@@ -161,20 +161,34 @@ works from an empty directory; a broken pack exits 1 with every fault named.
 
 ---
 
-## A4 — Profiles ⬜
+## A4 — Profiles ✅
 
 The adoption mechanism. Today the engines *are* the standard; the profile has to
 become a configuration input.
 
-- [ ] A4.1 `src/aegoll/profiles/` — `aegs-1`, `aegs-2`, `none` as declarative manifests, not code branches
-- [ ] A4.2 A profile declares: which controls must be exercised, which must be *recorded*, and what makes a decision non-conformant
-- [ ] A4.3 `ComplianceAssessment` records controls exercised *against the active profile* (half-supported in the prototype — finish it)
-- [ ] A4.4 `profile = "aegs-1"` is the default in `aegoll init`, so a user emits conformant evidence without having read the spec
-- [ ] A4.5 `profile = "none"` genuinely disables profile enforcement — the escape hatch has to work or people fork
-- [ ] A4.6 Test: switching profile changes conformance scoring and touches **no** engine code
-- [ ] A4.7 Test: AEGS-CONF still 7/7 under `aegs-1` after the refactor. This is the independent instrument; if it moves, the refactor changed behaviour
+- [x] A4.1 Manifests, not code branches — vendored from the standard into `src/aegoll/_profiles/`, pinned and drift-checked. `aegs-1`, `aegs-2`, `none`
+- [x] A4.2 Each declares which controls must be **exercised**, which must be **recorded**, and what makes a decision non-conformant. Every `MUST_EXERCISE` names a `recordPath`, because a requirement with nowhere to look for its evidence is not checkable
+- [x] A4.3 `Assessment.as_dict()` is that control's content — controls exercised against a **named** profile, which is a checkable statement about one action rather than the capability claim *"we run a trust engine"*
+- [x] A4.3a **Correction: it was not "half-supported" as this plan said — it was not supported at all.** The Decision Record carried no profile or compliance field, and the package had no profile concept. Emitting the assessment *into* the record needs a schema change in `aegs` (the record schema is `additionalProperties: false`), so that is [B1](../aegs/PLAN.md) work, not this task's
+- [x] A4.4 `aegs-1` is the default in `aegoll init` and in `Config.defaults()`
+- [x] A4.5 `none` genuinely disables enforcement, and `aegoll check` **says so out loud** — a user who selected it and forgot is otherwise reading a green check that guarantees nothing
+- [x] A4.6 Tested four ways: no engine imports `profiles.py`; the composition root does not either; `profiles.py` mutates nothing (checked by AST); and the same request yields the same verdict and matched rule under every profile. There is no parameter to pass a profile into the decision path, which is itself the evidence
+- [x] A4.7 **AEGS-CONF still 7/7**, both levels claimable, after the refactor
 
-**Exit:** profile switchable in config alone, AEGS-CONF unchanged at 7/7.
+**Exit:** ✅ profile switchable in config alone; AEGS-CONF unchanged at 7/7.
+
+> **Found — I scored honesty as a failure.** The first `assess()` treated `intentId: null`
+> as a missing control, so a perfectly honest record came back non-conformant. But a null
+> `intentId` *is* the record saying "no intent was declared" — a recorded position, and
+> exactly what *absent ≠ not-run ≠ unknown ≠ zero* asks for. Scoring it as a failure
+> punishes an implementation for reporting accurately and pushes the next one toward
+> omitting the key instead.
+>
+> So the levels now ask different questions: **MUST_EXERCISE** needs a value that is
+> evidence; **MUST_RECORD** needs the *key present*, and an explicit null satisfies it.
+> That required a `_MISSING` sentinel, because `None` and *absent* are different answers
+> and telling them apart is the whole of the four-state rule at this layer. `0` and `False`
+> count as evidence for the same reason — a headroom of zero is a measurement.
 
 ---
 
