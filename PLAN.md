@@ -291,7 +291,7 @@ two verified end-to-end in the prototype.
 
 ---
 
-## A8 — Test vectors 🔨
+## A8 — Test vectors ✅
 
 Consumes [`../aegs/PLAN.md`](../aegs/PLAN.md) B4. The reason aegoll can be checked
 against a spec rather than against itself.
@@ -302,10 +302,11 @@ against a spec rather than against itself.
 - [x] A8.4 **Envelope family passes: 27 vectors.** The runner builds `Envelope` directly rather than driving a whole decision, so a failure names the envelope rule rather than implicating policy, trust and risk as well
 - [x] A8.5 **Verdict family passes: 32 vectors**, plus a test that drives five real decisions end to end and recomputes attribution independently — without it the vectors could pass while the product disagreed with the spec, and the suite would be testing the runner
 - [x] A8.6 **Evidence family passes: 21 vectors** — after raising every hash from 64 to 128 bits, which is what the clause demanded
+- [x] A8.6a **States, controls, identity, profiles and path pass: 38 vectors** across five families — and they did not, at first. See [F-A11](#f-a11--twenty-eight-vectors-that-ran-nothing--2026-08-17)
 - [x] A8.7 Both covered, and asserted **by name** — "we have arithmetic vectors" is not the same claim as "the minus-sign bug is covered"
-- [x] A8.8 Four classified. **Three code bugs here**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). one a **vector bug** (an amount that genuinely breached the envelope it claimed to fit), one a **specification bug** ([VERD-4](../aegs/spec/04-verdicts.md) misattributed a sanctioned counterparty to whatever spending limit bit first — the spec was amended, this code was already right), and one a **cryptographic weakness**: 64-bit truncated hashes where [EVID-5](../aegs/spec/07-evidence.md) requires 128
+- [x] A8.8 **Six classified.** **Three code bugs here**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). one a **vector bug** (an amount that genuinely breached the envelope it claimed to fit), one a **specification bug** ([VERD-4](../aegs/spec/04-verdicts.md) misattributed a sanctioned counterparty to whatever spending limit bit first — the spec was amended, this code was already right), one a **cryptographic weakness** (64-bit truncated hashes where [EVID-5](../aegs/spec/07-evidence.md) requires 128), one a **live escalation** ([ID-4](../aegs/spec/08-identity.md) — a delegate declaring *no* limit escaped its parent's entirely), and one a **missing distinction** ([STATE-1](../aegs/spec/06-four-states.md) — the four states were a boolean)
 
-**Exit:** 100% of vectors green, and a written list of what the spec failed to say.
+**Exit:** ✅ **151 of 151 green and every one of them executing**, plus a written list of what the spec failed to say and what this implementation failed to do.
 
 ---
 
@@ -438,6 +439,73 @@ Full list and reasoning in [`../CONTEXT.md`](../CONTEXT.md).
 ## Findings
 
 Recorded as work lands. A plan with the wrong turns removed is not a plan.
+
+### F-A9 · Delegation escalation, reachable by leaving a field out — 2026-08-17
+
+Found by writing [AEGS-0.1-ID-4](../aegs/spec/08-identity.md) and then checking whether the code
+did what the clause said. It did not, and the gap was **live**: reverting the fix, a $1.00
+payment was **APPROVED** under a parent capped at $0.002.
+
+`_widens()` compared a delegate's limits against its delegator's and refused any that were
+larger. That detects nothing when the delegate declares *no* limit: there is nothing comparable,
+so nothing is refused — and the child's own per-action check did not fire either, because it had
+no limit to check against. **Declaring nothing was strictly more permissive than declaring a
+large number**, which is an escalation you reach by omission rather than by attack.
+
+The docstring said the policy envelopes would cover it. They do not, and this is the part worth
+carrying forward: **envelopes are treasury-scoped and never inherit an identity's ceiling**, so
+nothing downstream of the identity check knew a tighter limit had been declared upstream. Two
+mechanisms that each look sufficient can leave a gap precisely between them.
+
+ID-4 says *clamp to the narrower* rather than *refuse the wider* for this reason — a clamp has to
+produce a number, so there is no case it can quietly fail to cover. `_widens()` keeps its
+narrower job: a delegate claiming a *larger* number is worth refusing outright rather than
+silently clamping, because it is a statement of intent.
+
+Both new tests were checked against the old code before being trusted. One failed, which is the
+only evidence that it tests anything.
+
+### F-A10 · The four states were a boolean — 2026-08-17
+
+Found by writing [AEGS-0.1-STATE-1](../aegs/spec/06-four-states.md).
+
+`profiles._is_evidence` answered *did this control run* and discarded **which of the four ways it
+did not**. That is enough for MUST_EXERCISE scoring, which only needs the boolean, and not enough
+for a record a human reads: *we never asked* and *we asked and the answer was nothing* are a gap
+and a measurement, and the record showed them identically.
+
+Now `aegoll.states` classifies `absent` / `not-run` / `unknown` / `zero`, plus `no-opinion` for
+[STATE-4](../aegs/spec/06-four-states.md) and `measured` for the ordinary case. `is_evidence` is
+**defined through** the classifier rather than beside it, so there is one rule; its behaviour is
+unchanged, which is why the existing 532 tests still passed unmodified.
+
+Worth noting what the first draft got wrong: a helper that classified a *reported* value returned
+`zero` on every branch, which would have called `score: "0.25"` a zero. Caught by reading it back
+rather than by a test — none of the 11 vectors happened to carry a non-zero measurement, because
+the spec's four states are the four ways a value can fail to be ordinary and nobody thought to
+vector the ordinary case.
+
+### F-A11 · Twenty-eight vectors that ran nothing — 2026-08-17
+
+The 38 vectors added alongside spec sections 02, 06, 08, 09 and 10 used five operations the
+`aegoll` runner had no arm for. `tools/lint_normative.py` counted their clauses as tested, the
+coverage report said 56 clauses, and **28 of the vectors executed no implementation code at all**
+— they errored as unrunnable, and had the runner been more forgiving they would have skipped
+silently.
+
+Caught by running the suite before committing rather than by trusting the coverage number.
+
+The general form is worth keeping: **a coverage count is not a coverage claim unless something
+executes.** A linter that reads a `clause` field is measuring intent. The same shape had already
+appeared once as [F-C1](../aegoll-integrations/PLAN.md) — a test scanning a path that resolved to
+nothing — and it will appear again, which is why both are recorded rather than just fixed.
+
+Closed with five arms, each driving real code — the state classifier, the packaged profile
+manifests, the identity disclosure filter, the delegation clamp — rather than restating the rule
+in the test, which would have made each vector a test of the test. One further defect surfaced
+while writing them: the generic assertion took `next(iter(expected))` and checked **only the
+first key**, so a vector asserting `requiredCount` *and* `enforces` would have had half of itself
+ignored. Replaced by `_assert_every_key`.
 
 ### F-A8 · Sixty-four-bit hashes, in five places — 2026-08-17
 
