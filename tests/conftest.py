@@ -41,11 +41,17 @@ def imported_names(source: Path) -> list[tuple[int, str]]:
 
     Walks the AST rather than importing, so a banned dependency is detected even
     when it is not installed.
+
+    **Relative imports keep their leading dots.** `from ..domain import X` yields
+    `"..domain"`, not `"domain"`. Without that, a caller filtering out first-party
+    imports sees `domain`, `config`, `store` as third-party packages — which is
+    exactly what happened the first time `test_deps.py` ran, reporting eighteen
+    in-package imports as undeclared dependencies.
     """
     out: list[tuple[int, str]] = []
     for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
         if isinstance(node, ast.Import):
             out += [(node.lineno, a.name) for a in node.names]
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            out.append((node.lineno, node.module))
+        elif isinstance(node, ast.ImportFrom):
+            out.append((node.lineno, "." * node.level + (node.module or "")))
     return out

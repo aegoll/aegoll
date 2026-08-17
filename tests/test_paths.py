@@ -17,12 +17,12 @@ import os
 import pytest
 from conftest import imported_names, package_dir
 
-#: Modules whose out-of-package reaches are known and already scheduled for removal.
-#: The Streamlit cockpit leaves the package entirely at PLAN.md A2.1 — it is not a
-#: library surface at all. Each entry must name a file that still exists, so the
-#: exemption cannot outlive the module: delete the file and this list must shrink or
-#: `test_the_exemptions_have_not_become_permanent` fails.
-_LEAVING_AT_A2 = {"app.py", "ui_demo.py"}
+#: Empty, and it should stay that way. It briefly held {"app.py", "ui_demo.py"} — the
+#: Streamlit cockpit, exempted because it was already scheduled to leave the package at
+#: PLAN.md A2.1. When A2.1 landed, `test_the_exemptions_have_not_become_permanent`
+#: failed and forced this list to be emptied, which is exactly what it was written to
+#: do. An exemption that outlives the thing it exempts is how a guard rots.
+_LEAVING_AT_A2: set[str] = set()
 
 
 def _modules():

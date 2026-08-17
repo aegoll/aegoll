@@ -1,11 +1,23 @@
 """Headless entry point: `python -m aegoll.cli <command>`.
 
     decide       one-off decision, full engine breakdown
-    scenarios    run A-D2 and report
     audit        verify the hash chain
     replay       determinism check against the journal
     reviews      list / resolve the review queue
     bench        latency and cost-per-decision measurement
+    record       emit or validate AEGS Decision Records
+    intent       declare, list or revoke an economic intent
+    identity     register or inspect an agent identity
+    policies     list available policy bundles
+
+`scenarios` and `eval` are gone: the first is a demo and the second costs money for
+advisor calls, and neither belongs in a library's shipped surface. Both live in
+aegoll-integrations now.
+
+`bench` stays, against the plan's first draft. It measures the decision latency of
+the package on the caller's own hardware, needs no framework, no key and no money,
+and it substantiates the layer's central performance claim. Pushing that into a
+separate repository would put a core claim somewhere the user has to go looking.
 """
 
 from __future__ import annotations
@@ -21,8 +33,11 @@ from pathlib import Path
 from .clock import FixedClock
 from .config import available_bundles, load_bundle
 from .runtime import Aegoll, Paths
-from .scenarios import BASE_TIME, run_all
 from .domain import Purpose, Vendor, fmt_usd
+
+#: The fixed instant `--fixed-time` pins the clock to. Lived in the scenarios module,
+#: which has left the package; it is a clock constant, so it belongs beside the clock.
+BASE_TIME = datetime(2026, 8, 12, 14, 30, tzinfo=timezone.utc)
 
 
 def _aegl(args: argparse.Namespace, ephemeral: bool = False) -> Aegoll:
@@ -69,51 +84,6 @@ def cmd_decide(args: argparse.Namespace) -> int:
         return 0 if decision.approved else 2
     finally:
         aegoll.close()
-
-
-def cmd_scenarios(args: argparse.Namespace) -> int:
-    bundle = load_bundle(args.policy) if args.policy else load_bundle()
-    results = run_all(bundle)
-
-    if args.json:
-        print(json.dumps([r.as_dict() for r in results], indent=2))
-        return 0 if all(r.passed for r in results) else 1
-
-    print(f"policy: {bundle.name} ({bundle.hash})\n")
-    for r in results:
-        d = r.as_dict()
-        mark = "PASS" if d["passed"] else "FAIL"
-        mode = "LIVE-CAPABLE" if r.scenario.live else "simulated"
-        print(
-            f"{mark}  {d['key']:3} {d['title'][:34]:34} {mode:13} "
-            f"${d['amountUsd']:>9} -> {d['actual']:9} ({d['matchedRule']})"
-        )
-        print(
-            f"      trust={d['trust']:.2f} risk={d['risk']:.2f} "
-            f"flags={d['riskFlags']} latency={d['latencyUs']:.0f}us"
-        )
-        for note in r.notes:
-            print(f"      note: {note}")
-        print()
-
-    ok = all(r.passed for r in results)
-    print(f"{sum(r.passed for r in results)}/{len(results)} scenarios matched expectations")
-
-    if bundle.name != "default":
-        divergent = [r.scenario.key for r in results if not r.passed]
-        print(
-            f"\nnote: scenario expectations are calibrated against the `default` bundle. "
-            f"Under `{bundle.name}` the divergences ({', '.join(divergent) or 'none'}) are "
-            "not failures -- they are the measured cost of a stricter policy, i.e. its "
-            "false-reject rate on traffic default would have allowed."
-        )
-    if any(not s.scenario.live for s in results):
-        print(
-            "\nreminder: only scenario A can run against the real x402 seller "
-            "($0.001-$0.01). B-D2 use simulated vendors through the same decide() path."
-        )
-    # A non-default bundle diverging is expected, so do not fail the process on it.
-    return 0 if (ok or bundle.name != "default") else 1
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
@@ -205,57 +175,6 @@ def cmd_policies(args: argparse.Namespace) -> int:
     for p in available_bundles():
         b = load_bundle(p)
         print(f"  {b.name:12} {b.hash}  {len(b.rules)} rules  {p}")
-    return 0
-
-
-def cmd_eval(args: argparse.Namespace) -> int:
-    """Measure how often an advisor blocks traffic that should have passed.
-
-    Costs money: one advisor call per case. The deterministic baseline
-    (`--advisor none`) is free and shows what the engines alone decide.
-    """
-    from .evaluation import CASES, evaluate_advisor
-
-    bundle = load_bundle(args.policy) if args.policy else load_bundle()
-    reports = []
-    for spec in args.advisor or ["none"]:
-        if spec == "none":
-            provider = model = None
-        elif "/" in spec:
-            provider, model = spec.split("/", 1)
-        else:
-            print(f"  bad --advisor {spec!r}; expected provider/model or 'none'")
-            return 2
-        try:
-            report = evaluate_advisor(provider, model, bundle)
-        except Exception as exc:  # noqa: BLE001 - one bad key must not kill the run
-            print(f"  {spec:44} SKIPPED  {exc}")
-            continue
-        reports.append(report)
-
-        if not args.json:
-            print(f"\n  {report.provider}/{report.model}")
-            print(f"  {'-' * 74}")
-            for r in report.results:
-                mark = "FALSE-BLOCK" if r.false_block else ("ok" if r.passed_through else "blocked")
-                said = (r.as_dict()["advisorSaid"] or "-")[:8]
-                print(
-                    f"    {r.case.key:24} {r.case.category:9} "
-                    f"{r.deterministic:8} advisor={said:8} final={r.final:8} {mark}"
-                )
-            print(
-                f"  false-block {report.false_blocks}/{len(report.good)} "
-                f"({report.false_block_rate:.0%})   "
-                f"caught {report.catch_rate:.0%} of bad   "
-                f"ambiguous blocked {report.ambiguous_blocked}/{len(report.ambiguous)}   "
-                f"${report.total_cost_usd:.5f}  {report.mean_latency_ms:.0f}ms avg"
-                + "  mean tokens {:.0f} in / {:.0f} out".format(*report.mean_tokens)
-                + (f"  errors {report.errors}" if report.errors else "")
-            )
-
-    if args.json:
-        print(json.dumps({"cases": len(CASES),
-                          "advisors": [r.as_dict() for r in reports]}, indent=2))
     return 0
 
 
@@ -455,9 +374,6 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--fixed-time", action="store_true", help="deterministic clock")
     d.set_defaults(func=cmd_decide)
 
-    s = sub.add_parser("scenarios", help="run scenarios A-D2")
-    s.set_defaults(func=cmd_scenarios)
-
     a = sub.add_parser("audit", help="verify the audit chain")
     a.add_argument("--tail", type=int, default=10)
     a.set_defaults(func=cmd_audit)
@@ -476,11 +392,6 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("bench", help="measure decision latency and cost")
     b.add_argument("-n", type=int, default=2000)
     b.set_defaults(func=cmd_bench)
-
-    e = sub.add_parser("eval", help="measure advisor false-block rate (costs money)")
-    e.add_argument("--advisor", action="append", metavar="PROVIDER/MODEL",
-                   help="repeatable; 'none' for the deterministic baseline")
-    e.set_defaults(func=cmd_eval)
 
     rec = sub.add_parser("record", help="emit or validate AEGS Decision Records")
     rec.add_argument("--file", help="validate records from a file instead of the journal")
