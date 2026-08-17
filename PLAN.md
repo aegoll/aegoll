@@ -100,21 +100,31 @@ reads as a fix rather than as churn.
 
 ---
 
-## A2 — Purity: get the package out of the UI business ⬜
+## A2 — Purity: get the package out of the UI business ✅
 
 Today `aegl` depends on `streamlit>=1.40` unconditionally. A library that drags a web
 framework into every install will be declined by exactly the teams worth having.
 
-- [ ] A2.1 Move `app.py` (853 LOC), `ui.py` (383), `ui_demo.py` (128), `ui_keys.py` (190), `crossview.py` (227) out — destination `../aegoll-integrations/` ([C4](../aegoll-integrations/PLAN.md))
-- [ ] A2.2 Move `scenarios.py` (316) and `evaluation.py` (436) out — demo and measurement harnesses, not library surface ([C6](../aegoll-integrations/PLAN.md))
-- [ ] A2.3 Remove `streamlit` from `dependencies`. Target dependency set: `pyyaml` only, with `jsonschema` as an extra for validation
-- [ ] A2.4 Test: `tests/test_deps.py` asserts the installed-package import graph pulls in nothing outside the declared runtime set
-- [ ] A2.5 Test: core purity — no module under `src/aegoll/engines/` may import `os.path`, `open`, `requests`/`httpx`, or read a wall clock. Clock is injected (`clock.py` already does this — enforce it)
-- [ ] A2.6 Test: no module under `src/aegoll/` outside `advisors/` may import an LLM client. Extend the existing tree-walking `test_no_llm.py`
-- [ ] A2.7 Test: `src/aegoll/engines/` imports nothing from `src/aegoll/adapters/` or `advisors/` — dependency arrow points one way only
-- [ ] A2.8 Confirm the three engine families still import no sibling family (existing 20 tests from prototype S6)
+- [x] A2.1 `app.py`, `ui.py`, `ui_demo.py`, `ui_keys.py`, `crossview.py` moved to `../aegoll-integrations/cockpit/` — `8b825c6` / `237b7a2`
+- [x] A2.2 `scenarios.py`, `evaluation.py` moved to `../aegoll-integrations/harness/`
+- [x] A2.3 Runtime dependencies are **`pyyaml` alone**. `jsonschema` is the `schema` extra; a clean install pulls nothing else
+- [x] A2.4 [`tests/test_deps.py`](tests/test_deps.py) — 16 assertions on the declared *and* imported surface. Verified by planting `import streamlit`: the guard fails
+- [x] A2.5 Engines import no third-party code **at module scope**. Not "at all" — two import `jsonschema` inside a validation function, after the verdict, degrading cleanly when the extra is absent
+- [x] A2.6 Model clients importable only under `advisors/`, enforced by test
+- [x] A2.7 `engines/` imports nothing from `adapters/` or `advisors/`
+- [x] A2.8 The three engine families still import no sibling family
 
-**Exit:** `pip install aegoll` in a clean venv pulls `pyyaml` and nothing else; five purity tests green.
+**Exit:** ✅ a clean venv pulls `aegoll` + `PyYAML` and nothing else; 16 dependency
+assertions green; the wheel carries 35 modules and no UI. 225 passed from source,
+224 + 1 skip from the wheel, AEGS-CONF still 7/7.
+
+> **Found — I made the mistake this file exists to prevent, inside this file.**
+> `test_deps.py` located `pyproject.toml` as `package_dir().parents[1]` — resolving a
+> path relative to the package to reach something outside it, exactly the F-A1 pattern.
+> Fine in the source tree; from an installed wheel `parents[1]` is `Lib/`, and three
+> assertions failed. Anchored to `__file__` now, and it skips when there is no
+> `pyproject.toml` to assert about. Recorded rather than quietly corrected, because the
+> pattern is evidently easy to reproduce even while actively guarding against it.
 
 ---
 
@@ -169,13 +179,15 @@ meaningful exit codes.
 - [ ] A5.4 `aegoll policy explain` — what this policy would do, in plain terms, rule by rule
 - [ ] A5.5 `aegoll decide --amount 2.50 --vendor acme --dry-run`
 - [ ] A5.6 `aegoll report` — what was spent, what was refused, and why, attributed to the control that decided
+- [ ] A5.6a **Firm up `Report`** from provisional to stable ([api-surface §3](docs/api-surface.md)). Four renderers now depend on one shape: the CLI table, `--json`, the HTML page ([A10a](#a10a--aegoll-report---html-in-01)) and the live API ([A10b](#a10b--aegoll-serve-v02)). `Governor.report()` already returns it; the work is deciding the field names once, deliberately, rather than four times by accident
 - [ ] A5.7 `aegoll audit` — verify the evidence chain
 - [ ] A5.8 `aegoll conformance --profile aegs-1` — delegates to `aegs-conformance` if installed, says so clearly if not
 - [ ] A5.9 `aegoll record [--export|--validate]` — emit or validate AEGS Decision Records
 - [ ] A5.10 `aegoll intent` / `aegoll identity` — carried from the prototype
 - [ ] A5.11 `--json` on **every** command. A CLI without machine output is a CLI nobody scripts
 - [ ] A5.12 Exit-code table documented in `docs/cli.md`: `0` ok, `1` invalid config/policy, `2` refused, `3` chain broken, `4` usage
-- [ ] A5.13 Drop `scenarios`, `bench`, `eval` from the shipped CLI — they move to integrations ([C6](../aegoll-integrations/PLAN.md)). Keep `replay`: determinism is a user-facing guarantee
+- [x] A5.13 `scenarios` and `eval` dropped from the shipped CLI — a demo and a money-spending measurement, both now in integrations. `replay` kept: determinism is a user-facing guarantee
+- [x] A5.13a **`bench` kept, against this plan's first draft.** It measures decision latency on the caller's own hardware, needs no framework, no key and no money, and it substantiates the layer's central performance claim. Moving it to another repository would put a core claim somewhere the user has to go looking for it
 - [ ] A5.14 Test: every subcommand has a `--json` path and an exit-code assertion
 - [ ] A5.15 Test: `--help` for every subcommand renders without importing an optional extra
 
@@ -265,19 +277,58 @@ against a spec rather than against itself.
 
 ---
 
-## A10 — Local visual output (v0.2) ⬜
+## A10 — Local visual output ⬜
 
 The vision: *"in the next version this can apply an optional localhost app giving
-visual output"*. Deliberately after the CLI, and deliberately not Streamlit.
+visual output"*. Deliberately after the CLI, deliberately not Streamlit — and split in
+two, because half of it is worth having in 0.1.
 
-- [ ] A10.1 Read-only HTTP API specified in `docs/read-api.md` — one small JSON surface, versioned
-- [ ] A10.2 Server: stdlib only if possible; a small dependency behind the `aegoll[serve]` extra if not
-- [ ] A10.3 **`127.0.0.1` only.** Never defaults to `0.0.0.0`. It shows spending state and sits next to a wallet
-- [ ] A10.4 Off unless `aegoll serve` is run explicitly
-- [ ] A10.5 SPA views: active policy in readable form, live envelope headroom, decision stream with attributed reasons, evidence chain state
-- [ ] A10.6 Built bundle shipped inside the package — no build step for the user, no node toolchain at install
-- [ ] A10.7 Test: binding to a non-loopback address requires an explicit flag *and* prints a warning
-- [ ] A10.8 Test: every read-API endpoint is read-only — no route mutates policy, envelope, or journal
+**The design decision, made 2026-08-17.** `Governor.report()` already returns everything
+a view needs as plain data, with a vendor-safe identity projection already applied — its
+docstring says *"a report rendered in a browser must not carry the controller's details
+just because the layer happens to know them."* So the package is already **one shape, N
+renderers**; it just had exactly one renderer and that renderer needed Streamlit.
+
+**Stdlib only. One self-contained HTML file. No npm, no build step.** Two reasons: a
+package that sits next to a wallet should not ship a minified bundle nobody audited, and
+the argument that justified a build step in the old plan — one SPA shared across a Python
+*and* a TypeScript core — died when the TS core was dropped. Hand-written vanilla HTML,
+CSS and JS, shipped as package data.
+
+### A10a — `aegoll report --html`, in 0.1
+
+A generated file, not a server. ~80% of the value at ~10% of the risk: no port, no
+listener, no auth surface, and it is an artifact you can send to someone. A generated
+file is not a localhost app, so pulling this forward does not contradict the vision.
+
+- [ ] A10a.1 One HTML template as package data, rendered from `Report` — no network, no CDN font, no analytics, no outbound request of any kind. Self-contained or it is not auditable
+- [ ] A10a.2 `aegoll report --html [-o PATH]`, defaulting to stdout so it pipes
+- [ ] A10a.3 **Four panels**, each answering one question an agent developer has at 2am:
+      **Policy** — which pack, its hash, rules in priority order, in plain terms → *what will this do?* ·
+      **Envelopes** — both channels, every limit, headroom, **which one binds** → *how much is left?* ·
+      **Decisions** — newest first, with the **attributed control** → *why did my agent stop?* ·
+      **Evidence** — chain length and state → *can I trust this record?*
+- [ ] A10a.4 Absent limits render as **absent**, never as `0`. Invariant 5, in the one place a reader will misread it fastest
+- [ ] A10a.5 The **truncation caveat is printed on the page**, next to the chain state. A page that says "VALID" without it overstates what a hash chain proves
+- [ ] A10a.6 Keys never rendered; keep the vendor-safe projection `report()` already applies
+- [ ] A10a.7 Test: the rendered HTML contains no `http://`, `https://` or `//cdn` reference
+- [ ] A10a.8 Test: a report containing a key-shaped string does not render it
+- [ ] A10a.9 Test: golden-file render, so a template change that drops the attributed-control column fails
+
+**Exit:** a single file a developer opens after a run and immediately sees which control refused what.
+
+### A10b — `aegoll serve`, v0.2
+
+The same template, fed live. Same renderer, second transport.
+
+- [ ] A10b.1 Read-only HTTP API specified in `docs/read-api.md` — one small versioned JSON surface
+- [ ] A10b.2 Server is **stdlib `http.server`**. If that proves untenable, a dependency goes behind an `aegoll[serve]` extra — never into the core
+- [ ] A10b.3 **`127.0.0.1` only.** Never defaults to `0.0.0.0`
+- [ ] A10b.4 Off unless `aegoll serve` is run explicitly
+- [ ] A10b.5 **No mutation endpoints. Ever.** Not even resolving a review — that is the CLI's job. Read-only is the whole security model, and it is what makes an unauthenticated page acceptable
+- [ ] A10b.6 Test: binding to a non-loopback address requires an explicit flag **and** prints a warning
+- [ ] A10b.7 Test: every route is read-only — no request of any method mutates policy, envelope or journal
+- [ ] A10b.8 Test: the page renders from the API alone, so the two transports cannot drift
 
 **Exit:** `aegoll serve` shows what the CLI says, on localhost, with no new attack surface.
 
