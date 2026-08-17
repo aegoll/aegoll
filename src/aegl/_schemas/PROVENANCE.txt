@@ -1,0 +1,42 @@
+Vendored AEGS schemas — package data, not a source of truth.
+
+The canonical schemas live in the standard's own repository:
+
+    https://github.com/aegoll/aegs   ->   schemas/
+
+They are copied here so that `aegoll` can validate what it emits without a network
+call and without assuming a sibling directory exists on disk. The prototype resolved
+them as `Path(__file__).parents[4] / "aegs" / "schemas" / ...`, which worked only
+inside the monorepo — an installed wheel has no sibling `aegs/`. See PLAN.md F-A1.
+
+Source
+------
+  repo:    Jayzilva/x402  (the read-only proof-of-concept)
+  commit:  e3e295bee3a25d0500d4afcdd565ce8546822dd4
+  path:    aegs/schemas/
+  copied:  2026-08-17
+
+Files
+-----
+  agent-identity-0.1.json     used by engines/evidence/identity.py
+  decision-record-0.1.json    used by record.py
+  economic-intent-0.1.json    used by engines/economic/intent.py
+
+Only the three schemas an engine actually validates against are vendored. The other
+ten exist in the standard and are not needed here; vendoring them would imply this
+package implements controls it does not.
+
+Drift
+-----
+These copies can fall behind the standard, and a validator running against a stale
+schema is worse than one that fails loudly. Two rules:
+
+  1. Never edit a file in this directory. A change to a schema is a change to the
+     standard, made in the `aegs` repository and copied down afterwards.
+  2. CI must fail when a vendored copy differs from the standard at the pinned
+     commit, and the pin must be raised deliberately. Tracked as PLAN.md A1.11.
+
+Licence
+-------
+The AEGS specification and its schemas are CC-BY-4.0. Attribution: Jayzilva,
+https://github.com/aegoll/aegs

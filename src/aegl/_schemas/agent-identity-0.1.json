@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegs.dev/schemas/agent-identity-0.1.json",
+  "title": "AEGS Agent Identity (Know Your Agent)",
+  "version": "0.1",
+  "description": "What an ecosystem participant may need to know about an autonomous economic actor. Deliberately pseudonymous at its core: `agentId` is a stable handle, not a person. Everything that could identify a human or an organisation is optional, separately grouped, and excluded from counterparty disclosure by default -- because a standard that makes real-world identity the price of transacting has answered the accountability question by abolishing privacy.",
+
+  "type": "object",
+  "required": ["aegsVersion", "agentId", "purpose", "status"],
+  "additionalProperties": false,
+
+  "properties": {
+    "aegsVersion": { "const": "0.1" },
+
+    "agentId": {
+      "description": "A stable pseudonymous handle. AEGS does not require it to resolve to a legal person; whether it must is a deployment and jurisdiction question, not a protocol one.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "purpose": {
+      "description": "What this agent exists to do. Distinct from an Economic Intent, which is what it was sent to do on one occasion.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "status": {
+      "description": "`suspended` is reversible, `revoked` is terminal. Both stop the agent transacting; keeping them distinct lets an operator pause an agent without destroying the record of it having been authorised.",
+      "enum": ["active", "suspended", "revoked"]
+    },
+
+    "parentAgentId": {
+      "description": "The agent that delegated authority to this one. A sub-agent's authority can never exceed its parent's -- a delegation that widens authority is an escalation, and AEGS requires implementations to refuse it.",
+      "type": ["string", "null"]
+    },
+
+    "controller": {
+      "description": "PRIVATE. The party that controls this agent's keys. Excluded from counterparty disclosure by default.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["individual", "organisation", "agent", "unknown"] },
+        "jurisdiction": { "type": ["string", "null"] }
+      }
+    },
+
+    "operator": {
+      "description": "PRIVATE. The party accountable for what this agent does, where that differs from the controller.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["individual", "organisation", "agent", "unknown"] },
+        "jurisdiction": { "type": ["string", "null"] }
+      }
+    },
+
+    "wallets": {
+      "description": "PRIVATE by default. A counterparty already sees the address that pays it; publishing the full set links an agent's activity across counterparties, which is a surveillance surface rather than a control.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["address", "network"],
+        "additionalProperties": false,
+        "properties": {
+          "address": { "type": "string" },
+          "network": { "type": "string" },
+          "label": { "type": ["string", "null"] }
+        }
+      },
+      "default": []
+    },
+
+    "authorizedNetworks": {
+      "description": "Settlement networks this agent may transact on, as CAIP-2 identifiers. An empty list means unrestricted.",
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+
+    "spendingLimits": {
+      "description": "PRIVATE. What the controller asserts this agent may spend. An implementation applies this as an ADDITIONAL constraint -- the narrower of this and its own policy -- never as a widening. Never disclosed to a counterparty: telling a seller the remaining budget invites it to charge exactly that.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "perAction": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+        "daily": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+        "asset": { "type": ["string", "null"] }
+      }
+    },
+
+    "credentials": {
+      "description": "References to credentials held elsewhere -- a DID document, a verifiable credential, an attestation. AEGS 0.1 defines the reference, NOT verification: an implementation that lists a credential is not thereby claiming to have checked it, and `verified` says which.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "issuer", "verified"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string" },
+          "issuer": { "type": "string" },
+          "reference": { "type": ["string", "null"] },
+          "verified": {
+            "description": "False means listed but unchecked. AEGS 0.1 has no verification mechanism, so an honest implementation reports false here rather than implying assurance it has not obtained.",
+            "type": "boolean"
+          },
+          "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "default": []
+    },
+
+    "riskProfile": {
+      "description": "A deployment's own classification of this agent. AEGS does not define the vocabulary; it requires only that the value be recorded rather than inferred.",
+      "type": ["string", "null"]
+    },
+
+    "policyVersion": {
+      "description": "The governance policy in force when this identity was registered, as a content hash.",
+      "type": ["string", "null"]
+    },
+
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

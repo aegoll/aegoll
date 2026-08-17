@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegs.dev/schemas/economic-intent-0.1.json",
+  "title": "AEGS Economic Intent",
+  "version": "0.1",
+  "description": "What an autonomous agent was sent out to do, expressed in machine-readable economic terms, declared before it acts. Authorization asks whether an agent is *permitted* to spend. Intent asks whether the spend it proposes is what it was *sent to do*. Those are different questions, and an agent can pass the first while failing the second -- a compromised agent with valid credentials and budget headroom is exactly that case.",
+
+  "type": "object",
+  "required": ["aegsVersion", "intentId", "agentId", "purpose", "maximumAmount", "asset"],
+  "additionalProperties": false,
+
+  "properties": {
+    "aegsVersion": { "const": "0.1" },
+
+    "intentId": {
+      "description": "Unique within an implementation. Referenced by every Decision Record taken under it.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "agentId": {
+      "description": "Whose intent this is. An intent is not transferable between agents -- that would make it a shared budget rather than a statement of purpose.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "purpose": {
+      "description": "Free text for a human reader. Deliberately not a closed vocabulary: AEGS defines the interface, not a taxonomy of what agents may be for.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "maximumAmount": {
+      "description": "The total this intent may spend over its whole life, as a decimal string. Not per action -- a per-action ceiling that permits unlimited repetitions is not a budget, and structuring a large spend into many small ones is a named threat.",
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+    },
+
+    "maximumPerAction": {
+      "description": "Optional ceiling on any single action under this intent. Null means only the total constrains it.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+    },
+
+    "asset": {
+      "description": "The unit maximumAmount is denominated in. An action in a different asset cannot be checked against this intent and is refused rather than assumed equivalent.",
+      "type": "string",
+      "minLength": 1
+    },
+
+    "allowedResources": {
+      "description": "Resource patterns this intent permits. `*` matches within a path segment, `**` across segments. An empty list means unrestricted, which is a real choice and should be visible as one.",
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+
+    "allowedCategories": {
+      "description": "Category tags this intent permits, matched against a tag the caller supplies on the action. AEGS does not define the vocabulary -- an implementation, a marketplace or a regulator may.",
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+
+    "allowedChannels": {
+      "description": "Which spend channels this intent covers. Omitted means both. An intent to buy market data does not obviously authorise the agent's own inference spend, and being able to say so is the point.",
+      "type": "array",
+      "items": { "enum": ["internal", "external"] }
+    },
+
+    "expectedOutcome": {
+      "description": "What the spend is meant to produce. Human-readable; not machine-checked in 0.1, and recorded as such rather than implied to be verified.",
+      "type": ["string", "null"]
+    },
+
+    "createdAt": { "type": "string", "format": "date-time" },
+
+    "expiresAt": {
+      "description": "After this instant the intent authorises nothing. Null means no expiry, which for an autonomous agent is a decision worth making deliberately.",
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+
+    "status": {
+      "description": "`revoked` is terminal and exists so an operator can withdraw authority without deleting the record of it having been granted.",
+      "enum": ["active", "revoked", "fulfilled"],
+      "default": "active"
+    },
+
+    "declaredBy": {
+      "description": "Who or what declared this intent -- an operator, a parent agent, a delegation chain. Null where the implementation does not model it.",
+      "type": ["string", "null"]
+    }
+  }
+}

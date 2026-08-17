@@ -1,0 +1,570 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegs.dev/schemas/decision-record-0.1.json",
+  "title": "AEGS Autonomous Economic Decision Record",
+  "version": "0.1",
+  "description": "The evidence one governed economic action produces. An implementation that can emit a valid record for every action it authorises is demonstrating AEGS-1 evidence requirements, whatever engines it uses internally. Fields for capabilities an implementation has not built are null rather than absent, so a reader can tell 'assessed and found nothing' apart from 'never assessed' -- a distinction this project has already been burned by once, when an unmeasured vendor history was rendered as zero and every advisor read it as a fact.",
+  "type": "object",
+  "required": [
+    "aegsVersion",
+    "decisionId",
+    "agentId",
+    "action",
+    "decision",
+    "authorization",
+    "policy",
+    "timestamp",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "aegsVersion": {
+      "description": "Schema version this record claims to satisfy.",
+      "const": "0.1"
+    },
+    "decisionId": {
+      "description": "Unique within an implementation. Stable across the record's lifetime.",
+      "type": "string",
+      "minLength": 1
+    },
+    "agentId": {
+      "description": "Which autonomous actor requested this. Pseudonymous by default; AEGS does not require it to be resolvable to a legal person.",
+      "type": "string",
+      "minLength": 1
+    },
+    "intentId": {
+      "description": "The governed economic intent this action was taken under. Null where the implementation has no intent model -- see AEGS \u00a7Economic Intent.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "action": {
+      "description": "The economic action being decided, before any verdict.",
+      "type": "object",
+      "required": [
+        "channel",
+        "resource",
+        "amount",
+        "asset"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "description": "Which kind of spend. Separating an agent's own inference cost from its external purchases is an AEGS requirement, because they are different currencies paid to different counterparties.",
+          "enum": [
+            "internal",
+            "external"
+          ]
+        },
+        "resource": {
+          "type": "string"
+        },
+        "amount": {
+          "description": "Decimal string, never a float. Float arithmetic is not associative and a governance layer that cannot add up is worthless.",
+          "type": "string",
+          "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
+        },
+        "asset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "counterparty": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sanctioned": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "decision": {
+      "description": "The final verdict, after every clamp.",
+      "enum": [
+        "APPROVE",
+        "REVIEW",
+        "ESCALATE",
+        "REJECT"
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "required": [
+        "decidingEngine",
+        "reasons"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decidingEngine": {
+          "description": "Which control actually determined the verdict. Required because 'REJECT' without an attributable cause is not auditable evidence.",
+          "type": "string",
+          "minLength": 1
+        },
+        "matchedRule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deterministicVerdict": {
+          "description": "The verdict before any model-assisted advice. Equal to `decision` where no advisor ran.",
+          "enum": [
+            "APPROVE",
+            "REVIEW",
+            "ESCALATE",
+            "REJECT"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source",
+              "code",
+              "detail"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "verdict": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "budgetState": {
+      "description": "Envelope state at decision time. `cumulative: false` marks a per-call cap, whose `used` is meaningless -- rendering one as a spent budget states the opposite of what it means.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "ok",
+        "envelopes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "binding": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "envelopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "limit",
+              "used",
+              "cumulative"
+            ],
+            "additionalProperties": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "window": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "limit": {
+                "type": "string"
+              },
+              "used": {
+                "type": "string"
+              },
+              "cumulative": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assessments": {
+      "description": "One entry per control that ran. Absent keys mean the implementation does not have that control; a present key with `assessed: false` means it has it and did not run it. That difference matters to anyone reading the record as evidence.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trust": {
+          "$ref": "#/$defs/assessment"
+        },
+        "risk": {
+          "$ref": "#/$defs/assessment"
+        },
+        "roi": {
+          "$ref": "#/$defs/assessment"
+        },
+        "aml": {
+          "$ref": "#/$defs/assessment"
+        },
+        "sanctions": {
+          "$ref": "#/$defs/assessment"
+        },
+        "fraud": {
+          "$ref": "#/$defs/assessment"
+        },
+        "behavioral": {
+          "$ref": "#/$defs/assessment"
+        }
+      }
+    },
+    "intelligence": {
+      "description": "Whether a model was consulted, and what that cost. AEGS does not require one; it requires that its use be recorded when it happens.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "consulted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "consulted": {
+          "type": "boolean"
+        },
+        "skipReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "changedVerdict": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "costUsd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "injectionSuspected": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "description": "A content hash is preferable to a label: it makes a silent rule edit detectable.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "humanReview": {
+      "description": "Present when a person acted on this decision. An override that left no trace would make the log a record of what policy would have done rather than what happened.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "override",
+            "approval",
+            "denial",
+            "expired"
+          ]
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "overrodeVerdict": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "latencyUs": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "evidence": {
+      "description": "Binds the record to a tamper-evident log. `chainHash` is the entry hash in an append-only chain; `previousHash` is its predecessor. Without both, a record is a claim rather than evidence.",
+      "type": "object",
+      "required": [
+        "evidenceHash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "evidenceHash": {
+          "type": "string",
+          "minLength": 16
+        },
+        "chainSequence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "previousHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decisionHash": {
+          "description": "Hash of the decision inputs, so replaying the same inputs through the same policy is checkable.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "settlement": {
+      "description": "What actually happened afterwards. Null while the action is undecided or unsettled -- an authorised payment is not a completed one.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "settled"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "settled": {
+          "type": "boolean"
+        },
+        "success": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reference": {
+          "description": "Rail-specific settlement identifier -- a transaction hash on x402/EVM, something else elsewhere. AEGS does not constrain the format.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "implementation": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "framework": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "actor": {
+      "description": "Who acted, and whether anything is known about them. `known: false` is a real answer -- an unregistered agent is not the same as a registered one that passed, and a record must not let the two be confused. Deliberately carries no controller or operator: this is evidence about an economic action, not a dossier on whoever owns the agent.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "known"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "known": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "purpose": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "delegatedFrom": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "assessment": {
+      "type": "object",
+      "required": [
+        "assessed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "assessed": {
+          "description": "False means this control exists but did not run for this action. The score is then null, not zero.",
+          "type": "boolean"
+        },
+        "score": {
+          "description": "Normalised 0..1 where the control produces one. Null where it does not, or where the value is genuinely unknown -- 'unknown' must never be encoded as 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "level": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "indicators": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

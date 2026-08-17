@@ -76,8 +76,8 @@ The package reaches outside itself in eleven places. Each gets its own commit so
 reads as a fix rather than as churn.
 
 - [ ] A1.10 **Starter policies become package data** — `src/aegoll/policies/*.yaml`, resolved with `importlib.resources`, never with `Path(__file__).parents[n]`
-- [ ] A1.11 **AEGS schemas become vendored package data** — `src/aegoll/_schemas/`, with a provenance header naming the `aegs` commit they came from and a CI check that they have not drifted. Three engines currently read them from a sibling directory of the monorepo
-- [ ] A1.12 **The schema read moves out of import time.** `record.py`, `intent.py` and `identity.py` load a schema at module import, which is filesystem I/O inside the core — invariant 7, quietly untrue. Load lazily on first validation, and make validation optional so the core needs no `jsonschema` at all
+- [ ] A1.11 **AEGS schemas become vendored package data** — `src/aegoll/_schemas/`, with a provenance file naming the `aegs` commit they came from and a CI check that they have not drifted. Three engines currently reach into a sibling directory of the monorepo for them
+- [x] A1.12 ~~Move the schema read out of import time~~ — **already correct in the prototype.** Reads are lazy inside `load_schema()`, `import jsonschema` is local to the validating function, and absent `jsonschema` degrades to a clear message rather than an error. Nothing to do; recorded so the claim is not repeated
 - [ ] A1.13 **Delete the `.env` walk.** `config.py` resolves `.env` from `parents[2]`. A library that walks up the filesystem looking for dotenv files reads files the caller never offered it, and this one also handles BYOK keys. Keys come from the environment or from explicit config — never from a file the library went looking for
 - [ ] A1.14 **`.data/` becomes caller-controlled.** `runtime.py` writes the journal and sqlite history beside the package, i.e. into `site-packages`. Default to `./.aegoll/` relative to the working directory, overridable by `evidence.journal` in config
 - [ ] A1.15 **Remove the `x402_core` path-hack** from the rail adapter. It imports its dependency or fails with a clear message; it does not reach into a sibling repository
@@ -344,11 +344,17 @@ itself in eleven places**, and every one of them breaks in an installed wheel.
 | `app.py:23`, `ui_demo.py:25` | `sys.path` manipulation | leaving the package anyway ([A2.1](#a2--purity-get-the-package-out-of-the-ui-business-)) |
 | `tests/test_{engines,plugin,ui,ui_keys}.py` | `parents[1]/"aegl"` | asserts on the old layout |
 
-**Two of these are more than packaging.** The `.env` walk is a security smell in a library
-that also handles BYOK keys. And three engines **read AEGS schema files from disk at import
-time**, which is filesystem access inside the supposedly pure core — invariant 7, quietly
-untrue since whenever those lines were written, and invisible because the purity test checked
-imports rather than I/O.
+**One of these is more than packaging.** The `.env` walk resolved a path from `parents[2]`
+**and ran at module import time in two places**, so importing the package read a file the
+caller had never offered it and wrote the contents into `os.environ`. In a library that also
+handles BYOK keys that is a security problem rather than a convenience.
+
+> **Correction, same day.** A first draft of this finding also claimed the three engines
+> *read* AEGS schemas at import time, which would have made invariant 7 quietly untrue. They
+> do not. Only `SCHEMA_PATH` is computed at import — a `Path` construction with no I/O — and
+> the read happens lazily inside `load_schema()`, with `import jsonschema` local to the
+> validating function and a clean fallback when it is absent. That part of the prototype was
+> already right. The defect is narrower than stated: the path points outside the package.
 
 This is the failure the `src/` layout exists to surface, found in the first commit here
 rather than in the first bug report after publishing. Fixed as [A1.10–A1.16](#a1--port-and-rename-),

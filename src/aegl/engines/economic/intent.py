@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+from importlib import resources
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -54,9 +55,10 @@ from ...domain import (
 )
 
 AEGS_VERSION = "0.1"
-SCHEMA_PATH = (
-    Path(__file__).resolve().parents[4] / "aegs" / "schemas" / "economic-intent-0.1.json"
-)
+
+#: Vendored package data — see `_schemas/PROVENANCE.txt`. The prototype resolved this
+#: from `parents[4]`, which only worked inside the monorepo. See PLAN.md F-A1.
+SCHEMA_PATH = Path(str(resources.files("aegl") / "_schemas" / "economic-intent-0.1.json"))
 
 
 @dataclass(frozen=True)

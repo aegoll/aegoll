@@ -36,15 +36,18 @@ it evidence rather than a log.
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
 from .domain import atomic_to_usd
 
 AEGS_VERSION = "0.1"
-SCHEMA_PATH = (
-    Path(__file__).resolve().parents[2] / "aegs" / "schemas" / "decision-record-0.1.json"
-)
+
+#: Vendored package data — see `_schemas/PROVENANCE.txt`. The prototype resolved this
+#: from `parents[2]`, which only worked inside the monorepo that had `aegs/` as a
+#: sibling. An installed wheel has no siblings. See PLAN.md F-A1.
+SCHEMA_PATH = Path(str(resources.files("aegl") / "_schemas" / "decision-record-0.1.json"))
 
 #: Controls AEGL implements. Anything outside this set is *absent* from a record
 #: rather than reported as un-run -- claiming to have a sanctions control that never
