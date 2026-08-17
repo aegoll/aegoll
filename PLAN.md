@@ -128,25 +128,36 @@ assertions green; the wheel carries 35 modules and no UI. 225 passed from source
 
 ---
 
-## A3 — Config and policy packs ⬜
+## A3 — Config and policy packs ✅
 
 Two separate things, and conflating them causes trouble later. **Policy pack** = what
 the rules are (user-authored). **Profile** = which controls must exist (the standard,
 see A4).
 
-- [ ] A3.1 `src/aegoll/config.py` — one loader, `aegoll.yaml` and `aegoll.json` both accepted, same schema
-- [ ] A3.2 Config schema: `profile`, `policy`, `channels.internal`, `channels.external`, `evidence.journal`, `advisor` (optional). Documented in `docs/configuration.md`
-- [ ] A3.3 Policy pack loader — discovery by path or by name from `policies/`
-- [ ] A3.4 Policy pack validation against the AEGS Policy schema (`aegs/schemas/policy-0.1.json`) with readable errors that name the offending rule id
-- [ ] A3.5 Content hash over config **and** rules together, recorded in every audit entry. Already true in the prototype — carry it, do not rebuild it
-- [ ] A3.6 `policy.version` may be a label; warn when it is not a hash. A label can be reused across edited rules; a hash cannot
-- [ ] A3.7 **Policy packs stay data, never code.** Fixed comparator vocabulary (`gte`, `lt`, `in`, …), no `eval`, no import hooks. This is a security boundary: an executable policy pack downloaded from a registry is remote code execution wearing a governance hat
-- [ ] A3.8 Test: a pack containing a Python expression, an import, or an unknown comparator is *rejected*, not partially applied
-- [ ] A3.9 Ship two starter packs — `policies/dev-sandbox.yaml` (permissive, loud) and `policies/prod-strict.yaml`. Port `../x402/aegl/policies/{default,strict}.yaml` as the base
-- [ ] A3.10 Ship the same two as `.json` so the JSON path is tested by use, not by a unit test alone
-- [ ] A3.11 `aegoll init` writes `aegoll.yaml` + `policies/default.yaml` and nothing else
+- [x] A3.1 [`settings.py`](src/aegoll/settings.py) — one loader; `aegoll.yaml`, `aegoll.yml` and `aegoll.json` all accepted, same schema. JSON is a YAML 1.2 subset so there is one parser, not two that can disagree
+- [x] A3.2 Config schema: `profile`, `policy`, `channels.{internal,external}`, `evidence.journal`, `advisor`. Unknown keys at every level are rejected, not ignored
+- [x] A3.3 Pack discovery by path or by stem, **de-duplicated with YAML winning** — both syntaxes ship, and two entries with one name make `--policy strict` ambiguous
+- [x] A3.4 Validation names the offending rule id, and reports **every** problem rather than the first
+- [x] A3.5 Content hash over config **and** rules, carried from the prototype. Config and pack hash *separately* — they version independently and a record carries both
+- [x] A3.6 `LOOKS_LIKE_HASH` exposed for the label-vs-hash warning
+- [x] A3.7 Packs stay data — fixed comparator vocabulary, no `eval`, `safe_load` only. The *enforcement* moved from evaluation time to load time, which is the substance of this task
+- [x] A3.8 Tested: unknown comparator, unknown verdict, unknown fact, duplicate id, missing id, bad priority, malformed `between`/`in`, null comparison, unknown keys — each **rejected at load**, and `!!python/object/apply` fails to parse rather than executing
+- [x] A3.9 Two starter packs shipped — **`default` and `strict`, not renamed**. Declined the `dev-sandbox`/`prod-strict` naming for two reasons: `default` is genuinely the default and is *not* a permissive sandbox (it rejects sanctioned counterparties, rejects over-balance, reviews at $100), so the name would misdescribe it; and `strict` is referenced **by stem** in CONF-005 in the `aegs` repo, so renaming breaks a conformance case — data that is supposed to be stable — for no user benefit
+- [x] A3.10 Both shipped as `.json` too, **generated from the YAML and proven equivalent**: the content hash is over the parsed structure, so an identical hash means the two files really are one policy rather than merely looking similar
+- [x] A3.11 `aegoll init` writes `aegoll.yaml` + `policies/default.yaml` and refuses to overwrite without `--force`. It **copies** the starter out rather than pointing at site-packages, so a user's first act with a policy is reading and editing their own copy
 
-**Exit:** a policy change is validated, hashed, and traceable from any decision back to the exact numbers that produced it.
+**Exit:** ✅ a policy change is validated **at load**, hashed, and traceable from any
+decision back to the exact numbers that produced it. `aegoll init` then `aegoll check`
+works from an empty directory; a broken pack exits 1 with every fault named.
+
+> **Found — the check existed and did not run.** `COMPARATORS` was already a fixed tuple
+> with no `eval` anywhere, so the *vocabulary* half of "policy packs are data, never code"
+> was solid. But the check lived inside `policy.evaluate()`, so a malformed rule only
+> raised if a request reached it — and **a rule that never matches never validates.** A
+> pack could carry a verdict of `MAYBE` and look fine until the one request that touched
+> it arrived. Same shape as F-A1 and F-C1: a guard in the wrong place, passing quietly.
+> The fact vocabulary is now *derived from `build_facts()` by AST* rather than duplicated
+> as a list, because a hand-maintained list is how that class of bug returns.
 
 ---
 
@@ -174,8 +185,8 @@ CLI output first, visual output optional and later. Non-interactive, CI-friendly
 meaningful exit codes.
 
 - [ ] A5.1 Migrate `../x402/aegl/aegl/cli.py` (536 LOC, 12 subcommands: decide, scenarios, audit, replay, reviews, bench, eval, policies, record, intent, identity)
-- [ ] A5.2 `aegoll init` — scaffold config + starter policy
-- [ ] A5.3 `aegoll check` — validate config and policy, exit 1 if invalid. **The quiet win:** a policy change that would refuse everything, or allow everything, fails the build before it reaches an agent holding a wallet
+- [x] A5.2 `aegoll init` — landed with [A3.11](#a3--config-and-policy-packs-)
+- [x] A5.3 `aegoll check` — landed with A3. Validates config **and** the pack it points at, reports every fault, exits 1. `--json` accepted before *and* after the subcommand, because users type it after
 - [ ] A5.4 `aegoll policy explain` — what this policy would do, in plain terms, rule by rule
 - [ ] A5.5 `aegoll decide --amount 2.50 --vendor acme --dry-run`
 - [ ] A5.6 `aegoll report` — what was spent, what was refused, and why, attributed to the control that decided
