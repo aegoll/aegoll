@@ -192,31 +192,47 @@ become a configuration input.
 
 ---
 
-## A5 — The CLI ⬜
+## A5 — The CLI ✅
 
 The primary surface in v0.1, and the one that has to be good. The vision is explicit:
 CLI output first, visual output optional and later. Non-interactive, CI-friendly,
 meaningful exit codes.
 
-- [ ] A5.1 Migrate `../x402/aegl/aegl/cli.py` (536 LOC, 12 subcommands: decide, scenarios, audit, replay, reviews, bench, eval, policies, record, intent, identity)
+- [x] A5.1 Ported in A1; `scenarios` and `eval` dropped since, `report`, `policy explain` and `conformance` added
 - [x] A5.2 `aegoll init` — landed with [A3.11](#a3--config-and-policy-packs-)
 - [x] A5.3 `aegoll check` — landed with A3. Validates config **and** the pack it points at, reports every fault, exits 1. `--json` accepted before *and* after the subcommand, because users type it after
-- [ ] A5.4 `aegoll policy explain` — what this policy would do, in plain terms, rule by rule
-- [ ] A5.5 `aegoll decide --amount 2.50 --vendor acme --dry-run`
-- [ ] A5.6 `aegoll report` — what was spent, what was refused, and why, attributed to the control that decided
-- [ ] A5.6a **Firm up `Report`** from provisional to stable ([api-surface §3](docs/api-surface.md)). Four renderers now depend on one shape: the CLI table, `--json`, the HTML page ([A10a](#a10a--aegoll-report---html-in-01)) and the live API ([A10b](#a10b--aegoll-serve-v02)). `Governor.report()` already returns it; the work is deciding the field names once, deliberately, rather than four times by accident
-- [ ] A5.7 `aegoll audit` — verify the evidence chain
-- [ ] A5.8 `aegoll conformance --profile aegs-1` — delegates to `aegs-conformance` if installed, says so clearly if not
-- [ ] A5.9 `aegoll record [--export|--validate]` — emit or validate AEGS Decision Records
-- [ ] A5.10 `aegoll intent` / `aegoll identity` — carried from the prototype
-- [ ] A5.11 `--json` on **every** command. A CLI without machine output is a CLI nobody scripts
-- [ ] A5.12 Exit-code table documented in `docs/cli.md`: `0` ok, `1` invalid config/policy, `2` refused, `3` chain broken, `4` usage
+- [x] A5.4 `aegoll policy explain` — rules in **evaluation order**, derived facts first, conditions in words. Reads the pack the *config* names, not the packaged starter
+- [x] A5.5 `aegoll decide --amount 2.50 --vendor acme --dry-run` — `--dry-run` uses an ephemeral store, so nothing is journalled and no envelope moves
+- [x] A5.6 `aegoll report` — four panels, attributed to the control that decided
+- [x] A5.6a **`Report` is now stable** — [`reporting.py`](src/aegoll/reporting.py). Field names decided once; attribution and money formatting both reuse `record.py` rather than being reimplemented, so a report and a conformance run cannot disagree about which control decided
+- [x] A5.7 `aegoll audit` — verifies the chain, exits `3` when it is broken. A test tampers with a journal to prove the BROKEN path
+- [x] A5.8 `aegoll conformance --profile aegs-1` — scores journalled records for **evidence completeness**, and says plainly that the full AEGS-CONF suite is a separate package
+- [x] A5.9 `aegoll record [--export|--file]` — carried from the prototype
+- [x] A5.10 `aegoll intent` / `aegoll identity` — carried from the prototype
+- [x] A5.11 `--json` on **every** subcommand, added by a loop over the subparsers rather than by hand — a hand-maintained list is how "every" quietly becomes "most". Accepted both before and after the subcommand
+- [x] A5.12 Five distinct exit codes documented in [`docs/cli.md`](docs/cli.md): `0` ok, `1` invalid, `2` refused, `3` chain, `4` usage. `4` exists because argparse's default of `2` would collide with **refused**, and a typo reading as a governance decision is the worst confusion this tool could hand someone
 - [x] A5.13 `scenarios` and `eval` dropped from the shipped CLI — a demo and a money-spending measurement, both now in integrations. `replay` kept: determinism is a user-facing guarantee
 - [x] A5.13a **`bench` kept, against this plan's first draft.** It measures decision latency on the caller's own hardware, needs no framework, no key and no money, and it substantiates the layer's central performance claim. Moving it to another repository would put a core claim somewhere the user has to go looking for it
-- [ ] A5.14 Test: every subcommand has a `--json` path and an exit-code assertion
-- [ ] A5.15 Test: `--help` for every subcommand renders without importing an optional extra
+- [x] A5.14 62 CLI tests: `--json` parses for every command, and every exit code asserted end-to-end as a subprocess
+- [x] A5.15 `--help` renders for every subcommand, with the command list derived from the parser so a new command is covered the moment it is added
 
-**Exit:** the whole product usable from a terminal, scriptable, no UI anywhere near it.
+**Exit:** ✅ the whole product usable from a terminal, scriptable, no UI anywhere near it.
+412 tests, AEGS-CONF 7/7, and the installed binary runs `init` then `check` from an empty
+directory.
+
+> **Found — three bugs the tests caught rather than a user.** `--json` *before* the
+> subcommand silently stopped working the moment per-command flags were added, because
+> argparse parses the global flag and then lets the subparser's default overwrite it with
+> `False`. `policy explain` fell back to the **packaged** starter whenever `--policy` was
+> absent, so it cheerfully explained a policy the agent was not using — worse than
+> explaining nothing. And a per-call ceiling was rendered as "used of limit", so
+> `per_transaction` showed `$0.00 of $10.00` beside the cumulative windows and read as
+> *nothing was spent*, which is false.
+>
+> **And one in my own first draft of `reporting.py`:** it rolled its own attribution and
+> reported **rule ids** as controls — `deny-over-balance` where the answer is `treasury`.
+> A different claim, and the wrong one. It now reuses `record._deciding_engine`, the same
+> projection AEGS-CONF scores, so if that logic is ever wrong it is wrong in one place.
 
 ---
 
