@@ -455,20 +455,42 @@ def cmd_check(args: argparse.Namespace) -> int:
             print(str(exc))
         return 1
 
+    from .profiles import Profile  # noqa: PLC0415
+    from .validate import Problem  # noqa: PLC0415
+
     problems = config.validate()
+
+    # The profile is loaded before either output branch, so `--json` and the human form
+    # report the same thing. Splitting them once meant `--json` referenced a name the
+    # human path had assigned, which is the shape of bug that only shows up in the
+    # less-used branch.
+    profile = None
+    try:
+        profile = Profile.load(config.profile)
+    except ConfigError as exc:
+        problems.append(Problem("error", f"{config.source or 'config'}:profile", str(exc)))
+
     errors = [p for p in problems if p.severity == "error"]
 
     if args.json:
         print(json.dumps({
             "ok": not errors,
             "config": config.as_dict(),
+            "profile": profile.as_dict() if profile is not None else None,
             "problems": [p.as_dict() for p in problems],
         }, indent=2))
         return 1 if errors else 0
 
     where = config.source or "<no config file; packaged defaults>"
     print(f"config : {where}")
-    print(f"profile: {config.profile}")
+    if profile is None:
+        print("profile: UNUSABLE — see below")
+    elif profile.enforces():
+        print(f"profile: {profile.id}  {len(profile.required_controls())} required control(s)")
+    else:
+        # Said out loud. A user who selected `none` and forgot is otherwise looking at a
+        # green check that guarantees nothing.
+        print(f"profile: {profile.id}  — NO conformance enforcement")
     try:
         bundle = config.policy()
         print(f"policy : {bundle.name}  {bundle.hash}  {len(bundle.rules)} rules")
@@ -476,6 +498,12 @@ def cmd_check(args: argparse.Namespace) -> int:
         # Detail comes from the problems list below. Printing the exception here too
         # reported every fault twice, which makes a long list read as a longer one.
         print("policy : UNUSABLE — see below")
+
+    if profile is not None and args.controls:
+        print()
+        print(f"controls required by {profile.id}:")
+        for req in profile.required_controls():
+            print(f"  {req.requirement:14} {req.control:22} <- {req.record_path}")
 
     if not problems:
         print()
@@ -502,6 +530,8 @@ def build_parser() -> argparse.ArgumentParser:
     # Also accepted before the subcommand. Users type it after, so both work rather than
     # one being technically correct and the other an error message.
     chk.add_argument("--json", action="store_true", help="machine-readable output")
+    chk.add_argument("--controls", action="store_true",
+                     help="list the controls the active profile requires")
     chk.set_defaults(func=cmd_check)
 
     d = sub.add_parser("decide", help="decide one payment request")

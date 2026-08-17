@@ -73,6 +73,8 @@ aegoll = [
     "policies/*.json",
     "_schemas/*.json",
     "_schemas/PROVENANCE.txt",
+    "_profiles/*.json",
+    "_profiles/PROVENANCE.txt",
 ]
 
 [tool.pytest.ini_options]

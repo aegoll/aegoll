@@ -1,0 +1,67 @@
+{
+  "aegsVersion": "0.1",
+  "profile": "aegs-1",
+  "title": "Baseline economic governance",
+  "description": "What a governed agent needs before it is allowed near a wallet: a budget it cannot exceed, a policy that decided, a declared purpose, a stated identity, and an append-only record naming which control decided. Deliberately reachable — every requirement here can be satisfied today with a complete record, because a baseline nobody can meet is not a baseline.",
+  "controls": [
+    {
+      "control": "BudgetEnvelope",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "budgetState",
+      "note": "Every decision is evaluated against an envelope, and the record carries the resulting state including which limit was binding. A cap on one payment is not a budget; the envelope is what makes cumulative spend governable."
+    },
+    {
+      "control": "Policy",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "policy",
+      "note": "The record identifies the policy by a content hash, not a label. Labels get reused across edited rules; hashes cannot, and a silent rule edit is exactly what an auditor needs to be able to detect."
+    },
+    {
+      "control": "GovernanceDecision",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "decision",
+      "note": "One of APPROVE, REVIEW, ESCALATE, REJECT."
+    },
+    {
+      "control": "Authorization",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "authorization/decidingEngine",
+      "note": "The attributed control — which one actually determined the verdict. A correct verdict attributed to the wrong control is right by accident, and the same case shaped differently would fail. This is the single field that makes conformance mean anything."
+    },
+    {
+      "control": "EconomicIntent",
+      "requirement": "MUST_RECORD",
+      "recordPath": "intentId",
+      "note": "An agent need not always act under a declared intent, but the record must say which — and must distinguish `no intent declared` from `intent expired`. Treating the second as the first waves a lapsed agent through as merely ungoverned."
+    },
+    {
+      "control": "AgentIdentity",
+      "requirement": "MUST_RECORD",
+      "recordPath": "actor",
+      "note": "Pseudonymous by default. Recording an identity does not mean disclosing it: `spendingLimits` in particular is never shown to a counterparty, because telling a seller your remaining budget invites it to charge exactly that."
+    },
+    {
+      "control": "EvidenceRecord",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "evidence",
+      "note": "Append-only and hash-chained. The known limit is stated rather than hidden: any prefix of a valid chain is itself valid, so truncation is undetectable without an external anchor. A profile that claimed tamper-evidence without saying so would overstate what a chain proves."
+    },
+    { "control": "TrustAssessment", "requirement": "OPTIONAL" },
+    { "control": "RiskAssessment", "requirement": "OPTIONAL" },
+    { "control": "ConformanceDeclaration", "requirement": "OPTIONAL" },
+    {
+      "control": "AMLAssessment",
+      "requirement": "OPTIONAL",
+      "note": "Schema only, no engine anywhere. Requiring it would make the profile unsatisfiable, which does not raise the bar — it makes the bar decorative."
+    },
+    { "control": "ComplianceAssessment", "requirement": "OPTIONAL", "note": "Schema only, no engine." },
+    { "control": "IncidentRecord", "requirement": "OPTIONAL", "note": "Schema only, no engine." }
+  ],
+  "nonConformant": [
+    "A decision whose record omits a MUST_EXERCISE control.",
+    "A decision whose attributed control is absent, null, or names something that did not run.",
+    "A record that reports a control as zero when it was never measured. Absent, not-run, unknown and zero are four different things.",
+    "A policy identified by a mutable label where the implementation could have supplied a content hash.",
+    "An intent that has expired but is recorded as though none was declared."
+  ]
+}

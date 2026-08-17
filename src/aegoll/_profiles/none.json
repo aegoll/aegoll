@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "profile": "none",
+  "title": "No profile enforcement",
+  "description": "A real, working escape hatch. Selecting `none` means an implementation makes no conformance claim and nothing is reported as a finding. It exists because an escape hatch that does not work is an escape hatch people fork around — and a fork is worse than an honest opt-out, because it takes the user out of reach of every later fix. The engines still run and the policy still decides; only the conformance reporting is switched off.",
+  "controls": [
+    { "control": "AgentIdentity", "requirement": "OPTIONAL" },
+    { "control": "EconomicIntent", "requirement": "OPTIONAL" },
+    { "control": "Policy", "requirement": "OPTIONAL" },
+    { "control": "BudgetEnvelope", "requirement": "OPTIONAL" },
+    { "control": "RiskAssessment", "requirement": "OPTIONAL" },
+    { "control": "TrustAssessment", "requirement": "OPTIONAL" },
+    { "control": "GovernanceDecision", "requirement": "OPTIONAL" },
+    { "control": "EvidenceRecord", "requirement": "OPTIONAL" },
+    { "control": "Authorization", "requirement": "OPTIONAL" },
+    { "control": "ConformanceDeclaration", "requirement": "OPTIONAL" },
+    { "control": "AMLAssessment", "requirement": "OPTIONAL" },
+    { "control": "ComplianceAssessment", "requirement": "OPTIONAL" },
+    { "control": "IncidentRecord", "requirement": "OPTIONAL" }
+  ],
+  "nonConformant": [
+    "Nothing. This profile makes no claim, so nothing can fail it."
+  ]
+}

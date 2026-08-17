@@ -1,4 +1,4 @@
-"""Fail if a vendored AEGS schema has drifted from the standard at its pinned commit.
+"""Fail if vendored AEGS content has drifted from the standard at its pinned commit.
 
 A validator running against a stale schema is worse than one that fails loudly: it
 reports conformance against a document nobody is holding it to. This drift is not
@@ -8,8 +8,11 @@ vendored copies here silently kept a dead one. Nothing failed.
     python tools/check_schema_drift.py             # compare against the pinned commit
     python tools/check_schema_drift.py --refresh   # update the copies and the pin
 
-Reads the pin from `src/aegoll/_schemas/PROVENANCE.txt` and fetches only that commit's
-copy, so raising the pin stays a deliberate act rather than a side effect of the
+Covers `_schemas/` and `_profiles/`, each with its own `PROVENANCE.txt` and its own pin,
+because they are separate artifacts of the standard and change for different reasons. A
+stale schema makes validation wrong; a stale profile makes a *conformance claim* wrong.
+
+Reads each pin and fetches only that commit's copy, so raising the pin stays a deliberate act rather than a side effect of the
 standard moving. Needs network; skips cleanly without one, because a broken build on a
 train is not a useful signal.
 
@@ -31,8 +34,14 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parents[1]
-SCHEMAS = HERE / "src" / "aegoll" / "_schemas"
-PROVENANCE = SCHEMAS / "PROVENANCE.txt"
+
+#: Every directory of vendored standard content. Each carries its own PROVENANCE.txt with
+#: its own pin, so schemas and profiles can be raised independently — they are separate
+#: artifacts of the standard and change for different reasons.
+VENDORED = (
+    HERE / "src" / "aegoll" / "_schemas",
+    HERE / "src" / "aegoll" / "_profiles",
+)
 API = "https://api.github.com/repos/{repo}/contents/{path}{name}?ref={commit}"
 RAW = "https://raw.githubusercontent.com/{repo}/{commit}/{path}{name}"
 
@@ -41,21 +50,21 @@ def token() -> str | None:
     return os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or None
 
 
-def read_pin() -> tuple[str, str, str]:
-    """(repo, commit, path) from the provenance file. The file is the single source."""
-    text = PROVENANCE.read_text(encoding="utf-8")
+def read_pin(provenance: Path) -> tuple[str, str, str]:
+    """(repo, commit, path) from a provenance file. The file is the single source."""
+    text = provenance.read_text(encoding="utf-8")
 
     def field(name: str) -> str:
         match = re.search(rf"^\s*{name}:\s*(\S+)\s*$", text, re.M)
         if not match:
-            raise SystemExit(f"{PROVENANCE}: no `{name}:` field. The pin must be explicit.")
+            raise SystemExit(f"{provenance}: no `{name}:` field. The pin must be explicit.")
         return match.group(1)
 
     return field("repo"), field("commit"), field("path")
 
 
-def vendored() -> list[Path]:
-    return sorted(SCHEMAS.glob("*.json"))
+def vendored(directory: Path) -> list[Path]:
+    return sorted(directory.glob("*.json"))
 
 
 def fetch(repo: str, commit: str, path: str, name: str) -> str:
@@ -91,22 +100,24 @@ def canonical(text: str) -> str:
     return json.dumps(json.loads(text), sort_keys=True, separators=(",", ":"))
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--refresh", action="store_true",
-        help="overwrite the vendored copies from the pinned commit",
-    )
-    args = parser.parse_args()
+def check(directory: Path, *, refresh: bool) -> int:
+    """One vendored directory against its own pin."""
+    provenance = directory / "PROVENANCE.txt"
+    if not provenance.is_file():
+        print(f"{directory.name}: no PROVENANCE.txt. Vendored data with no stated source "
+              "is unmaintainable — a reader cannot tell what it should equal.")
+        return 1
 
-    repo, commit, path = read_pin()
-    files = vendored()
+    repo, commit, path = read_pin(provenance)
+    files = vendored(directory)
     if not files:
-        raise SystemExit(f"{SCHEMAS}: no vendored schemas to check")
+        print(f"{directory.name}: nothing to check")
+        return 1
 
-    print(f"pinned to {repo}@{commit[:7]} {path}")
+    print(f"{directory.name}: pinned to {repo}@{commit[:7]} {path}")
 
     drifted, missing, refreshed = [], [], []
+    args_refresh = refresh
     for local in files:
         try:
             remote = fetch(repo, commit, path, local.name)
@@ -131,7 +142,7 @@ def main() -> int:
 
         if canonical(remote) == canonical(local.read_text(encoding="utf-8")):
             print(f"  ok      {local.name}")
-        elif args.refresh:
+        elif args_refresh:
             local.write_text(remote, encoding="utf-8")
             refreshed.append(local.name)
             print(f"  updated {local.name}")
@@ -141,15 +152,15 @@ def main() -> int:
 
     if missing:
         print(
-            "\nnot present at the pinned commit: " + ", ".join(missing) +
-            "\nEither the pin is wrong or the schema was renamed in the standard. "
+            "  not present at the pinned commit: " + ", ".join(missing) +
+            "\n  Either the pin is wrong or the file was renamed in the standard. "
             "Both need a human."
         )
         return 1
 
     if refreshed:
         print(
-            f"\nrefreshed {len(refreshed)}. The pin in PROVENANCE.txt is unchanged and "
+            f"  refreshed {len(refreshed)}. The pin in PROVENANCE.txt is unchanged and "
             "still names the commit these came from -- raise it deliberately, in its own "
             "commit, so the diff shows what the standard changed."
         )
@@ -157,16 +168,33 @@ def main() -> int:
 
     if drifted:
         print(
-            f"\n{len(drifted)} vendored schema(s) differ from {repo}@{commit[:7]}.\n"
-            "A validator running against a stale schema reports conformance against a "
-            "document nobody is holding it to.\n"
-            "Fix by refreshing the copies (`--refresh`), never by editing a file in "
-            "_schemas/ -- a schema change belongs in the standard."
+            f"  {len(drifted)} file(s) differ from {repo}@{commit[:7]}.\n"
+            f"  Running against a stale copy reports conformance against a document "
+            "nobody is holding it to.\n"
+            f"  Fix by refreshing (`--refresh`), never by editing a file in "
+            f"{directory.name}/ -- that content belongs to the standard."
         )
         return 1
 
-    print(f"\n{len(files)} vendored schema(s) match the pin")
+    print(f"  {len(files)} file(s) match the pin")
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--refresh", action="store_true",
+        help="overwrite the vendored copies from their pinned commits",
+    )
+    args = parser.parse_args()
+
+    worst = 0
+    for directory in VENDORED:
+        if not directory.is_dir():
+            print(f"{directory.name}: absent, skipped")
+            continue
+        worst = max(worst, check(directory, refresh=args.refresh))
+    return worst
 
 
 if __name__ == "__main__":

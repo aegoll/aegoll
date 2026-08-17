@@ -1,0 +1,82 @@
+{
+  "aegsVersion": "0.1",
+  "profile": "aegs-2",
+  "extends": "aegs-1",
+  "title": "Counterparty-aware economic governance",
+  "description": "Everything in aegs-1, plus what a deployment paying strangers needs: a stated view of who the counterparty is and how risky this particular action looks. The difference between the two profiles is not strictness — a stricter policy belongs in a policy pack — it is how much the implementation must be able to say about the other party.",
+  "controls": [
+    {
+      "control": "TrustAssessment",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "assessments/trust",
+      "note": "A counterparty starts untrusted and earns standing through settled transactions. The record must distinguish a cold-start score from a measured one: an unmeasured history rendered as zero once made every advisor treat established counterparties as strangers, which is the bug the four-state rule exists to prevent."
+    },
+    {
+      "control": "RiskAssessment",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "assessments/risk",
+      "note": "The engine measures how risky an action inherently is; the policy decides how much of that is acceptable at a given exposure. Keeping the two apart is why a risk score is evidence rather than a verdict. Hand-weighted and never validated against outcomes — the profile requires that a score be produced and recorded, not that it be accurate."
+    },
+    {
+      "control": "AgentIdentity",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "actor",
+      "note": "Tightened from MUST_RECORD in aegs-1. Paying a stranger without a stated actor leaves nobody accountable for the payment. Delegation is clamped: a sub-agent may never claim more authority than its parent."
+    },
+    {
+      "control": "BudgetEnvelope",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "budgetState"
+    },
+    {
+      "control": "Policy",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "policy"
+    },
+    {
+      "control": "GovernanceDecision",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "decision"
+    },
+    {
+      "control": "Authorization",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "authorization/decidingEngine"
+    },
+    {
+      "control": "EvidenceRecord",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "evidence"
+    },
+    {
+      "control": "EconomicIntent",
+      "requirement": "MUST_RECORD",
+      "recordPath": "intentId"
+    },
+    {
+      "control": "ConformanceDeclaration",
+      "requirement": "OPTIONAL"
+    },
+    {
+      "control": "AMLAssessment",
+      "requirement": "OPTIONAL",
+      "note": "Not required even here, and the reason is worth stating plainly: sanctions screening in the reference implementation is a boolean on a vendor object — no list, no matching. A profile requiring AML would be certifying a capability nobody has. The FATF Travel Rule gap is real and named in the crosswalk: AEGS carries no originator or beneficiary data."
+    },
+    {
+      "control": "ComplianceAssessment",
+      "requirement": "OPTIONAL",
+      "note": "Schema only, no engine."
+    },
+    {
+      "control": "IncidentRecord",
+      "requirement": "OPTIONAL",
+      "note": "Schema only, no engine."
+    }
+  ],
+  "nonConformant": [
+    "Everything that is non-conformant under aegs-1.",
+    "A decision that paid a counterparty with no trust assessment recorded.",
+    "A trust or risk score recorded as zero when it was never measured.",
+    "A sanctions bar recorded as a policy refusal. The clamp must be recorded even when a policy rule refused first — otherwise deleting the screening changes nothing observable, which is a real defect this suite has already caught once."
+  ]
+}
