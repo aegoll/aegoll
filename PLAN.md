@@ -301,9 +301,9 @@ against a spec rather than against itself.
 - [x] A8.3 **Arithmetic family passes: 33 vectors, 0 divergences.** Refusal categories are *mapped* rather than string-compared — a vector checks the right *kind* of reason, and matching wording would make the suite a test of our vocabulary
 - [x] A8.4 **Envelope family passes: 27 vectors.** The runner builds `Envelope` directly rather than driving a whole decision, so a failure names the envelope rule rather than implicating policy, trust and risk as well
 - [x] A8.5 **Verdict family passes: 32 vectors**, plus a test that drives five real decisions end to end and recomputes attribution independently — without it the vectors could pass while the product disagreed with the spec, and the suite would be testing the runner
-- [ ] A8.6 Evidence family passes — record projection, canonical serialisation, chain hashes
+- [x] A8.6 **Evidence family passes: 21 vectors** — after raising every hash from 64 to 128 bits, which is what the clause demanded
 - [x] A8.7 Both covered, and asserted **by name** — "we have arithmetic vectors" is not the same claim as "the minus-sign bug is covered"
-- [x] A8.8 Three classified so far. Two **code bugs here**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). one a **vector bug** (an amount that genuinely breached the envelope it claimed to fit), and one a **specification bug**: [VERD-4](../aegs/spec/04-verdicts.md) required attribution to the last control that narrowed, which misattributes a sanctioned counterparty to whatever spending limit bit first. The spec was amended; this code was already right
+- [x] A8.8 Four classified. **Three code bugs here**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). one a **vector bug** (an amount that genuinely breached the envelope it claimed to fit), one a **specification bug** ([VERD-4](../aegs/spec/04-verdicts.md) misattributed a sanctioned counterparty to whatever spending limit bit first — the spec was amended, this code was already right), and one a **cryptographic weakness**: 64-bit truncated hashes where [EVID-5](../aegs/spec/07-evidence.md) requires 128
 
 **Exit:** 100% of vectors green, and a written list of what the spec failed to say.
 
@@ -438,6 +438,26 @@ Full list and reasoning in [`../CONTEXT.md`](../CONTEXT.md).
 ## Findings
 
 Recorded as work lands. A plan with the wrong turns removed is not a plan.
+
+### F-A8 · Sixty-four-bit hashes, in five places — 2026-08-17
+
+Found by writing [AEGS-0.1-EVID-5](../aegs/spec/07-evidence.md), not by a security review.
+
+Every hash in the package retained 64 bits — `hexdigest()[:16]` written out in `audit.py`,
+`authorize.py`, `config.py` and `settings.py`, agreeing with each other only by luck. A number
+repeated five times is a number that drifts.
+
+Sixty-four bits matters because altering a hashed artefact undetectably needs a **second
+preimage**: 2⁶⁴ work, which commodity GPUs reach in months. Three distinct things were
+affected, all by the same concern — the evidence chain (an entry commits to its predecessor),
+the decision hash (`replay` compares against it, so a second preimage makes the determinism
+check confirm something false), and the content hashes for config and policy (the AEGS Policy
+schema prefers a hash to a label *because* a label can be reused across edited rules, and a
+second preimage restores exactly the weakness the hash was chosen to remove).
+
+Now 128 bits, routed through one `hashing.py` so the length exists in one place with the
+reasoning beside it. Cheap now; a migration once anything published depended on the old
+values.
 
 ### F-A5 · `binding` is not `tightest` — 2026-08-17
 
