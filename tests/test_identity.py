@@ -237,6 +237,55 @@ def test_a_delegation_within_the_parents_authority_passes(aegoll):
     assert verdict.verdict is Verdict.APPROVE
 
 
+def test_a_delegate_declaring_no_limit_inherits_its_parents(aegoll):
+    """The escalation reachable by omission, and the reason AEGS-0.1-ID-4 says *clamp*.
+
+    `_widens()` compares only limits both parties declare, so a child that declares nothing
+    widened nothing it could detect — and the child's own per-action check did not fire either,
+    because it had no limit to check against. Declaring no limit was therefore strictly more
+    permissive than declaring a large one, which is an escalation you reach by leaving a field
+    out.
+
+    The docstring said the policy envelopes would cover it. They do not: envelopes are
+    treasury-scoped and never inherit a parent identity's ceiling, so nothing downstream knew
+    the parent had said $0.002.
+    """
+    aegoll.identities.register(
+        agent_id="parent", purpose="parent", per_action_usd="0.002", now=BASE
+    )
+    aegoll.identities.register(
+        agent_id="child", purpose="child", parent_agent_id="parent", now=BASE
+    )
+
+    verdict = identity_engine.evaluate(
+        request_for(aegoll, amount="1.00"), aegoll.identities.get("child"), now=BASE,
+        parent=aegoll.identities.get("parent"),
+    )
+    assert verdict.verdict is not Verdict.APPROVE, (
+        "a delegate that declares no per-action limit escaped its parent's"
+    )
+    assert "identity_per_action_exceeded" in {r.code for r in verdict.reasons}
+
+
+def test_a_delegate_is_still_bound_by_its_own_tighter_limit(aegoll):
+    """The clamp takes the narrower of the two, so a tighter child is not loosened to its
+    parent's ceiling on the way through."""
+    aegoll.identities.register(
+        agent_id="parent", purpose="parent", per_action_usd="10.00", now=BASE
+    )
+    aegoll.identities.register(
+        agent_id="child", purpose="child", parent_agent_id="parent",
+        per_action_usd="0.002", now=BASE,
+    )
+
+    verdict = identity_engine.evaluate(
+        request_for(aegoll, amount="1.00"), aegoll.identities.get("child"), now=BASE,
+        parent=aegoll.identities.get("parent"),
+    )
+    assert verdict.verdict is not Verdict.APPROVE
+    assert "identity_per_action_exceeded" in {r.code for r in verdict.reasons}
+
+
 def test_delegated_authority_cannot_outlive_its_source(aegoll):
     aegoll.identities.register(agent_id="parent", purpose="parent", now=BASE)
     aegoll.identities.register(

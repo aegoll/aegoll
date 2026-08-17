@@ -344,14 +344,14 @@ def evaluate(
     # --- the controller's own declared ceilings ---------------------------
     # Applied as an ADDITIONAL constraint. It can only tighten what policy already
     # allows; an identity claiming a higher limit than the policy does not get one.
-    if (
-        identity.per_action_atomic is not None
-        and request.amount_atomic > identity.per_action_atomic
-    ):
+    # The clamped ceiling, not this identity's own. A delegated agent inherits its
+    # parent's limit where it declares none -- AEGS-0.1-ID-4.
+    per_action_ceiling = effective_per_action_atomic(identity, parent)
+    if per_action_ceiling is not None and request.amount_atomic > per_action_ceiling:
         refuse(
             "identity_per_action_exceeded",
             f"{fmt_usd(request.amount_atomic)} exceeds the per-action limit its "
-            f"controller declared ({fmt_usd(identity.per_action_atomic)})",
+            f"controller declared ({fmt_usd(per_action_ceiling)})",
             Verdict.REJECT,
         )
 
@@ -382,12 +382,43 @@ def evaluate(
     )
 
 
+def narrower_limit(child: int | None, parent: int | None) -> int | None:
+    """The effective limit when a child is delegated from a parent. AEGS-0.1-ID-4.
+
+    The narrower of the two, where an undeclared limit contributes no constraint of its own
+    but does **not** erase the other's. So:
+
+        child 5, parent 10  -> 5      the child is tighter
+        child 10, parent 5  -> 5      the parent binds
+        child None, parent 10 -> 10   inherited, NOT unlimited
+        child 5, parent None  -> 5
+        both None -> None             no identity limit; envelopes still apply
+
+    The third line is the one that was wrong. `I declare no limit` is not `I am unlimited`
+    when somebody above you declared one -- and treating it as such made declaring nothing
+    strictly more permissive than declaring a large number, which is an escalation reachable
+    by omission.
+    """
+    candidates = [x for x in (child, parent) if x is not None]
+    return min(candidates) if candidates else None
+
+
+def effective_per_action_atomic(identity: Any, parent: Any | None) -> int | None:
+    """This agent's per-action ceiling after the delegation clamp."""
+    if parent is None:
+        return identity.per_action_atomic
+    return narrower_limit(identity.per_action_atomic, parent.per_action_atomic)
+
+
 def _widens(child: Identity, parent: Identity) -> bool:
     """Does a delegated identity claim more authority than its source?
 
-    Only comparable limits are compared: a parent with no declared ceiling has not
-    thereby granted an unlimited one, but neither can this function prove a breach,
-    so it reports False and leaves the policy envelopes to do their job.
+    Only comparable limits are compared, and this function alone is **not** the whole
+    clamp. A child that declares no limit widens nothing detectable here, and used to
+    escape its parent's ceiling entirely as a result -- envelopes are treasury-scoped and
+    do not inherit an identity limit. `effective_per_action_atomic()` closes that, and this
+    function keeps its narrower job: catching a child that declares a *larger* number,
+    which is worth refusing outright rather than silently clamping.
     """
     for child_limit, parent_limit in (
         (child.per_action_atomic, parent.per_action_atomic),

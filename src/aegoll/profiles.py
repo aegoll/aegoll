@@ -28,6 +28,8 @@ from pathlib import Path
 from typing import Any
 
 from .errors import ConfigError
+from .states import MISSING as _MISSING
+from .states import classify_state, dig as _dig, is_evidence as _is_evidence  # noqa: F401
 
 #: Requirement levels, strictly ordered. `extends` may move a control up, never down —
 #: enforced in the standard's own CI, not here, because it is a property of the manifests
@@ -260,56 +262,10 @@ class Profile:
         }
 
 
-class _Missing:
-    """`None` and *absent* are different answers, so they need different values.
-
-    Without this sentinel a key holding an explicit `null` is indistinguishable from a key
-    that is not there — and telling those apart is the whole of the four-state rule at the
-    profile layer.
-    """
-
-    def __repr__(self) -> str:  # pragma: no cover - debugging aid
-        return "<missing>"
 
 
-_MISSING = _Missing()
 
 
-def _dig(record: dict[str, Any], path: str) -> Any:
-    """Follow a slash-separated `recordPath`. Returns `_MISSING` when the key is absent.
-
-    An explicit `null` comes back as `None`, which is a *stated* position rather than a
-    missing one.
-    """
-    node: Any = record
-    for part in path.split("/"):
-        if not isinstance(node, dict) or part not in node:
-            return _MISSING
-        node = node[part]
-    return node
-
-
-def _is_evidence(value: Any) -> bool:
-    """Whether a record field is evidence that a control actually ran.
-
-    `0` and `False` count. A budget headroom of zero is a real measurement, and
-    `sanctioned: false` is a screening that ran and found nothing — treating either as
-    absent would punish an implementation for reporting accurately, which is the opposite
-    of what this whole layer is for.
-
-    `None`, an empty string, list or dict do not count. Nor does a value whose own
-    `measured` flag is false, which is how a control says *I did not run* rather than *the
-    answer was nothing*.
-    """
-    if value is _MISSING or value is None:
-        return False
-    if isinstance(value, dict):
-        if value.get("measured") is False or value.get("notRun") is True:
-            return False
-        return bool(value)
-    if isinstance(value, (str, list, tuple)):
-        return bool(value)
-    return True
 
 
 __all__ = [

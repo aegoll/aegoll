@@ -325,6 +325,141 @@ def _evidence(operation: str, data: dict) -> dict:
     raise AssertionError(f"unknown evidence operation {operation!r}")
 
 
+# --- states, controls, identity, profiles ---------------------------------
+
+
+def _classify_state(data: dict) -> dict:
+    """AEGS-0.1-STATE-*. Drives `aegoll.states`, which is what the profile scorer reads."""
+    from aegoll.states import classify_state
+
+    return {"state": classify_state(data["record"], data["field"])}
+
+
+def _defined_controls() -> frozenset[str]:
+    """The thirteen control names, read from the packaged `none` profile.
+
+    Not a literal list in this test. `none` is required to name every control explicitly
+    (AEGS-0.1-PROF-5), which makes the shipped manifest the implementation's own answer to
+    "which controls are defined" -- and a vector that compared against a list written here
+    would pass even if the manifest lost one.
+    """
+    from aegoll.profiles import Profile
+
+    return frozenset(r.control for r in Profile.load("none").requirements)
+
+
+def _classify_control(data: dict) -> dict:
+    """AEGS-0.1-CTRL-1: the name set is closed, and matching is exact.
+
+    A case variant is an *extension*, not the defined control. That looks pedantic until two
+    deployments disagree about whether `budgetenvelope` is the budget envelope, at which point
+    a profile requiring `BudgetEnvelope` silently scores an implementation that never had it.
+    """
+    return {"kind": "defined" if data["control"] in _defined_controls() else "extension"}
+
+
+def _clamp_delegation(data: dict) -> dict:
+    """AEGS-0.1-ID-4, folded root-to-leaf through the implementation's own clamp.
+
+    `limitedBy` is the interesting half. The effective number could be produced by a `min()`
+    over the chain; naming which step produced it is what makes the clamp explicable to whoever
+    has to ask why a payment was refused.
+    """
+    from aegoll.engines.evidence.identity import narrower_limit
+
+    effective = None
+    limited_by = None
+    for step in data["chain"]:
+        clamped = narrower_limit(step.get("perActionAtomic"), effective)
+        if clamped is not None and (effective is None or clamped < effective):
+            limited_by = step["agent"]
+        effective = clamped
+    return {"effectiveAtomic": effective, "limitedBy": limited_by}
+
+
+def _spec_identity_to_aegoll(spec: dict) -> dict:
+    """Translate a vector's identity into this implementation's field shapes.
+
+    Mapped here for the same reason `_categorise` maps refusal wording: the vector states what
+    a *vendor may see*, which is the specification's business, and the shape of a controller or
+    a wallet is ours. A vector written in our shapes would test our naming.
+    """
+    out = dict(spec)
+    controller = out.get("controller")
+    if isinstance(controller, str):
+        out["controller"] = {"id": controller, "kind": "organisation"}
+    out["wallets"] = tuple(
+        {"address": w} if isinstance(w, str) else dict(w) for w in out.get("wallets") or ()
+    )
+    limits = out.get("spendingLimits") or {}
+    if limits:
+        out["spendingLimits"] = {
+            "perAction": limits.get("perActionUsd") or limits.get("perAction"),
+            "daily": limits.get("dailyUsd") or limits.get("daily"),
+            "asset": limits.get("asset", "USDC"),
+        }
+    out.setdefault("purpose", "unstated")
+    return out
+
+
+def _disclose(data: dict) -> dict:
+    """AEGS-0.1-ID-2/ID-3, through the real `Identity.disclose` filter."""
+    from aegoll.engines.evidence.identity import Identity
+
+    identity = Identity.from_dict(_spec_identity_to_aegoll(data["identity"]))
+    return {"disclosed": identity.disclose(data["audience"])}
+
+
+def _evaluate_profile(data: dict) -> dict:
+    """AEGS-0.1-PROF-*, against the manifests the package actually ships."""
+    from aegoll.profiles import RANK, Profile
+
+    out: dict = {}
+
+    if "control" in data and "profile" in data:
+        out["requirement"] = Profile.load(data["profile"]).requirement_for(data["control"])
+        return out
+
+    if "extendsProfile" in data:
+        child = Profile.load(data["profile"])
+        parent = Profile.load(data["extendsProfile"])
+        parent_rank = {r.control: RANK[r.requirement] for r in parent.requirements}
+        loosened, tightened = [], []
+        for req in child.requirements:
+            before = parent_rank.get(req.control, 0)
+            after = RANK[req.requirement]
+            if after > before:
+                tightened.append(req.control)
+            elif after < before:
+                loosened.append(req.control)
+        out["onlyTightens"] = not loosened
+        out["loosened"] = sorted(loosened)
+        out["tightened"] = sorted(tightened)
+        return out
+
+    if "controls" in data:
+        out["allOptional"] = all(
+            Profile.load(name).requirement_for(control) == "OPTIONAL"
+            for name in data["profiles"]
+            for control in data["controls"]
+        )
+        return out
+
+    if "profiles" in data:
+        out["everyRequiredNamesAPath"] = all(
+            req.record_path
+            for name in data["profiles"]
+            for req in Profile.load(name).required_controls()
+        )
+        return out
+
+    profile = Profile.load(data["profile"])
+    out["requiredCount"] = len(profile.required_controls())
+    out["listedCount"] = len(profile.requirements)
+    out["enforces"] = profile.enforces()
+    return out
+
+
 def _run(vector: dict):
     """Perform the operation under test, returning either a value or a refusal category."""
     operation = vector["operation"]
@@ -340,6 +475,21 @@ def _run(vector: dict):
         "canonical_serialise", "chain_hash", "verify_chain", "hash_strength",
     }:
         return _evidence(operation, data)
+
+    if operation == "classify_state":
+        return _classify_state(data)
+
+    if operation == "classify_control":
+        return _classify_control(data)
+
+    if operation == "clamp_delegation":
+        return _clamp_delegation(data)
+
+    if operation == "disclose":
+        return _disclose(data)
+
+    if operation == "evaluate_profile":
+        return _evaluate_profile(data)
 
     if operation == "usd_to_atomic":
         try:
@@ -418,12 +568,62 @@ def test_vector(name, vector):
         _assert_evidence(clause, vector, expected, got)
         return
 
+    if vector["operation"] == "disclose":
+        _assert_disclosure(clause, vector, expected, got)
+        return
+
+    if vector["operation"] in {"classify_state", "classify_control", "evaluate_profile",
+                               "clamp_delegation"}:
+        _assert_every_key(clause, vector, expected, got)
+        return
+
     key = next(iter(expected))
     assert got[key] == expected[key], (
         f"{clause}: {vector['description']}\n"
         f"  expected {key}={expected[key]!r}, got {got[key]!r}\n"
         + (f"  note: {vector['note']}" if vector.get("note") else "")
     )
+
+
+def _assert_every_key(clause: str, vector: dict, expected: dict, got: dict) -> None:
+    """Check every key the vector asserts, not just the first.
+
+    The single-key shortcut below this in the file is fine for arithmetic, where a vector
+    asserts one number. A profile vector asserting `requiredCount` *and* `enforces` would have
+    had half of itself silently ignored -- which is the failure mode that makes a suite look
+    green while checking less than it claims.
+    """
+    for key, want in expected.items():
+        assert key in got, (
+            f"{clause}: {vector['description']}\n"
+            f"  the vector asserts {key!r} and the runner produced no such key: {sorted(got)}"
+        )
+        assert got[key] == want, (
+            f"{clause}: {vector['description']}\n"
+            f"  expected {key}={want!r}, got {got[key]!r}\n"
+            + (f"  note: {vector['note']}" if vector.get("note") else "")
+        )
+
+
+def _assert_disclosure(clause: str, vector: dict, expected: dict, got: dict) -> None:
+    """Selective disclosure is asserted by presence and absence, not by an exact shape.
+
+    `excludes` is the load-bearing half: a vector that only listed what a vendor may see would
+    pass an implementation that discloses everything.
+    """
+    disclosed = got["disclosed"]
+    for field in expected.get("includes", ()):
+        assert field in disclosed, (
+            f"{clause}: {vector['description']}\n"
+            f"  {field!r} must be disclosed to {vector['input']['audience']!r}; "
+            f"got {sorted(disclosed)}"
+        )
+    for field in expected.get("excludes", ()):
+        assert field not in disclosed, (
+            f"{clause}: {vector['description']}\n"
+            f"  {field!r} must NOT reach {vector['input']['audience']!r}, and it did.\n"
+            + (f"  note: {vector['note']}" if vector.get("note") else "")
+        )
 
 
 def _assert_envelopes(clause: str, vector: dict, expected: dict, got: dict) -> None:
