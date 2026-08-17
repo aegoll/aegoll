@@ -47,7 +47,9 @@ AEGS_VERSION = "0.1"
 #: Vendored package data — see `_schemas/PROVENANCE.txt`. The prototype resolved this
 #: from `parents[2]`, which only worked inside the monorepo that had `aegs/` as a
 #: sibling. An installed wheel has no siblings. See PLAN.md F-A1.
-SCHEMA_PATH = Path(str(resources.files("aegoll") / "_schemas" / "decision-record-0.1.json"))
+SCHEMA_PATH = Path(
+    str(resources.files("aegoll") / "_schemas" / "decision-record-0.1.json")
+).resolve()
 
 #: Controls AEGL implements. Anything outside this set is *absent* from a record
 #: rather than reported as un-run -- claiming to have a sanctions control that never

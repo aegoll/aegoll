@@ -125,7 +125,7 @@ def test_packaged_policies_are_reachable_through_resources():
     from aegoll.config import DEFAULT_BUNDLE, available_bundles
 
     assert DEFAULT_BUNDLE.is_file(), f"{DEFAULT_BUNDLE} is not there"
-    assert DEFAULT_BUNDLE.is_relative_to(package_dir()), (
+    assert DEFAULT_BUNDLE.resolve().is_relative_to(package_dir()), (
         f"{DEFAULT_BUNDLE} sits outside the package"
     )
     names = {p.name for p in available_bundles()}
@@ -141,7 +141,11 @@ def test_vendored_schemas_are_reachable_and_declared():
     for module in (record, intent, identity):
         path = module.SCHEMA_PATH
         assert path.is_file(), f"{module.__name__}: {path} is not there"
-        assert path.is_relative_to(package_dir()), (
+        # `.resolve()` on both sides. On Windows an 8.3 short path ("JAYATH~1") and
+        # its long form name the same file and compare unequal, which is how this
+        # first failed — against an installed wheel under a temp directory, never in
+        # the source tree.
+        assert path.resolve().is_relative_to(package_dir()), (
             f"{module.__name__}: {path} sits outside the package"
         )
 

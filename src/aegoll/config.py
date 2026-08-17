@@ -28,7 +28,7 @@ def _packaged_policies() -> Path:
     a monorepo with `policies/` as a sibling: in an installed wheel `parents[1]` is
     `site-packages`, and the starters were unreachable. See PLAN.md F-A1.
     """
-    return Path(str(resources.files(__package__) / "policies"))
+    return Path(str(resources.files(__package__) / "policies")).resolve()
 
 
 DEFAULT_BUNDLE = _packaged_policies() / "default.yaml"

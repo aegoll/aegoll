@@ -151,6 +151,16 @@ def test_persist_refuses_empty(tmp_path):
 
 
 def test_advisor_picks_up_a_runtime_key(monkeypatch):
+    """A key entered at runtime is found without an environment variable.
+
+    Skipped when the backend SDK is absent, because then `available()` is correctly
+    False for a different reason and the test would be asserting the wrong thing. This
+    surfaced the first time the suite ran against an installed wheel: `advisors` is an
+    optional extra, so a clean install of the core has no `openai` package at all — and
+    a core that could not be installed without one would be the real bug.
+    """
+    pytest.importorskip("openai", reason="advisors is an optional extra")
+
     from aegoll.advisors import build_advisor
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

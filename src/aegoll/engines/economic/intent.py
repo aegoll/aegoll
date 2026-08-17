@@ -58,7 +58,9 @@ AEGS_VERSION = "0.1"
 
 #: Vendored package data — see `_schemas/PROVENANCE.txt`. The prototype resolved this
 #: from `parents[4]`, which only worked inside the monorepo. See PLAN.md F-A1.
-SCHEMA_PATH = Path(str(resources.files("aegoll") / "_schemas" / "economic-intent-0.1.json"))
+SCHEMA_PATH = Path(
+    str(resources.files("aegoll") / "_schemas" / "economic-intent-0.1.json")
+).resolve()
 
 
 @dataclass(frozen=True)
