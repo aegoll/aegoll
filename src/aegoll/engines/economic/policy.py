@@ -120,7 +120,39 @@ class PolicyResult:
     evaluations: tuple[RuleEvaluation, ...]
 
 
+def apply_derived(bundle: PolicyBundle, facts: dict[str, Any]) -> dict[str, Any]:
+    """Add every `derived.<name>` fact to a **copy** of the fact base.
+
+    Declaration order is evaluation order, so a derived fact may reference one declared
+    before it and never one declared after. Cycles are therefore impossible rather than
+    detected — there is no order in which a cycle could be written down.
+
+    Returns a copy. `build_facts()` output stays exactly what the engines produced, which
+    keeps "the facts a rule matched" and "the measurements the engines took" separable in
+    a record.
+    """
+    if not bundle.derived:
+        return facts
+
+    out = dict(facts)
+    for derived in bundle.derived:
+        results = []
+        for clause in derived.clauses:
+            # A clause is a mapping, and every condition in it must hold -- the same
+            # shape and the same semantics as a rule's `when`.
+            results.append(all(_compare(out.get(k), spec)[0] for k, spec in clause.items()))
+        if derived.combinator == "all":
+            value = all(results)
+        elif derived.combinator == "any":
+            value = any(results)
+        else:  # "not" -- the negation of the conjunction, so `not: [a, b]` is not(a and b)
+            value = not all(results)
+        out[f"derived.{derived.name}"] = value
+    return out
+
+
 def evaluate(bundle: PolicyBundle, facts: dict[str, Any]) -> PolicyResult:
+    facts = apply_derived(bundle, facts)
     evaluations: list[RuleEvaluation] = []
     winner: Rule | None = None
 

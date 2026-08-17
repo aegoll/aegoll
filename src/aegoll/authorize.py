@@ -27,6 +27,7 @@ from .engines.economic import treasury as treasury_engine
 from .engines.risk import trust as trust_engine
 from .clock import Clock, SystemClock
 from .config import PolicyBundle
+from . import extend
 from .store import HistorySnapshot
 from .domain import (
     Decision,
@@ -168,6 +169,73 @@ class Governor:
                 )
             )
             verdict = Verdict.ESCALATE
+
+        # --- registered engines: consulted, and clamped -------------------
+        # Extension point. A user-supplied engine may add a control the built-ins do
+        # not cover -- anything a policy pack cannot express is a missing engine, and
+        # this is where one lands.
+        #
+        # It cannot widen. Not by a check: an engine returns an *opinion* and this
+        # loop applies `narrower()`, so an engine answering APPROVE against a
+        # standing REJECT has no effect whatsoever. Widening is not refused here, it
+        # is unreachable from here.
+        #
+        # Registration already refused anything impure, so nothing in this loop does
+        # I/O, reads a clock, or calls a model. See extend.py.
+        for engine in extend.registered_engines():
+            assessment = engine.assess(
+                extend.Context(
+                    request=request,
+                    snapshot=snapshot,
+                    now=now,
+                    trust=trust,
+                    risk=risk,
+                    roi=roi,
+                    budget=budget,
+                    facts=facts,
+                )
+            )
+            if not assessment.measured:
+                # A control that could not run says so. It does not report a zero and
+                # it does not silently pass -- the record must be able to show the
+                # difference between "screened, clean" and "never screened".
+                reasons.append(
+                    Reason(
+                        assessment.control,
+                        "not_measured",
+                        assessment.reason
+                        or "the control could not run; this decision is ungoverned by it, "
+                        "and this record says so rather than implying a check that did "
+                        "not happen",
+                    )
+                )
+                continue
+            if assessment.verdict is None:
+                continue
+            proposed = Verdict(assessment.verdict)
+            clamped = narrower(verdict, proposed)
+            if clamped is not verdict:
+                reasons.append(
+                    Reason(
+                        assessment.control,
+                        "clamped_by_extension",
+                        assessment.reason
+                        or f"narrowing {verdict.value} to {clamped.value}",
+                        clamped,
+                    )
+                )
+                verdict = clamped
+            elif proposed is not verdict:
+                # It asked for something looser and got nothing. Recorded, because an
+                # engine whose opinion is routinely discarded is worth noticing.
+                reasons.append(
+                    Reason(
+                        assessment.control,
+                        "opinion_did_not_narrow",
+                        f"proposed {proposed.value}; the standing verdict "
+                        f"{verdict.value} is already at least as strict",
+                    )
+                )
 
         # --- EIAP: compute, do not act -----------------------------------
         eiap = eiap_engine.evaluate(

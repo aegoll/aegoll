@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .domain import Verdict
+from .config import COMBINATORS
 from .engines.economic.policy import COMPARATORS, build_facts
 
 #: Comparators that need a two-element sequence rather than a scalar.
@@ -33,7 +34,7 @@ _PAIR_COMPARATORS = ("between",)
 _NULL_SAFE = ("eq", "ne", "in", "not_in")
 
 #: Top-level keys a pack may carry. Anything else is a typo or a feature nobody built.
-_PACK_KEYS = {"version", "name", "description", "supersedes", "config", "rules"}
+_PACK_KEYS = {"version", "name", "description", "supersedes", "config", "rules", "derived"}
 
 #: Config blocks a pack may carry, matching the dataclasses in `config.py`.
 _CONFIG_KEYS = {"treasury", "treasury_internal", "trust", "risk", "roi", "eiap"}
@@ -93,11 +94,28 @@ _FACT_NAMES: tuple[str, ...] = _derive_fact_names()
 _VERDICTS = frozenset(v.value for v in Verdict)
 
 
-def _validate_clause(rule_id: str, fact: str, spec: Any) -> list[Problem]:
+def _validate_clause(
+    rule_id: str, fact: str, spec: Any, *, extra_facts: frozenset[str] = frozenset()
+) -> list[Problem]:
     problems: list[Problem] = []
 
-    if fact not in _FACT_NAMES:
-        near = sorted(f for f in _FACT_NAMES if f.split(".")[0] == fact.split(".")[0])
+    if fact not in _FACT_NAMES and fact not in extra_facts:
+        known = set(_FACT_NAMES) | set(extra_facts)
+        if fact.startswith("derived."):
+            # A different cause and a different fix, so a different message. The usual
+            # reason is order: declaration order is evaluation order, so a derived fact
+            # can only reference one declared above it. That is also why a cycle cannot
+            # be written down rather than merely being detected.
+            in_scope = sorted(f for f in extra_facts if f.startswith("derived."))
+            problems.append(Problem(
+                "error", rule_id,
+                f"no derived fact {fact.removeprefix('derived.')!r} is in scope here. "
+                "A derived fact must be declared *before* it is used — declaration order "
+                "is evaluation order. In scope at this point: "
+                + (", ".join(in_scope) if in_scope else "nothing"),
+            ))
+            return problems
+        near = sorted(f for f in known if f.split(".")[0] == fact.split(".")[0])
         hint = f" Did you mean one of {near}?" if near else ""
         problems.append(Problem(
             "error", rule_id,
@@ -170,6 +188,79 @@ def validate_pack(raw: Any, *, source: str = "<pack>") -> list[Problem]:
     if version is None:
         problems.append(Problem("error", source, "no `version`"))
 
+    # --- derived facts ----------------------------------------------------
+    # Validated before the rules, because rules may reference them and the set of legal
+    # fact names depends on what was declared here.
+    derived_names: list[str] = []
+    declared: dict[str, int] = {}
+    derived = raw.get("derived")
+    if derived is not None and not isinstance(derived, list):
+        problems.append(Problem("error", f"{source}:derived", f"must be a list, got {type(derived).__name__}"))
+        derived = None
+
+    for index, entry in enumerate(derived or []):
+        where = f"{source}:derived[{index}]"
+        if not isinstance(entry, dict):
+            problems.append(Problem("error", where, f"must be a mapping, got {type(entry).__name__}"))
+            continue
+
+        name = entry.get("name")
+        if not isinstance(name, str) or not name:
+            problems.append(Problem("error", where, "no `name`. A derived fact is referenced by name, so it needs one"))
+            continue
+        where = f"{source}:derived.{name}"
+        if name in declared:
+            problems.append(Problem(
+                "error", where,
+                f"duplicate name, also at derived[{declared[name]}]. Two definitions for "
+                "one fact make its value depend on evaluation order.",
+            ))
+        if f"derived.{name}" in _FACT_NAMES or name in _FACT_NAMES:
+            problems.append(Problem(
+                "error", where,
+                f"{name!r} shadows a fact the engines already produce. A rule matching it "
+                "would read the derived value while its author expected the measured one.",
+            ))
+        declared[name] = index
+
+        present = [c for c in COMBINATORS if c in entry]
+        if len(present) != 1:
+            problems.append(Problem(
+                "error", where,
+                f"needs exactly one of {', '.join(COMBINATORS)}, found "
+                f"{', '.join(present) or 'none'}. A derived fact is a single combinator "
+                "over a list of clauses — nesting would make it a language.",
+            ))
+            derived_names.append(f"derived.{name}")
+            continue
+
+        for key in sorted(set(entry) - {"name", "description", *COMBINATORS}):
+            problems.append(Problem("error", where, f"unknown key {key!r}"))
+
+        clauses = entry[present[0]]
+        if not isinstance(clauses, list) or not clauses:
+            problems.append(Problem(
+                "error", where,
+                f"{present[0]!r} must be a non-empty list of clauses",
+            ))
+        else:
+            # Only facts declared BEFORE this one are in scope. That is what makes a
+            # cycle impossible to write rather than merely detectable.
+            in_scope = frozenset(derived_names)
+            for clause in clauses:
+                if not isinstance(clause, dict):
+                    problems.append(Problem(
+                        "error", where,
+                        f"each clause is a mapping of fact to condition, got {type(clause).__name__}",
+                    ))
+                    continue
+                for fact, spec in clause.items():
+                    problems.extend(_validate_clause(where, fact, spec, extra_facts=in_scope))
+
+        derived_names.append(f"derived.{name}")
+
+    known_extra = frozenset(derived_names)
+
     rules = raw.get("rules")
     if rules is None:
         problems.append(Problem("error", source, "no `rules`. A pack that permits nothing and refuses nothing is not a policy"))
@@ -235,7 +326,7 @@ def validate_pack(raw: Any, *, source: str = "<pack>") -> list[Problem]:
             problems.append(Problem("error", where, f"`when` must be a mapping, got {type(when).__name__}"))
         else:
             for fact, spec in when.items():
-                problems.extend(_validate_clause(where, fact, spec))
+                problems.extend(_validate_clause(where, fact, spec, extra_facts=known_extra))
 
     return problems
 

@@ -161,6 +161,33 @@ class Rule:
         }
 
 
+#: The three ways a derived fact may combine its clauses. Fixed, like the comparators:
+#: a pack that could introduce a fourth would be a pack that could introduce logic.
+COMBINATORS = ("all", "any", "not")
+
+
+@dataclass(frozen=True)
+class Derived:
+    """A named predicate composed from facts the engines already produce.
+
+    The reason this exists: anything a pack cannot express is a missing engine, and an
+    engine is *code* — gated, reviewed, and a much bigger commitment than a rule. But
+    "amount over $100 **and** the vendor is new" needs no new measurement, only
+    composition. Making that a derived fact keeps the common case in data and reserves
+    engines for genuinely new measurements.
+
+    Still data. Three fixed combinators, clauses drawn from the same fixed comparator
+    vocabulary, no expressions and nothing to `eval`.
+    """
+
+    name: str
+    combinator: str                       # all | any | not
+    clauses: tuple[dict[str, Any], ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"name": self.name, self.combinator: [dict(c) for c in self.clauses]}
+
+
 @dataclass(frozen=True)
 class PolicyBundle:
     version: int
@@ -174,6 +201,10 @@ class PolicyBundle:
     rules: tuple[Rule, ...]
     hash: str
     source: str = ""
+    #: Declaration order is evaluation order: a derived fact may reference one declared
+    #: before it, never after. That is what makes cycles impossible rather than merely
+    #: detected.
+    derived: tuple[Derived, ...] = ()
 
     def sorted_rules(self) -> list[Rule]:
         return sorted(self.rules, key=lambda r: (r.priority, r.id))
@@ -337,6 +368,15 @@ def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> Pol
 
     # Hash the canonicalised content, not the raw bytes: reformatting the YAML
     # should not invalidate replay, but changing a value must.
+    derived = tuple(
+        Derived(
+            name=str(d["name"]),
+            combinator=next(c for c in COMBINATORS if c in d),
+            clauses=tuple(dict(clause) for clause in d[next(c for c in COMBINATORS if c in d)]),
+        )
+        for d in (raw.get("derived") or [])
+    )
+
     canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"), default=str)
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
@@ -350,6 +390,7 @@ def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> Pol
         roi=roi,
         eiap=eiap,
         rules=rules,
+        derived=derived,
         hash=digest,
         source=str(p),
     )
