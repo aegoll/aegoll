@@ -28,7 +28,7 @@ second.
 
 ---
 
-## A0 — Blocking decisions ⬜
+## A0 — Blocking decisions ✅
 
 Irreversible once published. Nothing else starts until these are answers, not opinions.
 
