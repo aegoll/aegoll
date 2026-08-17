@@ -133,6 +133,70 @@ def _evaluate_envelopes(data: dict) -> dict:
     }
 
 
+def _resolve_verdict(data: dict) -> dict:
+    """Resolve a sequence of proposals against a standing verdict.
+
+    Uses this implementation's own `narrower()` and `Verdict` so the vectors exercise the
+    real severity ordering rather than a copy of it. A runner that reimplemented the
+    ordering would pass whatever it reimplemented.
+
+    Attribution here is *the last control that narrowed*, computed the way
+    `authorize.decide()` computes it: a proposal is attributed only when applying it
+    actually changes the standing verdict. Equality is not narrowing -- see VERD-4.
+    """
+    from aegoll.domain import Verdict, narrower
+
+    standing_name = data.get("standing")
+    # `noRuleMatched` means nothing produced a verdict, and VERD-8 says the fall-through
+    # must not approve. This implementation fails closed to REVIEW.
+    if standing_name is None:
+        standing = Verdict.REVIEW if data.get("noRuleMatched") else Verdict.APPROVE
+    else:
+        standing = Verdict(standing_name)
+
+    # Controls whose finding decides attribution whether or not it narrowed. VERD-4a.
+    # `sanctions` is dispositive in this implementation, which is why a sanctioned
+    # counterparty is not attributed to whatever spending limit happened to bite first.
+    dispositive = list(data.get("dispositive") or [])
+
+    verdict = standing
+    attributed = None
+    dispositive_hit = None
+    evidenced: list[str] = []
+
+    for proposal in data.get("proposals") or []:
+        control = proposal["control"]
+        if proposal.get("recordsEvidence"):
+            evidenced.append(control)
+
+        proposed_name = proposal.get("verdict")
+        if proposed_name is None:
+            continue  # no opinion, which is not approval
+
+        # A dispositive control's finding counts even when it changes nothing -- that is
+        # the whole point of the declaration, and the reason it must be declared.
+        if control in dispositive and dispositive_hit is None:
+            dispositive_hit = control
+
+        clamped = narrower(verdict, Verdict(proposed_name))
+        if clamped is not verdict:
+            verdict = clamped
+            attributed = control
+
+    narrowed_by = attributed
+    if dispositive_hit is not None:
+        attributed = dispositive_hit
+
+    return {
+        "verdict": verdict.value,
+        # None here asserts that no proposal narrowed. It is NOT an absent attribution --
+        # VERD-5 forbids that, and `standingControl` is what a real record would carry.
+        "attributedControl": attributed or data.get("standingControl"),
+        "narrowedBy": narrowed_by,
+        "evidenced": evidenced,
+    }
+
+
 def _run(vector: dict):
     """Perform the operation under test, returning either a value or a refusal category."""
     operation = vector["operation"]
@@ -140,6 +204,9 @@ def _run(vector: dict):
 
     if operation == "evaluate_envelopes":
         return _evaluate_envelopes(data)
+
+    if operation == "resolve_verdict":
+        return _resolve_verdict(data)
 
     if operation == "usd_to_atomic":
         try:
@@ -208,6 +275,10 @@ def test_vector(name, vector):
         _assert_envelopes(clause, vector, expected, got)
         return
 
+    if vector["operation"] == "resolve_verdict":
+        _assert_verdict(clause, vector, expected, got)
+        return
+
     key = next(iter(expected))
     assert got[key] == expected[key], (
         f"{clause}: {vector['description']}\n"
@@ -251,6 +322,53 @@ def _assert_envelopes(clause: str, vector: dict, expected: dict, got: dict) -> N
             )
 
 
+def _assert_verdict(clause: str, vector: dict, expected: dict, got: dict) -> None:
+    """Check only what the vector asserts.
+
+    `attributedControl: null` in a vector means *nothing narrowed*, which is a different
+    claim from *attribution is absent* -- VERD-5 forbids the second. So a null expectation
+    is checked against `narrowedBy`, while the record's actual attribution falls back to
+    whatever produced the standing verdict.
+    """
+    note = f"\n  note: {vector['note']}" if vector.get("note") else ""
+    head = f"{clause}: {vector['description']}"
+
+    if "verdict" in expected:
+        assert got["verdict"] == expected["verdict"], (
+            f"{head}\n  expected verdict={expected['verdict']}, got {got['verdict']}{note}"
+        )
+
+    if "verdictNot" in expected:
+        assert got["verdict"] != expected["verdictNot"], (
+            f"{head}\n  the verdict MUST NOT be {expected['verdictNot']}, and it is"
+            f"{note}"
+        )
+
+    if "attributedControl" in expected:
+        want = expected["attributedControl"]
+        if want is None:
+            assert got["narrowedBy"] is None, (
+                f"{head}\n  no proposal should have narrowed, but {got['narrowedBy']!r} "
+                f"did{note}"
+            )
+            assert got["attributedControl"] is not None or not vector["input"].get(
+                "standingControl"
+            ), (
+                f"{head}\n  attribution is absent, which VERD-5 forbids{note}"
+            )
+        else:
+            assert got["attributedControl"] == want, (
+                f"{head}\n  expected attributedControl={want!r}, got "
+                f"{got['attributedControl']!r}{note}"
+            )
+
+    if "evidenced" in expected:
+        assert set(got["evidenced"]) == set(expected["evidenced"]), (
+            f"{head}\n  expected evidenced={sorted(expected['evidenced'])}, "
+            f"got {sorted(got['evidenced'])}{note}"
+        )
+
+
 # --- the suite's own integrity --------------------------------------------
 
 
@@ -279,6 +397,83 @@ def test_the_two_known_vulnerabilities_are_covered():
     ids = {name for name, _ in VECTORS}
     assert any("negative" in i for i in ids), "no vector covers the -$1000 approval"
     assert any("overflow" in i for i in ids), "no vector covers the 30-digit crash"
+
+
+def test_the_real_pipeline_attributes_the_way_the_spec_says():
+    """The runner above reimplements the attribution rule. This checks the *product*.
+
+    Without this, the vectors could all pass while `authorize.decide()` and
+    `record._deciding_engine` disagree with AEGS-0.1-VERD-4 — the suite would be testing the
+    runner rather than the implementation. So this drives real decisions end to end and
+    recomputes the expected attribution independently from the recorded reasons.
+
+    Recomputing needs one detail that cost a debugging round: a clamp's `source` is
+    `authorize`, and `CLAMP_ORIGIN` names the control that *caused* it. Reading `source`
+    directly makes every sanctions case look misattributed when it is correct.
+    """
+    import tempfile
+
+    from aegoll import record as record_mod
+    from aegoll.config import load_bundle
+    from aegoll.domain import Purpose, Vendor, Verdict, narrower
+    from aegoll.record import CLAMP_ORIGIN, DISPOSITIVE_CONTROLS
+    from aegoll.runtime import Aegoll, Paths
+
+    def control_of(reason: dict) -> str:
+        if reason["source"] == "authorize":
+            return CLAMP_ORIGIN.get(reason["code"], "authorize")
+        return reason["source"]
+
+    bundle = load_bundle()
+    cases = [
+        ("micro clean", "0.01", {"id": "v", "name": "V"}),
+        ("untrusted", "2.50", {"id": "v", "name": "V"}),
+        ("over envelopes", "500", {"id": "v", "name": "V"}),
+        ("sanctioned micro", "0.01", {"id": "s", "name": "S", "sanctioned": True}),
+        ("sanctioned and over", "500", {"id": "s", "name": "S", "sanctioned": True}),
+    ]
+
+    for label, amount, vendor in cases:
+        layer = Aegoll(
+            bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="attr"
+        )
+        try:
+            request = layer.build_request(
+                resource="/market/snapshot", amount_usd=amount,
+                vendor=Vendor(**vendor), purpose=Purpose.DATA_PURCHASE,
+            )
+            layer.authorize(request)
+            entry = [e for e in layer.audit.entries() if e.payload.get("decision")][-1]
+            record = record_mod.from_audit_entry(entry)
+        finally:
+            layer.close()
+
+        recorded = record["authorization"]["decidingEngine"]
+
+        verdict, last, dispositive = Verdict.APPROVE, None, None
+        for reason in record["authorization"]["reasons"]:
+            control = control_of(reason)
+            if control in DISPOSITIVE_CONTROLS and dispositive is None:
+                dispositive = control
+            if not reason.get("verdict"):
+                continue
+            narrowed = narrower(verdict, Verdict(reason["verdict"]))
+            if narrowed is not verdict:
+                verdict, last = narrowed, control
+
+        expected = dispositive or last or "policy"
+        assert recorded == expected, (
+            f"{label}: the record attributes this to {recorded!r}; AEGS-0.1-VERD-4/4a "
+            f"says {expected!r}. Either the spec is wrong or this implementation is."
+        )
+        assert recorded, f"{label}: attribution is absent, which VERD-5 forbids"
+
+
+def test_the_dispositive_set_is_declared():
+    """VERD-4a requires the set and its precedence to be documented, not merely behaved."""
+    from aegoll.record import DISPOSITIVE_CONTROLS
+
+    assert DISPOSITIVE_CONTROLS == ("sanctions",), DISPOSITIVE_CONTROLS
 
 
 def test_the_rounding_mode_is_actually_pinned_down():

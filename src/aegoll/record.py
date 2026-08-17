@@ -82,6 +82,20 @@ def _usd_str(value: Any) -> str:
 #: an auditor cannot tell an intent mismatch from a sanctions bar, and a conformance
 #: suite cannot score either without string-matching an implementation's private
 #: reason codes.
+#: Controls declared **dispositive** under AEGS-0.1-VERD-4a: their finding decides
+#: attribution whenever it is present, whether or not it narrowed the verdict. The clause
+#: requires this set and its precedence to be documented, and this is that documentation.
+#:
+#: `sanctions` is the only one, and the reason is the defect that produced it. A sanctions
+#: bar could be recorded as a *policy* refusal: the clamp was written only when it changed
+#: the verdict, so when a policy rule refused first the record showed no screening at all —
+#: delete the screening and every record stayed identical. A counterparty being barred does
+#: not become less true because a spending limit happened to bite first.
+#:
+#: Precedence: `sanctions` outranks every narrowing control. With one entry there is nothing
+#: further to order, and a second entry would need its rank stated here.
+DISPOSITIVE_CONTROLS = ("sanctions",)
+
 CLAMP_ORIGIN = {
     "clamped_by_identity": "identity",
     "clamped_by_intent": "intent",
@@ -92,13 +106,18 @@ CLAMP_ORIGIN = {
 
 
 def _deciding_engine(decision: dict[str, Any]) -> str:
-    """Which control determined the verdict.
+    """Which control determined the verdict. AEGS-0.1-VERD-4 and VERD-4a.
 
-    Read from the back: the last clamp applied is the one that set the final
-    verdict, and it is more informative than the rule that preceded it. A REJECT
-    with no attributable cause is not auditable evidence, which is why the schema
-    requires this field -- and why a clamp resolves to the control that caused it
-    rather than to the engine that applied it.
+    Read from the back: the last clamp applied is the one that set the final verdict, and it
+    is more informative than the rule that preceded it. A REJECT with no attributable cause
+    is not auditable evidence, which is why the schema requires this field -- and why a clamp
+    resolves to the control that caused it rather than to the engine that applied it.
+
+    Reading from the back also implements VERD-4a for free, and it is worth naming why.
+    `sanctions` records its clamp *unconditionally*, so a sanctions finding is always the
+    last `authorize` reason present and therefore always wins attribution -- even when the
+    verdict was already REJECT and the clamp changed nothing. That is exactly what
+    DISPOSITIVE_CONTROLS declares. The mechanism is incidental; the behaviour is required.
     """
     for reason in reversed(decision.get("reasons") or []):
         if reason.get("source") == "authorize" and reason.get("verdict"):
