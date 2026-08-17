@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets — invariant: BYOK keys are never stored, logged, or journalled
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime state written by the layer itself
+.aegoll/
+*.jsonl
+!tests/**/*.jsonl
+!vectors/**/*.jsonl
+
+# Local config, not the shipped starters
+/aegoll.yaml
+/aegoll.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

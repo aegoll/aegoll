@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The prototype was developed on Windows. Test both, so a path bug is not
+# discovered at install time by someone else.
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install with dev extras only
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Tests
+        run: pytest tests -q
+
+  purity:
+    # The invariants that stop being true silently. Each is a test, not a doc.
+    #   - no LLM client imported outside advisors/
+    #   - no filesystem, network or wall clock inside engines/
+    #   - engines/ imports nothing from adapters/ or advisors/
+    #   - no engine family imports a sibling family
+    #   - core installs no framework
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install core only, no extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+      - name: Purity suite
+        run: pytest tests/test_no_llm.py tests/test_deps.py tests/test_engines.py -q
+      - name: Core imports nothing unexpected
+        run: python -c "import aegoll, sys; print(sorted(m for m in sys.modules if not m.startswith('_')))"
+
+  vectors:
+    # AEGS test vectors. A failure here is either a spec bug or a code bug,
+    # and which one must be stated in writing. Never quietly fixed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Vectors
+        run: pytest tests/test_vectors.py -q
+        continue-on-error: true  # remove once aegs/vectors exists (PLAN A8.1)
+
+  redteam:
+    # 18 attacks from the prototype. 13 defended, 3 open by design.
+    # The job asserts the score has not regressed, not that it is perfect.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Red team
+        run: pytest tests/redteam -q
+        continue-on-error: true  # remove once ported (PLAN A11.1)
