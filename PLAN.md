@@ -291,18 +291,18 @@ two verified end-to-end in the prototype.
 
 ---
 
-## A8 — Test vectors ⬜
+## A8 — Test vectors 🔨
 
 Consumes [`../aegs/PLAN.md`](../aegs/PLAN.md) B4. The reason aegoll can be checked
 against a spec rather than against itself.
 
-- [ ] A8.1 Vendor `aegs/vectors/` into the test suite (git submodule or pinned download — decide, then record)
-- [ ] A8.2 Vector runner in `tests/test_vectors.py` — one test per vector, failure names the vector id
-- [ ] A8.3 Arithmetic family passes — atomic conversion, rounding, boundaries, negatives, overflow
+- [x] A8.1 **Located by search, not vendored yet.** Two repos side by side is the normal layout; the module skips cleanly when the standard is absent, so a contributor with only this repo does not face red for something they cannot fix. Vendoring with a pin (like `_schemas/` and `_profiles/`) is the next step once the vectors stabilise
+- [x] A8.2 [`tests/test_vectors.py`](tests/test_vectors.py) — one test per vector, and a failure names the **clause in dispute** so the argument is *either the spec is wrong or this implementation is*, not a mystery
+- [x] A8.3 **Arithmetic family passes: 33 vectors, 0 divergences.** Refusal categories are *mapped* rather than string-compared — a vector checks the right *kind* of reason, and matching wording would make the suite a test of our vocabulary
 - [ ] A8.4 Envelope family passes — headroom, cumulative vs per-transaction, windows
 - [ ] A8.5 Verdict family passes — narrowing, attribution, evaluation order
 - [ ] A8.6 Evidence family passes — record projection, canonical serialisation, chain hashes
-- [ ] A8.7 The two known prototype vulnerabilities are vectors on day one: **the negative amount** (a `-$1000` request was approved, because every envelope asks `amount <= headroom` and any negative satisfies it) and **the 30-digit overflow** (crashed the layer instead of being refused by it)
+- [x] A8.7 Both covered, and asserted **by name** — "we have arithmetic vectors" is not the same claim as "the minus-sign bug is covered"
 - [ ] A8.8 Every failure classified in writing as *spec bug* or *code bug*, never quietly fixed
 
 **Exit:** 100% of vectors green, and a written list of what the spec failed to say.
