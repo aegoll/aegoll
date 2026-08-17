@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "name": "default",
+  "config": {
+    "treasury": {
+      "balance_usd": "500",
+      "per_transaction_usd": "10",
+      "daily_usd": "50",
+      "monthly_usd": "300",
+      "per_vendor_30d_usd": "100",
+      "per_resource_30d_usd": "50",
+      "emergency_reserve_usd": "10",
+      "velocity_60s": 10,
+      "velocity_1h": 100,
+      "earned_authority": [
+        {
+          "settled_at_least": 10,
+          "per_tx_multiplier": 1.5
+        },
+        {
+          "settled_at_least": 50,
+          "per_tx_multiplier": 2.0
+        },
+        {
+          "settled_at_least": 200,
+          "per_tx_multiplier": 3.0
+        }
+      ]
+    },
+    "treasury_internal": {
+      "balance_usd": "0.25",
+      "per_transaction_usd": "0.04",
+      "daily_usd": "0.15",
+      "monthly_usd": "0.25",
+      "per_vendor_30d_usd": "0.25",
+      "per_resource_30d_usd": "0.20",
+      "emergency_reserve_usd": "0.01",
+      "velocity_60s": 3,
+      "velocity_1h": 30,
+      "earned_authority": []
+    },
+    "trust": {
+      "cold_start": 0.25,
+      "weight_success": 0.45,
+      "weight_volume": 0.3,
+      "weight_age": 0.25,
+      "penalty_dispute": 0.6,
+      "volume_saturation": 20,
+      "age_saturation_days": 30
+    },
+    "risk": {
+      "weight_amount": 0.25,
+      "weight_novelty": 0.2,
+      "weight_zscore": 0.2,
+      "weight_velocity": 0.15,
+      "weight_reprice": 0.1,
+      "weight_failures": 0.1,
+      "amount_saturation_usd": "1000",
+      "zscore_saturation": 4.0,
+      "reprice_ratio_flag": 3.0,
+      "high_risk_threshold": 0.6
+    },
+    "roi": {
+      "default_confidence": 0.5,
+      "expected_value_usd": {
+        "/market/snapshot": "0.02",
+        "/market/signal": "0.05",
+        "/market/ohlcv/BTC-USD": "0.01",
+        "/market/ohlcv/ETH-USD": "0.01",
+        "/market/ohlcv/TSLA": "0.01",
+        "/market/ohlcv/AAPL": "0.01",
+        "/market/ohlcv/USDC-USD": "0.01"
+      }
+    },
+    "eiap": {
+      "ai_cost_usd": "0.004",
+      "base_p_flip": 0.01,
+      "max_p_flip": 0.05,
+      "small_model_exposure_usd": "1",
+      "large_model_exposure_usd": "100"
+    }
+  },
+  "rules": [
+    {
+      "id": "deny-sanctioned",
+      "priority": 0,
+      "when": {
+        "vendor.sanctioned": true
+      },
+      "then": "REJECT",
+      "reason": "sanctioned counterparty"
+    },
+    {
+      "id": "deny-over-balance",
+      "priority": 5,
+      "when": {
+        "budget.ok": false,
+        "budget.binding": {
+          "in": [
+            "balance",
+            "emergency_reserve"
+          ]
+        }
+      },
+      "then": "REJECT",
+      "reason": "insufficient treasury balance"
+    },
+    {
+      "id": "review-budget-exhausted",
+      "priority": 10,
+      "when": {
+        "budget.ok": false
+      },
+      "then": "REVIEW",
+      "reason": "outside a budget envelope"
+    },
+    {
+      "id": "internal-approve-within-budget",
+      "priority": 8,
+      "when": {
+        "channel": "internal",
+        "budget.ok": true
+      },
+      "then": "APPROVE",
+      "reason": "token budget available for this run"
+    },
+    {
+      "id": "internal-reject-over-budget",
+      "priority": 9,
+      "when": {
+        "channel": "internal",
+        "budget.ok": false
+      },
+      "then": "REJECT",
+      "reason": "token budget exhausted -- the run must not start"
+    },
+    {
+      "id": "escalate-high-risk",
+      "priority": 20,
+      "when": {
+        "risk.score": {
+          "gte": 0.6
+        }
+      },
+      "then": "ESCALATE",
+      "reason": "risk score above tolerance"
+    },
+    {
+      "id": "review-untrusted-vendor-nontrivial",
+      "priority": 30,
+      "when": {
+        "trust.score": {
+          "lt": 0.4
+        },
+        "amount_usd": {
+          "gte": 1.0
+        }
+      },
+      "then": "REVIEW",
+      "reason": "low vendor trust for a non-trivial amount"
+    },
+    {
+      "id": "review-large",
+      "priority": 40,
+      "when": {
+        "amount_usd": {
+          "gte": 100.0
+        }
+      },
+      "then": "REVIEW",
+      "reason": "amount at or above the review threshold"
+    },
+    {
+      "id": "review-negative-roi",
+      "priority": 50,
+      "when": {
+        "roi.known": true,
+        "roi.ratio": {
+          "lt": 1.0
+        },
+        "amount_usd": {
+          "gte": 1.0
+        }
+      },
+      "then": "REVIEW",
+      "reason": "expected value below cost"
+    },
+    {
+      "id": "auto-approve-micro",
+      "priority": 100,
+      "when": {
+        "amount_usd": {
+          "lt": 1.0
+        },
+        "risk.score": {
+          "lt": 0.35
+        },
+        "budget.ok": true
+      },
+      "then": "APPROVE",
+      "reason": "micro-transaction inside all envelopes"
+    },
+    {
+      "id": "approve-trusted-moderate",
+      "priority": 200,
+      "when": {
+        "amount_usd": {
+          "lt": 25.0
+        },
+        "trust.score": {
+          "gte": 0.7
+        },
+        "risk.score": {
+          "lt": 0.4
+        },
+        "budget.ok": true
+      },
+      "then": "APPROVE",
+      "reason": "trusted vendor, moderate amount"
+    },
+    {
+      "id": "default-review",
+      "priority": 9999,
+      "when": {},
+      "then": "REVIEW",
+      "reason": "no rule matched; defaulting to review"
+    }
+  ]
+}

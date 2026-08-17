@@ -18,6 +18,12 @@ from typing import Any
 import yaml
 
 from .domain import usd_to_atomic
+from .errors import ConfigError, PolicyError
+
+# `validate` is imported inside `load_bundle`, not here. It reads the fact vocabulary
+# from the policy engine, which imports this module for its config dataclasses — so a
+# module-level import closes a cycle. Deferring it is also honest: validation is a
+# load-time concern, and nothing else in this module needs it.
 
 
 def _packaged_policies() -> Path:
@@ -186,10 +192,45 @@ def _atomic(node: Any, key: str, default: str) -> int:
     return usd_to_atomic(str((node or {}).get(key, default)))
 
 
-def load_bundle(path: str | Path | None = None) -> PolicyBundle:
+def parse_pack_text(text: str, *, source: str) -> Any:
+    """Parse a policy pack from YAML **or** JSON. One schema, two syntaxes.
+
+    JSON is a subset of YAML 1.2, so `yaml.safe_load` handles both and there is one code
+    path rather than two that can disagree. `safe_load` also refuses arbitrary object
+    construction, which matters here: a pack is data, and a loader that could instantiate
+    Python types from a file would hand that guarantee away at the door.
+    """
+    try:
+        return yaml.safe_load(text) or {}
+    except yaml.YAMLError as exc:
+        raise PolicyError(f"{source}: could not be parsed as YAML or JSON: {exc}") from exc
+
+
+def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> PolicyBundle:
+    """Load and validate a policy pack.
+
+    `validate=True` is the default and should stay that way. The prototype validated
+    comparators inside `policy.evaluate()`, so a malformed rule only raised if a request
+    reached it — and **a rule that never matches never validates**. A pack could carry a
+    verdict of `MAYBE` and look fine until the one request that touched it arrived.
+
+    Now a pack is rejected at load, in full, or it is not loaded. Pass `validate=False`
+    only to inspect something known to be broken; nothing in the library does.
+    """
     p = Path(path) if path else DEFAULT_BUNDLE
-    raw_text = p.read_text(encoding="utf-8")
-    raw = yaml.safe_load(raw_text) or {}
+    if not p.is_file():
+        raise PolicyError(f"no policy pack at {p}")
+    raw = parse_pack_text(p.read_text(encoding="utf-8"), source=str(p))
+
+    if validate:
+        from .validate import has_errors, validate_pack  # noqa: PLC0415
+
+        problems = validate_pack(raw, source=p.name)
+        if has_errors(problems):
+            raise PolicyError(
+                f"{p} is not a usable policy pack",
+                [x for x in problems if x.severity == "error"],
+            )
 
     cfg = raw.get("config") or {}
     t = cfg.get("treasury") or {}
@@ -314,5 +355,25 @@ def load_bundle(path: str | Path | None = None) -> PolicyBundle:
     )
 
 
-def available_bundles() -> list[Path]:
-    return sorted((DEFAULT_BUNDLE.parent).glob("*.yaml"))
+#: Extensions a pack may use, in preference order. YAML is canonical; JSON is the same
+#: schema in the other syntax, for callers whose tooling emits JSON.
+PACK_SUFFIXES = (".yaml", ".yml", ".json")
+
+
+def available_bundles(directory: Path | None = None) -> list[Path]:
+    """Discoverable packs, **one per name**.
+
+    De-duplicated by stem, YAML winning, because the packaged starters ship in both
+    syntaxes and discovery must not report `strict` twice. Two entries with one name make
+    `--policy strict` ambiguous, and something downstream would quietly pick whichever
+    sorted first — the AEGS conformance suite selects a pack by stem exactly that way.
+
+    Pointing at a `.json` pack explicitly by path always works; it is only *discovery*
+    that prefers one form.
+    """
+    base = directory or DEFAULT_BUNDLE.parent
+    chosen: dict[str, Path] = {}
+    for suffix in PACK_SUFFIXES:
+        for path in sorted(base.glob(f"*{suffix}")):
+            chosen.setdefault(path.stem, path)
+    return [chosen[stem] for stem in sorted(chosen)]

@@ -68,7 +68,12 @@ include = ["aegoll*"]
 # without them and `Governor.load()` fails on a fresh install -- which is exactly
 # what tests/test_paths.py checks.
 [tool.setuptools.package-data]
-aegoll = ["policies/*.yaml", "_schemas/*.json", "_schemas/PROVENANCE.txt"]
+aegoll = [
+    "policies/*.yaml",
+    "policies/*.json",
+    "_schemas/*.json",
+    "_schemas/PROVENANCE.txt",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

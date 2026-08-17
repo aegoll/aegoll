@@ -31,13 +31,56 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .clock import FixedClock
-from .config import available_bundles, load_bundle
+from .config import DEFAULT_BUNDLE, available_bundles, load_bundle
+from .errors import ConfigError, PolicyError
 from .runtime import Aegoll, Paths
 from .domain import Purpose, Vendor, fmt_usd
 
 #: The fixed instant `--fixed-time` pins the clock to. Lived in the scenarios module,
 #: which has left the package; it is a clock constant, so it belongs beside the clock.
 BASE_TIME = datetime(2026, 8, 12, 14, 30, tzinfo=timezone.utc)
+
+#: What `aegoll init` writes. Comments included on purpose: this is the first and often
+#: only aegoll document a user reads closely, so the reasoning goes where they are already
+#: looking rather than in documentation they have not opened.
+_STARTER_CONFIG = '''\
+# aegoll -- what to enforce, and where the rules live.
+#
+# `profile` says which controls MUST exist and what evidence MUST be emitted; that is
+# the standard's business. `policy` says what the rules actually are; that is yours.
+# Two files, two jobs.
+#
+# Amounts are strings. Money never touches a float, and YAML turns an unquoted decimal
+# into one -- `aegoll check` will tell you so.
+
+profile: aegs-1
+policy: policies/default.yaml
+
+channels:
+  # What the agent pays out.
+  external:
+    daily_usd: "50"
+    per_transaction_usd: "10"
+
+  # The tokens it burns thinking. Never shares an envelope with the above: different
+  # currency, different counterparty, different failure mode. An exhausted token budget
+  # rejects rather than queues for review -- there is no human to ask mid-run, and
+  # starting a run that cannot finish wastes the budget that is already short.
+  internal:
+    daily_usd: "0.15"
+    per_transaction_usd: "0.04"
+
+evidence:
+  journal: .aegoll/audit.jsonl
+
+# Optional, and never in the decision path: an advisor may tighten a verdict, never
+# widen one. Keys come from the environment, never from this file -- this file gets
+# committed.
+#
+# advisor:
+#   provider: anthropic
+#   model: claude-haiku-4-5
+'''
 
 
 def _aegl(args: argparse.Namespace, ephemeral: bool = False) -> Aegoll:
@@ -356,11 +399,110 @@ def cmd_identity(args: argparse.Namespace) -> int:
         aegoll.close()
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    """Scaffold `aegoll.yaml` and a starter policy pack in the working directory.
+
+    Copies the packaged starter out rather than pointing at it, so the first thing a user
+    does with a policy is *read and edit their own copy*. A config that references a file
+    inside site-packages teaches people their policy is not theirs to change.
+
+    Refuses to overwrite. A policy file is the thing that decides whether money moves;
+    clobbering one on a mistyped command is not a risk worth taking for the convenience.
+    """
+    target = Path(args.dir or ".").resolve()
+    config_path = target / "aegoll.yaml"
+    policy_dir = target / "policies"
+    policy_path = policy_dir / "default.yaml"
+
+    existing = [p for p in (config_path, policy_path) if p.exists()]
+    if existing and not args.force:
+        for p in existing:
+            print(f"exists: {p}")
+        print()
+        print("nothing written. Pass --force to overwrite, or edit these instead.")
+        return 1
+
+    starter = load_bundle().source or str(DEFAULT_BUNDLE)
+    policy_dir.mkdir(parents=True, exist_ok=True)
+    policy_path.write_text(Path(starter).read_text(encoding="utf-8"), encoding="utf-8")
+
+    config_path.write_text(_STARTER_CONFIG, encoding="utf-8")
+
+    print(f"wrote {config_path}")
+    print(f"wrote {policy_path}")
+    print()
+    print("next:  aegoll check     # validate before an agent holds a wallet")
+    return 0
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    """Validate config and policy. Exit 1 if anything is wrong.
+
+    The quiet win of the whole CLI: a policy change that would refuse everything, or
+    allow everything, fails the build **before** it reaches an agent holding a wallet.
+    Reports every problem rather than the first, because a config with four mistakes
+    should be fixed in one pass.
+    """
+    from .settings import Config  # noqa: PLC0415
+    from .validate import format_problems  # noqa: PLC0415
+
+    try:
+        config = Config.load(args.config)
+    except (ConfigError, PolicyError) as exc:
+        if args.json:
+            print(json.dumps({"ok": False, "problems": [str(exc)]}, indent=2))
+        else:
+            print(str(exc))
+        return 1
+
+    problems = config.validate()
+    errors = [p for p in problems if p.severity == "error"]
+
+    if args.json:
+        print(json.dumps({
+            "ok": not errors,
+            "config": config.as_dict(),
+            "problems": [p.as_dict() for p in problems],
+        }, indent=2))
+        return 1 if errors else 0
+
+    where = config.source or "<no config file; packaged defaults>"
+    print(f"config : {where}")
+    print(f"profile: {config.profile}")
+    try:
+        bundle = config.policy()
+        print(f"policy : {bundle.name}  {bundle.hash}  {len(bundle.rules)} rules")
+    except (ConfigError, PolicyError):
+        # Detail comes from the problems list below. Printing the exception here too
+        # reported every fault twice, which makes a long list read as a longer one.
+        print("policy : UNUSABLE — see below")
+
+    if not problems:
+        print()
+        print("ok")
+        return 0
+    print()
+    print(format_problems(problems))
+    return 1 if errors else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="aegoll", description="AEGL Phase 1 (deterministic)")
     p.add_argument("--policy", help="path to a policy bundle YAML")
     p.add_argument("--json", action="store_true", help="machine-readable output")
     sub = p.add_subparsers(dest="command", required=True)
+
+    ini = sub.add_parser("init", help="scaffold aegoll.yaml and a starter policy")
+    ini.add_argument("--dir", help="where to write (default: here)")
+    ini.add_argument("--force", action="store_true", help="overwrite existing files")
+    ini.set_defaults(func=cmd_init)
+
+    chk = sub.add_parser("check", help="validate config and policy; exit 1 if invalid")
+    chk.add_argument("--config", help="path to aegoll.yaml or aegoll.json")
+    # Also accepted before the subcommand. Users type it after, so both work rather than
+    # one being technically correct and the other an error message.
+    chk.add_argument("--json", action="store_true", help="machine-readable output")
+    chk.set_defaults(func=cmd_check)
 
     d = sub.add_parser("decide", help="decide one payment request")
     d.add_argument("--resource", default="/market/snapshot")
