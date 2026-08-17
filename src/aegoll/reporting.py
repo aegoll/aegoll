@@ -8,7 +8,7 @@ the CLI and the page disagree about what "spent" means.
 The four questions, in the order an agent developer asks them at 2am:
 
 1. **What will this policy do?** → `policy`
-2. **How much is left, and which limit binds?** → `envelopes`
+2. **How much is left, and what will bite next?** → `envelopes`
 3. **Why did my agent stop?** → `decisions`, and above all `by_attributed_control`
 4. **Can I trust this record?** → `chain`
 
@@ -52,8 +52,17 @@ class EnvelopeView:
     #: as "used of limit" beside the cumulative windows reads as "nothing was spent" when
     #: the concept simply does not apply.
     cumulative: bool = True
-    #: True for the limit closest to biting. The single most useful thing on this panel.
+    #: True for the envelope whose breach caused a refusal. Only ever set on a refused
+    #: decision — `binding` answers "why was this refused".
     binding: bool = False
+    #: True for the envelope with the least headroom, refused or not. `tightest` answers
+    #: "what will bite next", which is the useful question when nothing has been refused.
+    #:
+    #: Two fields because they are two questions, and AEGS-0.1-ENV-6 says so. The first
+    #: version of this class had only `binding` under a heading meaning "closest to biting",
+    #: so an approved decision showed no envelope at all — the column went blank precisely
+    #: when the agent was healthy and someone was checking headroom.
+    tightest: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -64,6 +73,7 @@ class EnvelopeView:
             "headroomUsd": self.headroom_usd,
             "cumulative": self.cumulative,
             "binding": self.binding,
+            "tightest": self.tightest,
         }
 
 
@@ -176,17 +186,30 @@ class Report:
 
 
 def _envelope_views(budget: Any) -> tuple[EnvelopeView, ...]:
+    """Envelope state, marking both the binding and the tightest envelope.
+
+    See AEGS-0.1-ENV-6. `budget.binding` is None for an approved decision, which is correct
+    — nothing bound it — so `tightest` is computed here and is what a reader watching
+    headroom actually wants.
+    """
     if budget is None:
         return ()
+    tightest = (
+        min(budget.envelopes, key=lambda e: e.headroom_atomic).name
+        if budget.envelopes else None
+    )
     return tuple(
         EnvelopeView(
             name=envelope.name,
             window=envelope.window,
             limit_usd=_usd(envelope.limit_atomic),
+            # A per-call ceiling reports no consumed amount. Reporting `0 of 10` beside the
+            # cumulative windows reads as "nothing was spent", which is false. ENV-4.
             used_usd=_usd(envelope.used_atomic) if envelope.cumulative else None,
             headroom_usd=_usd(envelope.headroom_atomic),
             cumulative=envelope.cumulative,
             binding=envelope.name == budget.binding,
+            tightest=envelope.name == tightest,
         )
         for envelope in budget.envelopes
     )

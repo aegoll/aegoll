@@ -604,7 +604,12 @@ def cmd_report(args: argparse.Namespace) -> int:
         print()
         print(f"envelopes: {channel}")
         for e in envelopes:
-            mark = " <-- binding" if e.binding else ""
+            # `binding` only exists for a refusal; `tightest` always does. Showing both
+            # means the column is informative when the agent is healthy too. ENV-6.
+            mark = (
+                " <-- binding" if e.binding
+                else ("  (tightest)" if e.tightest else "")
+            )
             if e.cumulative:
                 print(
                     f"  {e.name:16} {e.window:22} ${e.used_usd} of ${e.limit_usd}"

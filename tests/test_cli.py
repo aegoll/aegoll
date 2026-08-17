@@ -288,6 +288,27 @@ def test_report_shows_a_per_call_ceiling_as_a_ceiling(project):
     assert per_tx[0]["usedUsd"] is None
 
 
+def test_report_distinguishes_binding_from_tightest(project):
+    """Two questions, two fields. AEGS-0.1-ENV-6.
+
+    `binding` answers "why was this refused" and exists only for a refusal. `tightest`
+    answers "what will bite next" and always exists. The first version of the report had
+    only `binding` under a heading meaning the second, so an approved decision showed no
+    envelope at all — blank precisely when someone was checking headroom.
+    """
+    data = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)
+    external = data["envelopes"]["external"]
+
+    assert not [e for e in external if e["binding"]], (
+        "nothing has been refused, so no envelope may be reported as binding"
+    )
+    tightest = [e for e in external if e["tightest"]]
+    assert len(tightest) == 1, "exactly one envelope is the tightest, always"
+
+    human = run("report", cwd=project, expect=EXIT_OK).stdout
+    assert "(tightest)" in human, "the human report does not surface it either"
+
+
 def test_report_always_carries_the_chain_caveat(project):
     """VALID without it overstates what a hash chain proves."""
     data = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)

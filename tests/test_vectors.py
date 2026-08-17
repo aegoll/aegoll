@@ -63,10 +63,83 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def _evaluate_envelopes(data: dict) -> dict:
+    """Evaluate the envelope set a vector describes, using this implementation's types.
+
+    Constructs `Envelope` and `CountEnvelope` directly rather than driving a whole decision.
+    A vector is about the envelope rule, and routing it through the full engine would drag
+    in policy, trust, risk and a store — so a failure would no longer say which rule broke.
+
+    `otherChannel` is deliberately **ignored**, and that is not laziness. ENV-9 says channels
+    never share an envelope, so the way an implementation passes those vectors is by the
+    other channel's state having no path into this evaluation at all. A runner that read it
+    and then carefully declined to use it would be proving something weaker.
+    """
+    from aegoll.domain import CountEnvelope, Envelope
+
+    amount = data.get("amountAtomic", 0)
+    repeat = data.get("repeat", 1)
+
+    envelopes, headroom, used = [], {}, {}
+    for spec in data.get("envelopes") or []:
+        limit = spec["limit"]
+        if limit is None:
+            # An absent limit constrains nothing (ENV-8). This implementation has no
+            # representation for one, and the vector is answered by construction: an
+            # unconstrained envelope is an envelope that is not there.
+            headroom[spec["name"]] = None
+            used[spec["name"]] = None
+            continue
+        envelope = Envelope(
+            name=spec["name"],
+            limit_atomic=limit,
+            used_atomic=spec["used"],
+            window=spec.get("window", ""),
+            cumulative=spec.get("cumulative", True),
+        )
+        envelopes.append(envelope)
+        headroom[envelope.name] = envelope.headroom_atomic
+        used[envelope.name] = envelope.used_atomic if envelope.cumulative else None
+
+    counters = [
+        CountEnvelope(
+            name=spec["name"], limit=spec["limit"], used=spec["used"],
+            window=spec.get("window", ""),
+        )
+        for spec in data.get("counters") or []
+    ]
+
+    breached: list[str] = []
+    for _ in range(repeat):
+        for envelope in envelopes:
+            if not envelope.admits(amount) and envelope.name not in breached:
+                breached.append(envelope.name)
+    breached += [c.name for c in counters if not c.admits()]
+
+    failing = [e for e in envelopes if e.name in breached]
+    binding = (
+        min(failing, key=lambda e: e.headroom_atomic).name if failing
+        else (breached[0] if breached else None)
+    )
+    tightest = min(envelopes, key=lambda e: e.headroom_atomic).name if envelopes else None
+
+    return {
+        "ok": not breached,
+        "breached": breached,
+        "binding": binding,
+        "tightest": tightest,
+        "headroom": headroom,
+        "used": used,
+    }
+
+
 def _run(vector: dict):
     """Perform the operation under test, returning either a value or a refusal category."""
     operation = vector["operation"]
     data = vector["input"]
+
+    if operation == "evaluate_envelopes":
+        return _evaluate_envelopes(data)
 
     if operation == "usd_to_atomic":
         try:
@@ -131,12 +204,51 @@ def test_vector(name, vector):
         f"  the spec expects {expected}; this implementation refused: {got}.\n"
         f"  Either {clause} is wrong or this implementation is."
     )
+    if vector["operation"] == "evaluate_envelopes":
+        _assert_envelopes(clause, vector, expected, got)
+        return
+
     key = next(iter(expected))
     assert got[key] == expected[key], (
         f"{clause}: {vector['description']}\n"
         f"  expected {key}={expected[key]!r}, got {got[key]!r}\n"
         + (f"  note: {vector['note']}" if vector.get("note") else "")
     )
+
+
+def _assert_envelopes(clause: str, vector: dict, expected: dict, got: dict) -> None:
+    """Check only what the vector asserts, and compare `breached` as a set.
+
+    Order in `breached` is not significant — the spec requires every breach to be
+    *reported*, not reported in any particular sequence, and a runner demanding an order
+    would be testing an implementation detail the specification deliberately leaves open.
+    """
+    note = f"\n  note: {vector['note']}" if vector.get("note") else ""
+    head = f"{clause}: {vector['description']}"
+
+    assert got["ok"] == expected["ok"], (
+        f"{head}\n  expected ok={expected['ok']}, got ok={got['ok']}"
+        f"\n  breached: {got['breached']}{note}"
+    )
+
+    if "breached" in expected:
+        assert set(got["breached"]) == set(expected["breached"]), (
+            f"{head}\n  expected breached={sorted(expected['breached'])}, "
+            f"got {sorted(got['breached'])}{note}"
+        )
+
+    for field in ("binding", "tightest"):
+        if field in expected:
+            assert got[field] == expected[field], (
+                f"{head}\n  expected {field}={expected[field]!r}, got {got[field]!r}{note}"
+            )
+
+    for field in ("headroom", "used"):
+        for name, want in (expected.get(field) or {}).items():
+            assert got[field].get(name) == want, (
+                f"{head}\n  expected {field}[{name!r}]={want!r}, "
+                f"got {got[field].get(name)!r}{note}"
+            )
 
 
 # --- the suite's own integrity --------------------------------------------
