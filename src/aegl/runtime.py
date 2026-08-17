@@ -28,7 +28,18 @@ from .domain import (
     usd_to_atomic,
 )
 
-DATA_DIR = Path(__file__).resolve().parents[1] / ".data"
+#: Where runtime state goes when the caller does not say: the sqlite history, the
+#: hash-chained audit journal, and the review queue.
+#:
+#: Relative to the **working directory**, never to the package. The prototype used
+#: `Path(__file__).resolve().parents[1] / ".data"`, which in an installed wheel means
+#: writing the evidence chain into `site-packages` — a directory that may be read-only,
+#: is shared between projects, and is wiped by a reinstall. Evidence that a reinstall
+#: deletes is not evidence. See PLAN.md F-A1.
+#:
+#: Overridable per instance via `Paths.under(...)`, and by `evidence.journal` in config
+#: once the loader lands (PLAN.md A3.2).
+DATA_DIR = Path.cwd() / ".aegoll"
 
 
 @dataclass

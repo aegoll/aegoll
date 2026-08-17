@@ -18,24 +18,31 @@ Import is lazy so the engines stay testable with no x402 dependency installed.
 
 from __future__ import annotations
 
-import sys
+import importlib.util
 from dataclasses import dataclass, field
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
 
 from ..runtime import Aegl
 from ..domain import Purpose, Vendor, Verdict, usd_to_atomic
 
-# The shared protocol layer -- not an agent. AEGL depends on the payment rail,
-# never on a particular agent's package.
-_X402_CORE = Path(__file__).resolve().parents[3] / "agents" / "x402_core"
-
-
 def _ensure_core_importable() -> None:
-    p = str(_X402_CORE)
-    if p not in sys.path:
-        sys.path.insert(0, p)
+    """Confirm the shared protocol layer is importable, and say so clearly if not.
+
+    The prototype inserted `parents[3] / "agents" / "x402_core"` into `sys.path`, which
+    only worked inside the monorepo and silently did nothing anywhere else — leaving a
+    confusing ImportError several frames later. A library must not mutate `sys.path` to
+    reach into a directory it guessed at. See PLAN.md F-A1.
+
+    AEGL depends on the payment rail, never on a particular agent's package. If the rail
+    is missing, that is a missing optional dependency and the message should say so.
+    """
+    if importlib.util.find_spec("x402_core") is None:
+        raise ImportError(
+            "the x402 rail adapter needs `x402_core`, which is not importable. "
+            "Install the rail extra (`pip install aegoll[x402]`), or add the shared "
+            "protocol layer to your environment. AEGL itself needs neither."
+        )
 
 
 class GovernanceRefused(RuntimeError):
