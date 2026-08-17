@@ -104,7 +104,7 @@ def cmd_decide(args: argparse.Namespace) -> int:
 
         if args.json:
             print(json.dumps(decision.as_dict(), indent=2))
-            return 0 if decision.approved else 2
+            return EXIT_OK if decision.approved else EXIT_REFUSED
 
         print(f"{decision.verdict.value}  {args.resource}  {fmt_usd(request.amount_atomic)}")
         print(f"  rule     : {decision.matched_rule}")
@@ -124,7 +124,7 @@ def cmd_decide(args: argparse.Namespace) -> int:
         print("  reasons  :")
         for line in decision.explain():
             print(f"    - {line}")
-        return 0 if decision.approved else 2
+        return EXIT_OK if decision.approved else EXIT_REFUSED
     finally:
         aegoll.close()
 
@@ -134,6 +134,15 @@ def cmd_audit(args: argparse.Namespace) -> int:
     try:
         entries = aegoll.audit.entries()
         ok, problems = aegoll.audit.verify()
+        if args.json:
+            print(json.dumps({
+                "path": str(aegoll.paths.audit),
+                "entries": len(entries),
+                "valid": ok,
+                "problems": problems,
+            }, indent=2))
+            return EXIT_OK if ok else EXIT_CHAIN
+
         print(f"audit: {len(entries)} entries at {aegoll.paths.audit}")
         print(f"chain: {'VALID' if ok else 'BROKEN'}")
         for p in problems:
@@ -145,7 +154,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
                     f"  #{e.seq:04d} {e.at[:19]}  {e.verdict:9} "
                     f"{tx.get('resource','-'):28} ${tx.get('amountUsd', 0):.6f}"
                 )
-        return 0 if ok else 1
+        return EXIT_OK if ok else EXIT_CHAIN
     finally:
         aegoll.close()
 
@@ -155,7 +164,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     try:
         result = aegoll.replay()
         print(json.dumps(result, indent=2))
-        return 0 if result["ok"] else 1
+        return EXIT_OK if result["ok"] else EXIT_CHAIN
     finally:
         aegoll.close()
 
@@ -168,6 +177,10 @@ def cmd_reviews(args: argparse.Namespace) -> int:
             print("resolved:" if item else "not found:", args.resolve)
             return 0 if item else 1
         items = aegoll.queue.all() if args.all else aegoll.queue.pending()
+        if args.json:
+            print(json.dumps([i.as_dict() for i in items], indent=2))
+            return 0
+
         if not items:
             print("no items")
             return 0
@@ -202,6 +215,18 @@ def cmd_bench(args: argparse.Namespace) -> int:
         def pct(p: float) -> float:
             return latencies[min(len(latencies) - 1, int(p * len(latencies)))]
 
+        if args.json:
+            print(json.dumps({
+                "decisions": args.n,
+                "wallSeconds": round(wall, 6),
+                "perSecond": round(args.n / wall),
+                "latencyP50Us": round(statistics.median(latencies)),
+                "latencyP99Us": round(pct(0.99)),
+                "latencyMaxUs": round(latencies[-1]),
+                "inferenceCostUsd": "0.000000",
+            }, indent=2))
+            return 0
+
         print(f"decisions      : {args.n}")
         print(f"wall clock     : {wall:.3f}s  ({args.n / wall:,.0f} decisions/sec)")
         print(f"latency p50    : {statistics.median(latencies):.0f} us")
@@ -215,8 +240,14 @@ def cmd_bench(args: argparse.Namespace) -> int:
 
 
 def cmd_policies(args: argparse.Namespace) -> int:
-    for p in available_bundles():
-        b = load_bundle(p)
+    bundles = [(p, load_bundle(p)) for p in available_bundles()]
+    if args.json:
+        print(json.dumps([
+            {"name": b.name, "hash": b.hash, "rules": len(b.rules), "path": str(p)}
+            for p, b in bundles
+        ], indent=2))
+        return 0
+    for p, b in bundles:
         print(f"  {b.name:12} {b.hash}  {len(b.rules)} rules  {p}")
     return 0
 
@@ -420,13 +451,20 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"exists: {p}")
         print()
         print("nothing written. Pass --force to overwrite, or edit these instead.")
-        return 1
+        return EXIT_INVALID
 
     starter = load_bundle().source or str(DEFAULT_BUNDLE)
     policy_dir.mkdir(parents=True, exist_ok=True)
     policy_path.write_text(Path(starter).read_text(encoding="utf-8"), encoding="utf-8")
 
     config_path.write_text(_STARTER_CONFIG, encoding="utf-8")
+
+    if args.json:
+        print(json.dumps({
+            "config": str(config_path),
+            "policy": str(policy_path),
+        }, indent=2))
+        return 0
 
     print(f"wrote {config_path}")
     print(f"wrote {policy_path}")
@@ -514,11 +552,270 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    """What was spent, what was refused, and which control decided.
+
+    `by attributed control` is the part worth reading. Counts by verdict say what happened;
+    counts by attributed control say what actually governed this agent, which is often not
+    what the policy file's author expected.
+    """
+    from . import reporting  # noqa: PLC0415
+    from .settings import Config  # noqa: PLC0415
+
+    try:
+        profile = Config.load(getattr(args, "config", None)).profile
+    except (ConfigError, PolicyError):
+        profile = None
+
+    aegoll = _aegl(args)
+    try:
+        report = reporting.build(aegoll, profile=profile, limit=args.limit)
+    finally:
+        aegoll.close()
+
+    if args.json:
+        print(json.dumps(report.as_dict(), indent=2))
+        return EXIT_OK if report.chain and report.chain.valid else EXIT_CHAIN
+
+    print(f"policy   : {report.policy_name}  {report.policy_hash}  {report.policy_rules} rules")
+    print(f"profile  : {report.profile or 'none'}")
+    print(
+        f"decisions: {report.decisions_total}  settled {report.settled}  "
+        f"spent ${report.spent_usd}"
+    )
+    if report.pending_reviews:
+        print(f"pending  : {report.pending_reviews} awaiting review")
+
+    if report.by_verdict:
+        print()
+        print("by verdict")
+        for verdict, count in sorted(report.by_verdict.items(), key=lambda kv: -kv[1]):
+            print(f"  {verdict:10} {count}")
+
+    if report.by_attributed_control:
+        print()
+        print("by attributed control  -- what actually governed this agent")
+        for control, count in sorted(report.by_attributed_control.items(), key=lambda kv: -kv[1]):
+            print(f"  {control:22} {count}")
+
+    for channel, envelopes in report.envelopes.items():
+        if not envelopes:
+            continue
+        print()
+        print(f"envelopes: {channel}")
+        for e in envelopes:
+            mark = " <-- binding" if e.binding else ""
+            if e.cumulative:
+                print(
+                    f"  {e.name:16} {e.window:22} ${e.used_usd} of ${e.limit_usd}"
+                    f"  headroom ${e.headroom_usd}{mark}"
+                )
+            else:
+                # A per-call ceiling has no `used`. Printing "0 of 10" beside the
+                # cumulative windows reads as "nothing was spent", which is false.
+                print(f"  {e.name:16} {e.window:22} ceiling ${e.limit_usd}{mark}")
+
+    if report.decisions:
+        print()
+        print(f"decisions (newest first, {len(report.decisions)} of {report.decisions_total})")
+        for d in report.decisions:
+            print(
+                f"  {d.at[:19]}  {d.verdict:9} ${d.amount_usd or '-':>12}  "
+                f"{(d.resource or '-')[:24]:24} [{d.attributed_control}]"
+            )
+            if d.reason:
+                print(f"      {d.reason[:96]}")
+
+    if report.chain:
+        print()
+        print(
+            f"chain    : {report.chain.entries} entries, "
+            f"{'VALID' if report.chain.valid else 'BROKEN'}"
+        )
+        for problem in report.chain.problems:
+            print(f"  ! {problem}")
+        # Printed every time, next to the verdict on the chain. VALID without this
+        # overstates what a hash chain proves.
+        print(f"  note   : {report.chain.caveat}")
+
+    return EXIT_OK if report.chain and report.chain.valid else EXIT_CHAIN
+
+
+def _explain_condition(spec: Any) -> str:
+    """One condition, in words. `{'gte': 1.0}` becomes `is at least 1.0`."""
+    words = {
+        "eq": "is", "ne": "is not", "lt": "is below", "lte": "is at most",
+        "gt": "is above", "gte": "is at least", "in": "is one of",
+        "not_in": "is none of", "between": "is between", "contains": "contains",
+    }
+    if not isinstance(spec, dict):
+        return f"is {spec!r}"
+    return " and ".join(f"{words.get(op, op)} {want!r}" for op, want in spec.items())
+
+
+def cmd_policy(args: argparse.Namespace) -> int:
+    """Explain what a policy would do, rule by rule, in priority order.
+
+    The point is answering "what will this actually do" without running an agent against
+    it. Priority order is evaluation order and the first match is terminal, so reading top
+    to bottom is reading the decision procedure.
+
+    Resolves the pack the **config** names, not the packaged starter. The first version
+    fell back to the default bundle whenever `--policy` was absent, so it cheerfully
+    explained a policy the agent was not using — which is worse than explaining nothing.
+    """
+    from .settings import Config  # noqa: PLC0415
+
+    if args.policy:
+        bundle = load_bundle(args.policy)
+    else:
+        try:
+            bundle = Config.load(getattr(args, "config", None)).policy()
+        except (ConfigError, PolicyError) as exc:
+            print(str(exc))
+            return 1
+
+    if args.json:
+        print(json.dumps({
+            "name": bundle.name,
+            "hash": bundle.hash,
+            "source": bundle.source,
+            "derived": [d.as_dict() for d in bundle.derived],
+            "rules": [r.as_dict() for r in bundle.sorted_rules()],
+        }, indent=2))
+        return 0
+
+    print(f"{bundle.name}  {bundle.hash}  {len(bundle.rules)} rules")
+    print(f"source: {bundle.source}")
+
+    if bundle.derived:
+        print()
+        print("derived facts  -- composed from what the engines measure, in this order")
+        for d in bundle.derived:
+            print(f"  derived.{d.name}  = {d.combinator} of:")
+            for clause in d.clauses:
+                for fact, spec in clause.items():
+                    print(f"      {fact} {_explain_condition(spec)}")
+
+    print()
+    print("rules, in evaluation order. The first match is terminal.")
+    for rule in bundle.sorted_rules():
+        print()
+        print(f"  [{rule.priority:>5}] {rule.id}  ->  {rule.then}")
+        if rule.reason:
+            print(f"          because: {rule.reason}")
+        if not rule.when:
+            print("          matches: everything (this is a catch-all)")
+        else:
+            print("          matches when ALL of:")
+            for fact, spec in rule.when.items():
+                print(f"            {fact} {_explain_condition(spec)}")
+
+    if not any(not r.when for r in bundle.rules):
+        print()
+        print("no catch-all rule. Anything unmatched fails closed to REVIEW.")
+    return 0
+
+
+def cmd_conformance(args: argparse.Namespace) -> int:
+    """Score this implementation's journalled records against a profile.
+
+    Two layers, and the difference matters. This checks *evidence completeness*: given the
+    decisions in the journal, were the controls the profile requires actually exercised?
+    The full AEGS-CONF suite is a separate package scoring an implementation against the
+    standard's own cases, and it ships apart from the thing it tests on purpose -- a
+    conformance suite bundled with its subject is not a conformance suite.
+    """
+    from . import record as record_mod  # noqa: PLC0415
+    from .profiles import Profile  # noqa: PLC0415
+    from .settings import Config  # noqa: PLC0415
+
+    name = args.profile
+    if name is None:
+        try:
+            name = Config.load(getattr(args, "config", None)).profile
+        except (ConfigError, PolicyError) as exc:
+            print(str(exc))
+            return 1
+
+    try:
+        profile = Profile.load(name)
+    except ConfigError as exc:
+        print(str(exc))
+        return 1
+
+    aegoll = _aegl(args)
+    try:
+        records = record_mod.records_from_journal(aegoll.audit)
+    finally:
+        aegoll.close()
+
+    assessments = [profile.assess(r) for r in records]
+    non_conformant = [a for a in assessments if not a.conformant]
+
+    if args.json:
+        print(json.dumps({
+            "profile": profile.id,
+            "records": len(records),
+            "conformant": len(records) - len(non_conformant),
+            "assessments": [a.as_dict() for a in assessments],
+        }, indent=2))
+        return 1 if non_conformant else 0
+
+    print(f"profile : {profile.id}  ({len(profile.required_controls())} required control(s))")
+    print(f"records : {len(records)} from the journal")
+    if not records:
+        print()
+        print("nothing to score yet. Run some decisions first -- try `aegoll decide`.")
+        return 0
+    print(f"conformant: {len(records) - len(non_conformant)}/{len(records)}")
+
+    if not profile.enforces():
+        print()
+        print("this profile enforces nothing, so everything passes. That is what `none` means.")
+        return 0
+
+    for assessment in non_conformant[: args.limit]:
+        print()
+        for finding in assessment.findings:
+            print(f"  {finding}")
+
+    if not non_conformant:
+        print()
+        print("ok")
+        return 0
+    print()
+    print(f"{len(non_conformant)} record(s) not conformant with {profile.id}")
+    return 1
+
+
+#: Exit codes, documented in docs/cli.md and asserted in tests/test_cli.py. A CLI that
+#: signals every failure with the same number is a CLI nobody can script against.
+EXIT_OK = 0
+EXIT_INVALID = 1       # config or policy is unusable
+EXIT_REFUSED = 2       # the layer worked and said no. Not an error
+EXIT_CHAIN = 3         # the evidence chain is broken or unverifiable
+EXIT_USAGE = 4         # the command line itself was wrong
+
+
+class _Parser(argparse.ArgumentParser):
+    """argparse with a usage exit code that does not collide with `refused`.
+
+    argparse exits 2 on a bad command line, and 2 is `EXIT_REFUSED` here. A script
+    checking `$? -eq 2` would read a typo as a governance decision, which is the worst
+    possible confusion for this particular tool to hand someone.
+    """
+
+    def error(self, message: str) -> None:  # type: ignore[override]
+        self.print_usage(sys.stderr)
+        self.exit(EXIT_USAGE, f"{self.prog}: error: {message}" + chr(10))
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="aegoll", description="AEGL Phase 1 (deterministic)")
+    p = _Parser(prog="aegoll", description="AEGL Phase 1 (deterministic)")
     p.add_argument("--policy", help="path to a policy bundle YAML")
     p.add_argument("--json", action="store_true", help="machine-readable output")
-    sub = p.add_subparsers(dest="command", required=True)
+    sub = p.add_subparsers(dest="command", required=True, parser_class=_Parser)
 
     ini = sub.add_parser("init", help="scaffold aegoll.yaml and a starter policy")
     ini.add_argument("--dir", help="where to write (default: here)")
@@ -545,6 +842,25 @@ def build_parser() -> argparse.ArgumentParser:
                    help="decide without journalling (uses in-memory history)")
     d.add_argument("--fixed-time", action="store_true", help="deterministic clock")
     d.set_defaults(func=cmd_decide)
+
+    rep = sub.add_parser("report", help="what was spent, what was refused, and why")
+    rep.add_argument("--config", help="path to aegoll.yaml or aegoll.json")
+    rep.add_argument("--limit", type=int, default=20, help="decisions to show")
+    rep.add_argument("--json", action="store_true", help="machine-readable output")
+    rep.set_defaults(func=cmd_report)
+
+    pex = sub.add_parser("policy", help="explain what a policy would do")
+    pex.add_argument("action", nargs="?", default="explain", choices=["explain"])
+    pex.add_argument("--config", help="path to aegoll.yaml or aegoll.json")
+    pex.add_argument("--json", action="store_true", help="machine-readable output")
+    pex.set_defaults(func=cmd_policy)
+
+    con = sub.add_parser("conformance", help="score journalled records against a profile")
+    con.add_argument("--profile", help="aegs-1 | aegs-2 | none (default: from config)")
+    con.add_argument("--config", help="path to aegoll.yaml or aegoll.json")
+    con.add_argument("--limit", type=int, default=10, help="non-conformant records to detail")
+    con.add_argument("--json", action="store_true", help="machine-readable output")
+    con.set_defaults(func=cmd_conformance)
 
     a = sub.add_parser("audit", help="verify the audit chain")
     a.add_argument("--tail", type=int, default=10)
@@ -607,11 +923,32 @@ def build_parser() -> argparse.ArgumentParser:
     pol = sub.add_parser("policies", help="list available policy bundles")
     pol.set_defaults(func=cmd_policies)
 
+    # --json on every subcommand, added here rather than on each parser by hand. A CLI
+    # without machine output is a CLI nobody scripts, and a hand-maintained list is how
+    # "every command" quietly becomes "most commands". Also accepted *before* the
+    # subcommand, because both spellings are what users actually type.
+    for name, parser in sub.choices.items():
+        if not any("--json" in a.option_strings for a in parser._actions):
+            parser.add_argument(
+                "--json", action="store_true", help="machine-readable output"
+            )
+
     return p
 
 
 def main() -> None:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+
+    # `aegoll --json report` and `aegoll report --json` must behave identically. argparse
+    # parses the global flag first and then lets the subparser's default overwrite it with
+    # False, so without this the pre-command spelling silently stopped working the moment
+    # per-command flags were added. Caught by a test rather than by a user.
+    if not getattr(args, "json", False):
+        raw = sys.argv[1:]
+        if "--json" in raw:
+            args.json = True
+
     sys.exit(args.func(args))
 
 
