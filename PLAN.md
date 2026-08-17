@@ -53,39 +53,50 @@ Irreversible once published. Nothing else starts until these are answers, not op
 
 ---
 
-## A1 — Port and rename ⬜
+## A1 — Port and rename ✅
 
 **`../x402` is read-only** — it is the frozen POC and nothing is moved out of it
 ([`../x402-REFERENCE.md`](../x402-REFERENCE.md) R1–R2). So this is a **port**: copy in, re-commit
 here, record provenance. `git log --follow` will not reach the prototype's commits, and
 that cost is accepted deliberately, with a provenance index as the mitigation.
 
-- [ ] A1.1 `PROVENANCE.md` created first, before any file arrives — every ported path, its source path, and source commit `e3e295b`
-- [ ] A1.2 Copy `../x402/aegl/aegl/` → `src/aegoll/` and commit it **faithfully, unchanged**, with trailer `Ported-from: Jayzilva/x402@e3e295b aegl/aegl/`
-- [ ] A1.3 Every subsequent change is a **separate commit after** the faithful copy. A port and a rewrite in one commit hides which is which
-- [ ] A1.4 `src/` layout is the target: `src/aegoll/`. Prevents the classic "tests pass against the source tree, package ships broken"
-- [ ] A1.5 Rename module `aegl` → `aegoll` throughout — imports, `pyproject.toml`, CLI entry point, docstrings
-- [ ] A1.6 Keep `AEGL` in *prose* everywhere. The layer is an AEGL; the package is `aegoll`. Do not sed the concept away
-- [ ] A1.7 `tests/` ported, **249 tests green** under the new name and layout — the number from [P2.1](../x402-REFERENCE.md) is the pass/fail bar for the port itself
-- [ ] A1.8 Delete the eleven 13-line re-export shims (`aegl/aegl/{audit,eiap,escalation,identity,intent,policy,risk,roi,treasury,trust}.py`) — they existed for an in-repo move and a fresh package does not need two import routes
-- [ ] A1.9 Re-run the purity test after deletion: `tests/test_no_llm.py` walks the tree, and the shims are exactly the shape that once made it pass while checking nothing
+- [x] A1.1 [`PROVENANCE.md`](PROVENANCE.md) created before any file arrived
+- [x] A1.2 `../x402/aegl/aegl/` copied in **verbatim** and committed unchanged — `41dbe48`
+- [x] A1.3 Every fix a separate commit after the faithful copy — `75b9ba5`, `926f50a`, `5a7c37d`, `bf63141`, `0049ce9`, `19a93c0`, `53c124a`
+- [x] A1.4 `src/` layout adopted — and it earned its keep in the first commit, see [F-A1](#f-a1--the-prototype-was-never-a-package--2026-08-17)
+- [x] A1.5 Module renamed `aegl` → `aegoll` across 46 files; class `Aegl` → `Aegoll`; CLI entry point, widget keys and `pyproject.toml` with it — `0049ce9`
+- [x] A1.6 `AEGL` left intact in prose everywhere
+- [x] A1.7 **267 tests green** from the source tree — the 249 baseline plus 18 new guards
+- [x] A1.8 The re-export shims deleted — **ten, not eleven** as this plan said. 13 internal import sites repointed across three import forms — `19a93c0`
+- [x] A1.9 Purity tests re-run and green. `test_no_llm.py` walks the tree, so it stayed honest through the deletion
 
 ### Discovered during the port — see [F-A1](#f-a1--the-prototype-was-never-a-package--2026-08-17)
 
 The package reaches outside itself in eleven places. Each gets its own commit so the diff
 reads as a fix rather than as churn.
 
-- [ ] A1.10 **Starter policies become package data** — `src/aegoll/policies/*.yaml`, resolved with `importlib.resources`, never with `Path(__file__).parents[n]`
-- [ ] A1.11 **AEGS schemas become vendored package data** — `src/aegoll/_schemas/`, with a provenance file naming the `aegs` commit they came from and a CI check that they have not drifted. Three engines currently reach into a sibling directory of the monorepo for them
+- [x] A1.10 **Starter policies are package data** — `src/aegoll/policies/*.yaml` via `importlib.resources` — `75b9ba5`
+- [x] A1.11 **AEGS schemas vendored** — `src/aegoll/_schemas/`, three of thirteen (only those an engine validates against; copying all would imply controls this package does not implement), with `_schemas/PROVENANCE.txt` naming the source commit — `926f50a`
+- [ ] A1.11a CI check that a vendored schema has not drifted from the standard at its pinned commit. **A validator running against a stale schema is worse than one that fails loudly** — the rule is written in `PROVENANCE.txt`, the enforcement is not built yet
 - [x] A1.12 ~~Move the schema read out of import time~~ — **already correct in the prototype.** Reads are lazy inside `load_schema()`, `import jsonschema` is local to the validating function, and absent `jsonschema` degrades to a clear message rather than an error. Nothing to do; recorded so the claim is not repeated
-- [ ] A1.13 **Delete the `.env` walk.** `config.py` resolves `.env` from `parents[2]`. A library that walks up the filesystem looking for dotenv files reads files the caller never offered it, and this one also handles BYOK keys. Keys come from the environment or from explicit config — never from a file the library went looking for
-- [ ] A1.14 **`.data/` becomes caller-controlled.** `runtime.py` writes the journal and sqlite history beside the package, i.e. into `site-packages`. Default to `./.aegoll/` relative to the working directory, overridable by `evidence.journal` in config
-- [ ] A1.15 **Remove the `x402_core` path-hack** from the rail adapter. It imports its dependency or fails with a clear message; it does not reach into a sibling repository
-- [ ] A1.16 **Update the four tests** asserting on `parents[1]/"aegl"` to the new layout — and make them assert on the *package* location rather than a hardcoded relative path, so the next layout change fails loudly instead of silently
-- [ ] A1.17 Add a test that **fails if any module resolves a path outside the package**. This is the check whose absence let all eleven survive
-- [ ] A1.18 Add a test that installs the built wheel into a clean environment and imports it. Source-tree tests cannot catch this class of bug at all
+- [x] A1.13 **The `.env` walk is gone** — `75b9ba5`. It ran at *import time* in two places, so `import aegl` read a file the caller never offered it and exported the contents into `os.environ`. Replaced by `load_env_file(path)`, which the caller names and which returns a dict rather than mutating the environment
+- [x] A1.14 **Runtime state is caller-controlled** — `./.aegoll/` relative to the working directory, not beside the package. Demonstrated against the installed wheel: `site-packages` stays clean — `bf63141`
+- [x] A1.15 **`x402_core` path-hack removed.** The adapter checks importability and names the extra to install — `bf63141`
+- [x] A1.16 **The four layout-dependent tests fixed** via `tests/conftest.py` — `package_dir()` resolves from `aegoll.__file__`, so the tests check the package that is actually importable — `5a7c37d`
+- [x] A1.17 **`tests/test_paths.py`** — nine guards: no upward walk from `__file__`, no `sys.path` mutation, no dotenv-style import, policies and schemas resolve inside the package, and importing exports nothing into `os.environ` — `bf63141`
+- [x] A1.18 **Wheel verified in a clean venv** — built, installed, suite run against the installed package, CLI exercised from an empty directory. Caught two real test bugs. `53c124a`
 
-**Exit:** 249 tests green **from an installed wheel**, `PROVENANCE.md` covers every ported path, no module named `aegl`, and no path resolved outside the package.
+**Exit:** ✅ **267 green from the source tree, 266 + 1 skip from the installed wheel.** `PROVENANCE.md` covers every ported path, no module named `aegl`, no path resolved outside the package, clean install pulls `PyYAML` alone.
+
+> **Found — the wheel test paid for itself immediately.** Neither failure it caught was in
+> the package; both were in my own tests, and neither was reproducible from the source tree.
+> Windows returned an 8.3 short path (`JAYATH~1`) from `importlib.resources` and the long
+> form from `__file__` — same file, unequal comparison — which only happens for a wheel
+> installed under a temp directory. And `test_advisor_picks_up_a_runtime_key` assumed the
+> `openai` SDK was importable, which it is not in a clean core install; `available()` was
+> correctly returning `False` for a reason the test did not mean. **A core that could not be
+> installed without a model SDK would have been the actual bug**, so the test was wrong to
+> assume one.
 
 ---
 

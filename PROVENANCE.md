@@ -25,7 +25,12 @@ commit — a port and a rewrite in one commit hides which is which.
 
 | Here | From `Jayzilva/x402` | Commit | Notes |
 |---|---|---|---|
-| _(nothing yet — [A1](PLAN.md))_ | | | |
+| `src/aegoll/` | `aegl/aegl/` | `41dbe48` | 49 modules, 10 engines. Renamed `aegl` → `aegoll` in `0049ce9`; ten top-level re-export shims deleted in `19a93c0` |
+| `src/aegoll/policies/` | `aegl/policies/` | `41dbe48` | Moved inside the package as package data in `75b9ba5` — the prototype resolved them from a sibling directory |
+| `src/aegoll/_schemas/` | `aegs/schemas/` | `926f50a` | Three of thirteen, vendored. See `_schemas/PROVENANCE.txt` |
+| `tests/` | `aegl/tests/` | `41dbe48` | 249 tests, all green. 18 guards added since |
+| `pyproject.toml` | `aegl/pyproject.toml` | `41dbe48` | Rewritten for a real distribution in `0049ce9` |
+| `docs/eval.md` | `aegl/EVAL.md` | `41dbe48` | |
 
 ## Planned
 
@@ -34,13 +39,10 @@ destination-side view.
 
 | Here | From | Task |
 |---|---|---|
-| `src/aegoll/` | `aegl/aegl/` (engines, domain, store, authorize, record, config, clock, runtime) | [A1.2](PLAN.md) |
-| `src/aegoll/advisors/` | `aegl/aegl/advisors/` — 4 backends + BYOK key handling | [A6.6](PLAN.md) |
-| `src/aegoll/adapters/x402.py` | `aegl/aegl/adapters/x402_python.py` | [A7.6](PLAN.md) |
-| `src/aegoll/cli.py` | `aegl/aegl/cli.py` | [A5.1](PLAN.md) |
-| `policies/` | `aegl/policies/{default,strict}.yaml` | [A3.9](PLAN.md) |
-| `tests/` | `aegl/tests/` — 249 tests | [A1.7](PLAN.md) |
 | `tests/redteam/` | `security/redteam/` — 18 attacks | [A11.1](PLAN.md) |
+
+Everything else in the A1 manifest landed with the package in `41dbe48` — `advisors/`,
+`adapters/`, `cli.py` and the engine families all came across as part of `aegl/aegl/`.
 
 ## Deliberately not ported
 
