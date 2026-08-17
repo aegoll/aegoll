@@ -24,7 +24,9 @@ from pathlib import Path
 
 import pytest
 
-PACKAGE = Path(__file__).resolve().parents[1] / "aegl"
+from conftest import package_dir
+
+PACKAGE = package_dir()
 ENGINES = PACKAGE / "engines"
 
 FAMILIES = {

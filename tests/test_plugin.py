@@ -358,7 +358,9 @@ def test_the_plugin_imports_no_framework_and_no_llm_sdk():
         "openai", "anthropic", "groq", "streamlit",
         "x402_agent", "langgraph_x402", "adk_x402",
     }
-    source = Path(__file__).resolve().parents[1] / "aegl" / "plugin.py"
+    from conftest import module_source
+
+    source = module_source("plugin.py")
     offenders = []
     for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
         names = []

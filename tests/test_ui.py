@@ -356,14 +356,15 @@ def test_a_skipped_advisor_explains_the_economics(ui, st, governor):
 def test_the_panel_imports_no_agent_and_no_framework():
     """One panel, four cockpits, and it must not know which one it is in."""
     import ast
-    from pathlib import Path
+
+    from conftest import module_source
 
     banned = {
         "langgraph", "langchain_core", "langchain_openai", "google.adk",
         "x402_agent", "langgraph_x402", "adk_x402", "x402_core",
         "openai", "anthropic", "groq",
     }
-    source = Path(__file__).resolve().parents[1] / "aegl" / "ui.py"
+    source = module_source("ui.py")
     offenders = []
     for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
         names = []
@@ -381,9 +382,10 @@ def test_the_panel_imports_no_agent_and_no_framework():
 def test_the_panel_never_touches_a_governor():
     """It renders a dict. Taking a `Governor` would couple every host to AEGL."""
     import ast
-    from pathlib import Path
 
-    source = Path(__file__).resolve().parents[1] / "aegl" / "ui.py"
+    from conftest import module_source
+
+    source = module_source("ui.py")
     tree = ast.parse(source.read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module:

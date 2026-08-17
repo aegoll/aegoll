@@ -280,13 +280,14 @@ def test_no_provider_catalogue_renders_nothing(ui_keys, st, tmp_path):
 def test_the_panel_imports_no_agent_and_no_framework():
     """One key panel, four hosts, and it must not know which one it is in."""
     import ast
-    from pathlib import Path
+
+    from conftest import module_source
 
     banned = {
         "langgraph", "langchain_core", "google.adk", "x402_agent",
         "langgraph_x402", "adk_x402", "x402_core", "cockpit_kit",
     }
-    source = Path(__file__).resolve().parents[1] / "aegl" / "ui_keys.py"
+    source = module_source("ui_keys.py")
     offenders = []
     for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
         names = []
