@@ -1,0 +1,23 @@
+[project]
+name = "aegl"
+version = "0.1.0"
+description = "Autonomous Economic Governance Layer (Phase 1: deterministic, zero-LLM) above x402"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "streamlit>=1.40",
+]
+
+[project.optional-dependencies]
+# Only needed for the live x402 adapter; the engines themselves need nothing.
+x402 = ["x402[evm,httpx]>=2.18.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aegl = "aegl.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["aegl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

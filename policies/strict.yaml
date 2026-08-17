@@ -1,0 +1,161 @@
+# A deliberately tighter bundle, for A/B comparison against `default`.
+#
+# Same engines, same code, different numbers -- which is the point: governance
+# behaviour should be configuration, not code. Swapping bundles in the cockpit's
+# sidebar changes verdicts without touching a Python file.
+#
+# Differences from default:
+#   * ten times smaller envelopes across the board
+#   * micro auto-approve requires near-zero risk (0.10 rather than 0.35), so an
+#     unfamiliar vendor no longer clears it -- novelty alone scores ~0.20
+#   * risk tolerance drops from 0.6 to 0.35
+#   * no earned authority: limits never rise, however good the record
+
+version: 1
+name: strict
+
+config:
+  treasury:
+    balance_usd: "50"
+    per_transaction_usd: "1"
+    daily_usd: "5"
+    monthly_usd: "30"
+    per_vendor_30d_usd: "10"
+    per_resource_30d_usd: "5"
+    emergency_reserve_usd: "5"
+    velocity_60s: 3
+    velocity_1h: 20
+    earned_authority: []      # authority is never earned here
+
+  # The internal channel (LLM tokens). Tighter than default: half the per-run
+  # budget and a smaller lifetime cap.
+  #
+  # This block is not optional. Without it -- and without the channel rules below
+  # -- an internal authorization falls through to `review-unknown-value` and every
+  # run is refused before it starts, because there is no declared expected value
+  # for a `llm:<model>` resource and there never will be.
+  treasury_internal:
+    balance_usd: "0.15"
+    per_transaction_usd: "0.02"
+    daily_usd: "0.06"
+    monthly_usd: "0.15"
+    per_vendor_30d_usd: "0.15"
+    per_resource_30d_usd: "0.10"
+    emergency_reserve_usd: "0.01"
+    velocity_60s: 2
+    velocity_1h: 15
+    earned_authority: []
+
+  trust:
+    cold_start: 0.10          # even less benefit of the doubt
+    weight_success: 0.45
+    weight_volume: 0.30
+    weight_age: 0.25
+    penalty_dispute: 0.80
+    volume_saturation: 50     # trust takes much longer to build
+    age_saturation_days: 90
+
+  risk:
+    weight_amount: 0.25
+    weight_novelty: 0.25
+    weight_zscore: 0.20
+    weight_velocity: 0.15
+    weight_reprice: 0.10
+    weight_failures: 0.05
+    amount_saturation_usd: "100"
+    zscore_saturation: 3.0
+    reprice_ratio_flag: 2.0
+    high_risk_threshold: 0.35
+
+  roi:
+    default_confidence: 0.5
+    expected_value_usd:
+      "/market/snapshot": "0.02"
+      "/market/signal": "0.05"
+
+  eiap:
+    ai_cost_usd: "0.004"
+    base_p_flip: 0.01
+    max_p_flip: 0.05
+    small_model_exposure_usd: "0.5"
+    large_model_exposure_usd: "50"
+
+rules:
+  - id: deny-sanctioned
+    priority: 0
+    when:
+      vendor.sanctioned: true
+    then: REJECT
+    reason: sanctioned counterparty
+
+  - id: deny-over-balance
+    priority: 5
+    when:
+      budget.ok: false
+      budget.binding: { in: ["balance", "emergency_reserve"] }
+    then: REJECT
+    reason: insufficient treasury balance
+
+  - id: reject-budget-exhausted
+    priority: 10
+    when:
+      budget.ok: false
+    then: REJECT            # strict rejects outright where default reviews
+    reason: outside a budget envelope
+
+  # --- internal channel: the agent's own token spend --------------------
+  # Must sit above `review-unknown-value` (40) and `review-new-vendor` (30):
+  # inference has no declared expected value and the Anthropic API is not a
+  # counterparty those rules were written for. Budget is the only real constraint.
+  - id: internal-approve-within-budget
+    priority: 8
+    when:
+      channel: internal
+      budget.ok: true
+    then: APPROVE
+    reason: token budget available for this run
+
+  - id: internal-reject-over-budget
+    priority: 9
+    when:
+      channel: internal
+      budget.ok: false
+    then: REJECT
+    reason: token budget exhausted -- the run must not start
+
+  - id: escalate-any-risk
+    priority: 20
+    when:
+      risk.score: { gte: 0.35 }
+    then: ESCALATE
+    reason: risk score above the strict tolerance
+
+  - id: review-new-vendor
+    priority: 30
+    when:
+      vendor.is_new: true
+    then: REVIEW            # any unknown vendor needs a human, at any amount
+    reason: no settled history with this counterparty
+
+  - id: review-unknown-value
+    priority: 40
+    when:
+      roi.known: false
+    then: REVIEW
+    reason: no declared expected value
+
+  - id: auto-approve-trivial
+    priority: 100
+    when:
+      amount_usd: { lt: 0.10 }
+      risk.score: { lt: 0.10 }
+      trust.score: { gte: 0.5 }
+      budget.ok: true
+    then: APPROVE
+    reason: trivial amount, known vendor, negligible risk
+
+  - id: default-review
+    priority: 9999
+    when: {}
+    then: REVIEW
+    reason: no rule matched; defaulting to review

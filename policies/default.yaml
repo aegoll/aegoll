@@ -1,0 +1,206 @@
+# AEGL Phase 1 default policy bundle.
+#
+# Config and rules share one content hash, recorded in every audit entry, so a
+# decision can always be traced to the exact numbers that produced it.
+#
+# All amounts are USD strings and are converted to integer atomic USDC units
+# (6 decimals) at load time. No float touches the money path.
+
+version: 1
+name: default
+
+config:
+  treasury:
+    balance_usd: "500"
+    per_transaction_usd: "10"
+    daily_usd: "50"
+    monthly_usd: "300"
+    per_vendor_30d_usd: "100"
+    per_resource_30d_usd: "50"
+    emergency_reserve_usd: "10"
+    velocity_60s: 10
+    velocity_1h: 100
+
+    # Earned authority (research question 12): a clean settlement record raises
+    # the per-transaction ceiling. Any dispute revokes it immediately.
+    earned_authority:
+      - settled_at_least: 10
+        per_tx_multiplier: 1.5
+      - settled_at_least: 50
+        per_tx_multiplier: 2.0
+      - settled_at_least: 200
+        per_tx_multiplier: 3.0
+
+  # The internal channel: the agent buying its own thinking (LLM tokens, real USD
+  # on an API key). Separate envelopes from the external channel above -- different
+  # currency, different counterparty, different failure mode. Only the keys named
+  # here override; anything omitted falls back to the block above.
+  #
+  # Sized to match agent-py's own defaults: $0.04 per run, $0.25 lifetime.
+  treasury_internal:
+    balance_usd: "0.25"           # the lifetime testing cap
+    per_transaction_usd: "0.04"   # one agent run's token budget
+    daily_usd: "0.15"
+    monthly_usd: "0.25"
+    per_vendor_30d_usd: "0.25"    # a single vendor: the Anthropic API
+    per_resource_30d_usd: "0.20"  # per model -- resource is `llm:<model-id>`
+    emergency_reserve_usd: "0.01"
+    velocity_60s: 3               # three runs a minute is already suspicious
+    velocity_1h: 30
+    earned_authority: []          # a run's budget never self-raises
+
+  trust:
+    cold_start: 0.25          # a new vendor is deliberately NOT trusted
+    weight_success: 0.45
+    weight_volume: 0.30
+    weight_age: 0.25
+    penalty_dispute: 0.60
+    volume_saturation: 20     # settled txs at which volume term maxes out
+    age_saturation_days: 30
+
+  risk:
+    weight_amount: 0.25
+    weight_novelty: 0.20
+    weight_zscore: 0.20
+    weight_velocity: 0.15
+    weight_reprice: 0.10
+    weight_failures: 0.10
+    amount_saturation_usd: "1000"
+    zscore_saturation: 4.0
+    reprice_ratio_flag: 3.0   # vendor charging 3x its own historical price
+    high_risk_threshold: 0.6
+
+  roi:
+    # Operator-declared expected value per resource. Anything absent is reported
+    # as genuinely unknown rather than guessed -- estimating value from a service
+    # description is Phase 2's job.
+    default_confidence: 0.5
+    expected_value_usd:
+      "/market/snapshot": "0.02"
+      "/market/signal": "0.05"
+      "/market/ohlcv/BTC-USD": "0.01"
+      "/market/ohlcv/ETH-USD": "0.01"
+      "/market/ohlcv/TSLA": "0.01"
+      "/market/ohlcv/AAPL": "0.01"
+      "/market/ohlcv/USDC-USD": "0.01"
+
+  eiap:
+    # Measured: one Haiku 4.5 analysis call at ~2k in / 400 out tokens.
+    ai_cost_usd: "0.004"
+    base_p_flip: 0.01
+    max_p_flip: 0.05
+    small_model_exposure_usd: "1"
+    large_model_exposure_usd: "100"
+
+# Rules are evaluated in priority order; the first match is terminal.
+# A rule can only ever NARROW a verdict that treasury or risk already set --
+# never widen it. Enforced in authorize.py, not here.
+rules:
+  - id: deny-sanctioned
+    priority: 0
+    when:
+      vendor.sanctioned: true
+    then: REJECT
+    reason: sanctioned counterparty
+
+  - id: deny-over-balance
+    priority: 5
+    when:
+      budget.ok: false
+      budget.binding: { in: ["balance", "emergency_reserve"] }
+    then: REJECT
+    reason: insufficient treasury balance
+
+  - id: review-budget-exhausted
+    priority: 10
+    when:
+      budget.ok: false
+    then: REVIEW
+    reason: outside a budget envelope
+
+  # --- internal channel: the agent's own token spend --------------------
+  # Priority 8/9 places these *below* deny-over-balance (5) but *above* the
+  # generic review-budget-exhausted (10). An exhausted token budget must REJECT,
+  # not REVIEW: there is no human to ask mid-run, and starting a run that cannot
+  # finish wastes the very budget that is already short.
+  # Note there is no risk-escalation path here: paying Anthropic for tokens has
+  # no counterparty risk worth modelling, so the binding constraint is budget.
+
+  - id: internal-approve-within-budget
+    priority: 8
+    when:
+      channel: internal
+      budget.ok: true
+    then: APPROVE
+    reason: token budget available for this run
+
+  - id: internal-reject-over-budget
+    priority: 9
+    when:
+      channel: internal
+      budget.ok: false
+    then: REJECT
+    reason: token budget exhausted -- the run must not start
+
+  - id: escalate-high-risk
+    priority: 20
+    when:
+      risk.score: { gte: 0.6 }
+    then: ESCALATE
+    reason: risk score above tolerance
+
+  - id: review-untrusted-vendor-nontrivial
+    priority: 30
+    when:
+      trust.score: { lt: 0.4 }
+      amount_usd: { gte: 1.0 }
+    then: REVIEW
+    reason: low vendor trust for a non-trivial amount
+
+  - id: review-large
+    priority: 40
+    when:
+      amount_usd: { gte: 100.0 }
+    then: REVIEW
+    reason: amount at or above the review threshold
+
+  - id: review-negative-roi
+    priority: 50
+    when:
+      roi.known: true
+      roi.ratio: { lt: 1.0 }
+      amount_usd: { gte: 1.0 }
+    then: REVIEW
+    reason: expected value below cost
+
+  # Risk tolerance belongs here, not in the risk engine: the engine measures how
+  # risky a transaction inherently is, policy decides how much of that is
+  # acceptable at a given exposure. Below $1 the worst case is losing under a
+  # dollar, so an unfamiliar vendor (novelty alone scores ~0.20) is tolerable --
+  # while a velocity burst or a repriced endpoint still pushes past 0.35 and
+  # falls through to review.
+  - id: auto-approve-micro
+    priority: 100
+    when:
+      amount_usd: { lt: 1.0 }
+      risk.score: { lt: 0.35 }
+      budget.ok: true
+    then: APPROVE
+    reason: micro-transaction inside all envelopes
+
+  - id: approve-trusted-moderate
+    priority: 200
+    when:
+      amount_usd: { lt: 25.0 }
+      trust.score: { gte: 0.7 }
+      risk.score: { lt: 0.4 }
+      budget.ok: true
+    then: APPROVE
+    reason: trusted vendor, moderate amount
+
+  # Nothing matched: default to human review rather than silent approval.
+  - id: default-review
+    priority: 9999
+    when: {}
+    then: REVIEW
+    reason: no rule matched; defaulting to review
