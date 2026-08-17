@@ -119,7 +119,9 @@ by you.
 
 ## Documentation
 
+- [`docs/quickstart.md`](docs/quickstart.md) — governing an agent from nothing, in about five minutes
 - [`docs/api-surface.md`](docs/api-surface.md) — the public API, and what is deliberately not public
+- [`docs/adapters.md`](docs/adapters.md) — framework and rail adapters, and what is verified about each
 - [`PLAN.md`](PLAN.md) — the build plan, as tracked checkboxes
 - [`PROVENANCE.md`](PROVENANCE.md) — what was ported from the prototype, and from which commit
 

@@ -119,12 +119,35 @@ def test_streamlit_is_not_declared_anywhere():
     assert not [d for d in everything if "streamlit" in d.lower()], everything
 
 
+#: Extras whose purpose is the build itself, so no user-facing document explains them.
+_TOOLING_EXTRAS = {"dev"}
+
+
 def test_every_extra_has_a_stated_purpose():
-    """An extra nobody can explain is an extra nobody should install."""
+    """An extra nobody can explain is an extra nobody should install.
+
+    Checked against the docs rather than a hardcoded list. A list has to be edited in step with
+    `pyproject.toml`, and the edit that keeps a test passing is not the edit that explains a new
+    dependency to whoever is deciding whether to install it -- so this asserts the actual claim:
+    every extra a user could type is named in a document they can read.
+    """
     extras = _project()["project"].get("optional-dependencies", {})
-    assert set(extras) == {"schema", "x402", "advisors", "dev"}, sorted(extras)
+    assert extras, "no extras declared at all"
+
+    docs = package_dir().parents[1] / "docs"
+    prose = "\n".join(
+        [p.read_text(encoding="utf-8") for p in sorted(docs.glob("*.md"))]
+        + [(package_dir().parents[1] / "README.md").read_text(encoding="utf-8")]
+    )
+
     for name, deps in extras.items():
         assert deps, f"extra {name!r} declares nothing"
+        if name in _TOOLING_EXTRAS:
+            continue
+        assert f"aegoll[{name}]" in prose, (
+            f"extra {name!r} is installable and undocumented: no document mentions "
+            f"`aegoll[{name}]`. Whoever is deciding whether to install it has nothing to read."
+        )
 
 
 # --- the imported surface --------------------------------------------------

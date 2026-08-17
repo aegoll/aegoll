@@ -219,6 +219,7 @@ defending against nothing — whoever can truncate the journal can rewrite the f
 | [`docs/cli.md`](cli.md) | every command, every flag |
 | [`docs/custom-policies.md`](custom-policies.md) | writing your own rules, and the two extension points |
 | [`docs/api-surface.md`](api-surface.md) | the public API, and what is deliberately not public |
+| [`docs/adapters.md`](adapters.md) | framework and rail adapters, and writing your own |
 | [`docs/advisors.md`](advisors.md) | optional models, and why they can only ever tighten |
 | [the standard](https://github.com/aegoll/aegs) | AEGS: the spec, its test vectors, and the conformance suite |
 

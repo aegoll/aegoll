@@ -12,6 +12,20 @@ and hides fixes tells a reader what was added and not what was wrong.
 
 ### Added
 
+- **The Python API of [`docs/api-surface.md`](docs/api-surface.md) §3 exists.** `Governor.load()`,
+  `authorize()`, `settle()`, `decide()`, `declare_intent()`, `register_identity()`, `wrap()`,
+  `report()`, `budget()`, `decisions()`, `verify()`, context manager. It was specified before the
+  code and then never built, so `from aegoll import Governor` returned the internal rules
+  evaluator and the README's own opening snippet raised `AttributeError` on its third line. The
+  evaluator is now `RuleEngine`, which is what it is.
+- **`Decision.attributed_control` and `Decision.reason`** — which control decided, and the reason
+  that carried the verdict rather than the first one logged. Both read the same projection
+  AEGS-CONF scores, so a report, a conformance run and a decision cannot disagree.
+- **Framework adapters as extras: `aegoll[claude]`, `aegoll[adk]`.** Plus `RunGuard`, the
+  three-call contract they are both built from, which imports nothing and needs no extra — an
+  agent on a framework with no adapter here can still be governed. The rail contract
+  (`PaymentClient`) is kept deliberately separate; the reasoning is in
+  [`docs/adapters.md`](docs/adapters.md), and it comes down to AP2 needing one and not the other.
 - **`aegoll report --html [-o PATH]`** — the report as one self-contained HTML file. Four
   panels: Policy (*what will this do?*), Envelopes (*how much is left?*), Decisions (*why did
   my agent stop?*), Evidence (*can I trust this record?*). No server, no port, no listener, and
@@ -38,6 +52,20 @@ and hides fixes tells a reader what was added and not what was wrong.
   A governance layer quietly enforcing a policy other than the one on disk is worse than one
   that fails to start. `Config.policy()` already applied the right precedence; eleven call
   sites shared a helper that never asked it.
+- **Settling for more than was authorised consumed the authorised amount.** `record_settlement`
+  journalled the settled figure as evidence and then called `mark_settled()` without it, so
+  `transactions.amount_atomic` kept the quote — and every window sum reads that column. A `$0.05`
+  authorisation settled as `$5.00` consumed **`$0.05`**. Under-counting is the direction that
+  matters: a cumulative envelope can be walked straight through by overspending at settlement,
+  with the daily ceiling seeing a hundredth of the money that moved. Both figures are now kept, so
+  `authorised 0.05, settled 5.00` stays visible as the discrepancy it is.
+- **Evidence location was frozen at import time.** `DATA_DIR = Path.cwd() / ".aegoll"` was
+  evaluated when the module loaded and captured in `Paths.under()`'s default, so a process that
+  changed directory kept writing to the journal it started with — and two governors loaded from
+  different directories shared one, meaning **one agent's spending consumed the other's
+  envelopes**.
+- **Revoking an already-revoked intent returned `True`**, telling a caller it had just withdrawn
+  authority that was withdrawn long ago.
 - **`evidence: journal:` is honoured.** It had no reader anywhere — a user could point it at
   `logs/spend.jsonl`, get no error, and find their evidence in `./.aegoll` instead.
 - **Delegation is clamped, not merely checked** (AEGS-0.1-ID-4). A delegate that declared *no*
@@ -83,8 +111,12 @@ this:
   no amount of tightening an envelope produces one.
 - **AML screening is a schema with no engine behind it.** No list, no matching, no jurisdiction
   model. No regulatory compliance is claimed or sought.
-- **The Python API of `docs/api-surface.md` is not fully implemented.** The CLI is the stable
-  surface for now.
+- **The framework adapters are not verified against the real SDKs.** Both are tested against
+  fakes with nothing installed, which is deliberate — a contract exercised only with an SDK
+  present is a contract nobody checks. But it means an SDK that moves a hook will break the
+  integration without breaking these tests. The hook shapes come from the proof-of-concept, where
+  all three frameworks ran end to end, and end-to-end runs belong in `aegoll-integrations`, which
+  installs them. See [`docs/adapters.md`](docs/adapters.md).
 
 ## [0.1.0] — unreleased
 

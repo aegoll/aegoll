@@ -41,6 +41,15 @@ schema = ["jsonschema>=4.20"]
 # The x402 payment rail. The engines need none of it.
 x402 = ["x402[evm,httpx]>=2.18.0"]
 
+# Framework adapters. Each governs the *internal* channel -- the tokens an agent
+# burns thinking -- and each is optional because nobody pays for a dependency they
+# do not use. The adapters import nothing at module level, so `aegoll.adapters.base`
+# works with no extra installed at all; these pin the SDK the adapter is written
+# against so a version that moves the hook is a resolvable conflict rather than an
+# AttributeError at run time.
+claude = ["claude-agent-sdk>=0.1"]
+adk = ["google-adk>=1.0"]
+
 # Advisory models. Never in the decision path -- see docs/api-surface.md §5 and
 # the clamp in eiap.py. Each backend is separately installable.
 advisors = ["anthropic>=0.40", "openai>=1.50", "google-genai>=0.3", "groq>=0.13"]

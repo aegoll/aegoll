@@ -268,7 +268,7 @@ either to weaken the layer. 350 tests, AEGS-CONF 7/7.
 
 ---
 
-## A7 — Framework adapters, step by step ⬜
+## A7 — Framework adapters, step by step 🔨
 
 Optional extras. Nobody pays for a dependency they do not use, and **the core never
 imports a framework**.
@@ -276,18 +276,18 @@ imports a framework**.
 Order is by verified evidence, not by popularity: Claude SDK and Google ADK are the
 two verified end-to-end in the prototype.
 
-- [ ] A7.1 Adapter contract in `src/aegoll/adapters/base.py` — duck-typed, documented, testable without any framework installed
-- [ ] A7.2 `aegoll[claude]` — Claude Agent SDK adapter
-- [ ] A7.3 `aegoll[adk]` — Google ADK adapter
+- [x] A7.1 [`adapters/base.py`](src/aegoll/adapters/base.py) — **two** contracts, not one. `RunGuard` is the framework hook (three calls, internal channel); `PaymentClient` is the rail contract (external channel). Both duck-typed, both exercised with fakes and **no framework installed** — a contract that needs a real SDK present is a contract nobody checks
+- [x] A7.2 `aegoll[claude]` — [`adapters/claude.py`](src/aegoll/adapters/claude.py). The SDK **already has** a cost ceiling, so the adapter's job is making two ceilings agree: `options_for()` returns the **tighter** and never raises the caller's own `max_budget_usd`. What it adds is what one per-run number cannot express — cumulative budget, attributed evidence, and refusal *before* the run rather than a stop with tokens already spent
+- [x] A7.3 `aegoll[adk]` — [`adapters/adk.py`](src/aegoll/adapters/adk.py). The opposite case: ADK caps `max_llm_calls`, which is a **step** ceiling, and one long-context call can cost more than fifty short ones. Here `should_stop()` is not a second opinion, it is the only thing watching money. `run_config_for()` leaves the step ceiling alone rather than deriving it — the two bound different things and neither substitutes
 - [ ] A7.4 `aegoll[langgraph]` — LangGraph adapter
 - [ ] A7.5 `aegoll[crewai]` — CrewAI adapter (new; no prototype precedent, so budget discovery time)
 - [ ] A7.6 `aegoll[x402]` — the payment **rail** adapter. Migrate `adapters/x402_python.py` (245 LOC)
 - [ ] A7.7 Rail adapter contract separated from framework adapter contract — they are different boundaries and merging them will hurt when AP2 arrives
-- [ ] A7.8 Test: **no adapter is importable from the core**, and the core test suite passes with zero extras installed
-- [ ] A7.9 Test: the duck-typed governor contract — a fake framework object satisfies it, proving the adapter is not the coupling
-- [ ] A7.10 Carry the prototype's inverted-dependency rule: an agent does not import the governor; the governor wraps the agent. A test fails if that reverses — otherwise "plugin" and "dependency" are indistinguishable
+- [x] A7.8 Both checked. No adapter module imports its framework (AST walk, so a docstring naming an SDK does not fail while an import would), and `import aegoll` pulls in **no** adapter — asserted in a **subprocess**, because by the time a test file has run its own imports an in-process check passes regardless
+- [x] A7.9 A fake framework that knows nothing about `aegoll` beyond the three calls runs governed end to end. The adapter is not the coupling: an agent on a framework with no adapter here is governed by using `RunGuard` directly, which imports nothing
+- [x] A7.10 Carried, and now stated as a *direction of control* rather than only an import rule: a framework **calls** the guard, whereas a rail adapter is **called by** the agent. That asymmetry is why the two contracts stay separate — a test fails if their members start to overlap
 
-**Exit:** four framework adapters and one rail adapter, each optional, core clean.
+**Exit:** 🔨 **two** framework adapters (the two with verified prototype evidence) and one rail adapter, each optional, core clean — 29 tests, all passing with **no SDK installed**. LangGraph, CrewAI and the rail-contract migration (A7.4–A7.6) remain.
 
 ---
 
@@ -310,18 +310,18 @@ against a spec rather than against itself.
 
 ---
 
-## A9 — Publish 0.1.0 ⬜
+## A9 — Publish 0.1.0 🔨
 
-- [ ] A9.1 `pyproject.toml` complete — classifiers, urls, readme, licence, keywords
+- [x] A9.1 `pyproject.toml` complete — classifiers, urls, readme, licence, keywords, and six extras. Each extra must be **documented**: the guard that used to compare against a hardcoded set now fails an extra no document mentions, because the edit that keeps a hardcoded list passing is not the edit that explains a dependency to whoever is installing it
 - [ ] A9.2 GitHub Actions: test matrix on 3.11/3.12/3.13, Windows and Linux (the prototype was developed on Windows; do not discover a path bug at install time)
-- [ ] A9.3 Build with `python -m build`; check with `twine check`
-- [ ] A9.4 TestPyPI upload, then install into a clean venv and run the quickstart from the published artifact
-- [ ] A9.5 `README.md` — the governed-budget claim in the first sentence, the standard in the second paragraph. Do **not** lead with "spend cap": the x402 SDKs now have one, and a reader who knows that will bounce. Lead with envelopes, attribution and evidence ([F3](../UPSTREAM-x402.md))
+- [x] A9.3 `python -m build` clean, `twine check` **PASSED** on both wheel and sdist. Package data all present (13 files: policies, `_schemas`, `_profiles`), and the 393 KB of vendored vectors correctly **excluded** — they are read by the test suite, and nothing in a user's site-packages needs them
+- [~] A9.4 **Clean-venv install and quickstart verified from the built wheel** — install pulls `aegoll` + `PyYAML` and nothing else, all five exit codes correct, the README snippet runs verbatim, `report --html` writes a self-contained page. The **TestPyPI upload itself is blocked**: no token in this environment. Everything it would prove has been proven against the same artifact locally
+- [x] A9.5 `README.md` leads with the governed-budget claim and a comparison table against a per-payment cap. Its opening snippet **now runs** — it did not, and that is [F-A12](#f-a12--the-documented-api-did-not-exist--2026-08-17)
 - [ ] A9.5a `docs/vs-sdk-spend-controls.md` — an honest side-by-side against x402's own `maxAmountPerPayment`. State what theirs does well and where it stops. A comparison that pretends the alternative is nothing is not read twice
 - [ ] A9.5b Test the composition, not just the claim: `aegoll` running **with** SDK spend controls enabled, where their per-payment cap is one envelope among ours ([B3.6](../aegs/PLAN.md))
-- [ ] A9.6 `docs/quickstart.md` — governs an agent in under five minutes, no prior knowledge assumed
-- [ ] A9.7 `CHANGELOG.md` started at 0.1.0
-- [ ] A9.8 State plainly that the API may change before 1.0, and mean it
+- [x] A9.6 [`docs/quickstart.md`](docs/quickstart.md) — install to verified evidence in seven steps, every command **run from the installed wheel** rather than from the source tree. That is how both config bugs were found, and it is also where the Git Bash `MSYS_NO_PATHCONV` trap is documented: a resource starting with `/` is silently rewritten into the evidence record, which is worse than an error
+- [x] A9.7 [`CHANGELOG.md`](CHANGELOG.md), with a **Fixed** section that names each defect and a **Known limitations** section stated up front rather than buried. A changelog that lists features and hides fixes tells a reader what was added and not what was wrong
+- [x] A9.8 Stated in the README, the CHANGELOG header and the quickstart's closing section — the last one deliberately placed where a reader is about to point this at a wallet
 - [ ] A9.9 Trusted publishing (OIDC) configured — no long-lived PyPI token in a secret
 - [ ] A9.10 Publish `0.1.0`
 - [ ] A9.11 Sealed experiment record for the packaged overhead, since packaging changed the import graph and the prototype's numbers were measured pre-split
@@ -330,7 +330,7 @@ against a spec rather than against itself.
 
 ---
 
-## A10 — Local visual output ⬜
+## A10 — Local visual output 🔨
 
 The vision: *"in the next version this can apply an optional localhost app giving
 visual output"*. Deliberately after the CLI, deliberately not Streamlit — and split in
@@ -354,21 +354,21 @@ A generated file, not a server. ~80% of the value at ~10% of the risk: no port, 
 listener, no auth surface, and it is an artifact you can send to someone. A generated
 file is not a localhost app, so pulling this forward does not contradict the vision.
 
-- [ ] A10a.1 One HTML template as package data, rendered from `Report` — no network, no CDN font, no analytics, no outbound request of any kind. Self-contained or it is not auditable
-- [ ] A10a.2 `aegoll report --html [-o PATH]`, defaulting to stdout so it pipes
-- [ ] A10a.3 **Four panels**, each answering one question an agent developer has at 2am:
+- [x] A10a.1 [`html.py`](src/aegoll/html.py) renders from `Report`. Self-containment is **tested**, not intended: the suite greps the rendered bytes for absolute URLs, `src` attributes, `<link>`, `@import` and every call that can reach the network. Written as a module rather than a template file — the CSS and JS are inline because they must be, so a separate template would be a file that only ever gets embedded
+- [x] A10a.2 `aegoll report --html [-o PATH]`, stdout by default so `> spend.html` works. `--html` with `--json` is a usage error rather than one silently winning, and `-o` without `--html` is too — accepting it and ignoring it would discard the file the user asked for
+- [x] A10a.3 **Four panels**, each answering one question an agent developer has at 2am:
       **Policy** — which pack, its hash, rules in priority order, in plain terms → *what will this do?* ·
       **Envelopes** — both channels, every limit, headroom, **which one binds** → *how much is left?* ·
       **Decisions** — newest first, with the **attributed control** → *why did my agent stop?* ·
       **Evidence** — chain length and state → *can I trust this record?*
-- [ ] A10a.4 Absent limits render as **absent**, never as `0`. Invariant 5, in the one place a reader will misread it fastest
-- [ ] A10a.5 The **truncation caveat is printed on the page**, next to the chain state. A page that says "VALID" without it overstates what a hash chain proves
-- [ ] A10a.6 Keys never rendered; keep the vendor-safe projection `report()` already applies
-- [ ] A10a.7 Test: the rendered HTML contains no `http://`, `https://` or `//cdn` reference
-- [ ] A10a.8 Test: a report containing a key-shaped string does not render it
-- [ ] A10a.9 Test: golden-file render, so a template change that drops the attributed-control column fails
+- [x] A10a.4 Absent limits render as **absent**, never `0`. Rendering an unset limit as `$0.00` would state the *tightest possible* ceiling where there is none — exactly inverted
+- [x] A10a.5 The truncation caveat is on the page **next to the chain state**, and a test asserts that ordering: in a footnote below everything it would be technically present and practically absent
+- [x] A10a.6 The renderer prints what it is given and filters nothing — filtering belongs in `reporting.build`, where the projection is documented, not scattered through a template. Tested from the other side: `Report`'s wire format carries no `controller`, `wallets` or `spendingLimits`, so the page cannot leak what it is never handed
+- [x] A10a.7 Done, and wider than asked: also no `src` attribute, no `<link>`, no `@import`, no `fetch`/`XHR`/`WebSocket`/`sendBeacon`/`EventSource`. A relative `href="style.css"` has no protocol and would have passed the narrow check while making the file useless once mailed
+- [x] A10a.8 Reframed and tested as the property that actually holds: no key-shaped *field* exists in `Report`, and the test fails if one is ever added. A renderer guessing which strings are secrets would be the wrong mechanism in the wrong place
+- [x] A10a.9 Asserted by property rather than by a golden file — the attributed-control column, the deciding reason, all four panel headings, the rule order, escaping per field. A golden file fails on every whitespace change and teaches people to regenerate it without reading
 
-**Exit:** a single file a developer opens after a run and immediately sees which control refused what.
+**Exit:** ✅ a single file a developer opens after a run and immediately sees which control refused what. 18 tests, and the escaping ones verified by removing `_e()` from one field and watching them go red.
 
 ### A10b — `aegoll serve`, v0.2
 
@@ -439,6 +439,68 @@ Full list and reasoning in [`../CONTEXT.md`](../CONTEXT.md).
 ## Findings
 
 Recorded as work lands. A plan with the wrong turns removed is not a plan.
+
+### F-A12 · The documented API did not exist — 2026-08-17
+
+Found by following [`docs/quickstart.md`](docs/quickstart.md) against a wheel installed into a
+clean virtual environment. Not visible from the source tree, and not visible to 632 passing tests.
+
+`docs/api-surface.md` was written before the code on purpose — W0.4, on the reasoning that a bad
+early API is the only permanent mistake available here. The code then grew a different shape
+underneath and **nothing checked the two against each other.** `from aegoll import Governor`
+returned `authorize.Governor`, the internal *rules evaluator*, which has no `load()`, no `wrap()`
+and no keyword `authorize()`. The README's own opening snippet raised `AttributeError` on its
+third line.
+
+Three surfaces called `Governor` existed at once: the evaluator (exported), the prototype's
+838-line `plugin.Governor` (working, with live consumers in `aegoll-integrations`), and the
+documented facade (absent). The evaluator is now `RuleEngine`, the facade is `governor.py`, and
+`plugin.Governor` keeps working undocumented so integrations do not break.
+
+The general lesson is not "write the docs later". Writing the API first was right, and it produced
+a better surface than the code had arrived at. What was missing is that **a designed API is only a
+contract if something asserts it exists** — so `tests/test_governor.py` now runs the ten-line
+snippet from that page verbatim, and an AST test fails if a facade method starts deciding anything
+rather than delegating.
+
+### F-A13 · Overspending at settlement bypassed every cumulative envelope — 2026-08-17
+
+Found by exercising `settle(actual_amount_usd=...)`, which exists because the amount paid is not
+always the amount quoted.
+
+`record_settlement` journalled the settled amount as evidence and then called `mark_settled()`
+**without it**, so `transactions.amount_atomic` kept the *authorised* figure — and every window
+sum reads that column. A `$0.05` authorisation settled as `$5.00` consumed **`$0.05`** of a daily
+ceiling.
+
+Under-counting is the direction that matters. Over-counting would merely be conservative; this
+made a cumulative envelope walkable by overspending at settlement, with the daily limit seeing a
+hundredth of the money that moved. It is worth noting *where* the layer was already correct: the
+real figure was in the evidence the whole time. The journal knew and the envelope did not, which
+is the shape of bug that a report and a decision drifting apart always takes.
+
+Fixed with a separate `settled_amount_atomic` column rather than by overwriting the authorised
+one, because **both numbers are the interesting fact** — `authorised 0.05, settled 5.00` is a
+discrepancy worth surfacing, and a single column that quietly became `5.00` would erase the
+evidence that the layer approved something smaller. Negative settlements are refused: a negative
+consumption would *create* headroom, which is ARITH-4 arriving at a boundary nobody had applied it
+to.
+
+### F-A14 · Evidence location was frozen at import — 2026-08-17
+
+`DATA_DIR = Path.cwd() / ".aegoll"` was evaluated when the module was imported and captured in
+`Paths.under()`'s default argument. So the journal's location was decided by whatever directory the
+process happened to start in, permanently: a process that changed directory kept writing to the
+original, and **two governors loaded from different directories shared one journal** — meaning one
+agent's spending consumed the other's envelopes.
+
+Found by this project's own test suite leaking state between tests: a revoked intent declared in
+one test refused a payment in another, because `monkeypatch.chdir(tmp_path)` could not affect a
+path resolved before the test began. Worth recording because the symptom looked like a test-isolation
+problem and was a product defect — the tests were isolated, and the package was not.
+
+A default argument evaluated once is a normal Python fact, and it is a trap specifically for
+values that describe *where things are*. `default_data_dir()` is a function now.
 
 ### F-A9 · Delegation escalation, reachable by leaving a field out — 2026-08-17
 
