@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/admits-one-over",
+  "clause": "AEGS-0.1-ENV-3",
+  "operation": "evaluate_envelopes",
+  "description": "One atomic unit above the headroom is refused.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_call",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": true
+      }
+    ],
+    "amountAtomic": 10000001
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "per_call"
+    ],
+    "binding": "per_call"
+  }
+}

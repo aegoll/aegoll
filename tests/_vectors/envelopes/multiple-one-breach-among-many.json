@@ -1,0 +1,40 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/multiple-one-breach-among-many",
+  "clause": "AEGS-0.1-ENV-5",
+  "operation": "evaluate_envelopes",
+  "description": "Only the envelopes actually exceeded are reported.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      },
+      {
+        "name": "per_vendor",
+        "limit": 15000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "vendor 30d"
+      },
+      {
+        "name": "monthly",
+        "limit": 300000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "this month"
+      }
+    ],
+    "amountAtomic": 20000000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "per_vendor"
+    ],
+    "binding": "per_vendor"
+  }
+}

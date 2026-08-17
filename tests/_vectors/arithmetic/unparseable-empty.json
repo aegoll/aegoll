@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/unparseable-empty",
+  "clause": "AEGS-0.1-ARITH-7",
+  "operation": "usd_to_atomic",
+  "description": "An empty amount is refused.",
+  "input": {
+    "amount": "",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "unparseable"
+  }
+}

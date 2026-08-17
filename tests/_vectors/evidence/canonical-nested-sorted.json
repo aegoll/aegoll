@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-nested-sorted",
+  "clause": "AEGS-0.1-EVID-3",
+  "operation": "canonical_serialise",
+  "description": "Nested objects are sorted at every level.",
+  "input": {
+    "payload": {
+      "outer": {
+        "z": 1,
+        "a": 2
+      },
+      "first": {
+        "y": 3,
+        "b": 4
+      }
+    }
+  },
+  "expect": {
+    "canonical": "{\"first\":{\"b\":4,\"y\":3},\"outer\":{\"a\":2,\"z\":1}}"
+  },
+  "note": "Sorting only the top level is a plausible partial implementation and produces a different hash for the same decision."
+}

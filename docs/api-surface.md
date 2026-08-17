@@ -187,17 +187,49 @@ because [A10](../PLAN.md) will want fields this draft has not anticipated.
 ```python
 @dataclass(frozen=True)
 class Report:
+    policy_name: str
+    policy_hash: str
+    policy_rules: int                          # the count
+    profile: str | None
+    rules: tuple[RuleView, ...]                # and the rules themselves, in eval order
     decisions_total: int
+    settled: int
+    spent_usd: str
     by_verdict: Mapping[str, int]
     by_attributed_control: Mapping[str, int]
-    envelopes: Mapping[str, Envelope]
-    chain_valid: bool
-    chain_length: int
+    envelopes: Mapping[str, tuple[EnvelopeView, ...]]
+    decisions: tuple[DecisionView, ...]
+    pending_reviews: int
+    chain: ChainView | None
+    aegoll_version: str
+    aegs_version: str
     def as_dict(self) -> dict: ...
 ```
 
 `by_attributed_control` is the field that makes a report worth reading: *what actually
 governed this agent*, as opposed to what the policy file hoped would.
+
+**One shape, N renderers.** `Report.as_dict()` is the wire format for `--json`, for
+`aegoll.html.render()` and for the `aegoll serve` read API in 0.2. Key names and number
+formatting are part of the contract for that reason: two renderers disagreeing about a field
+name is a bug that only ever shows up in the less-used one.
+
+`EnvelopeView` carries both `binding` and `tightest`, which are two questions and not one —
+AEGS-0.1-ENV-6. `binding` answers *why was this refused* and exists only on a refusal;
+`tightest` answers *what bites next* and always exists.
+
+`ChainView` carries `hash_name`, `hash_bits` and `caveat`. The first two because
+AEGS-0.1-EVID-5 requires the strength to be *declared* — "hash-chained" without a function
+and a length describes a shape rather than a guarantee. The third because any renderer that
+prints `valid` must print what `valid` does not cover.
+
+### `aegoll.html.render`
+
+**provisional.** `render(report: Report) -> str` — one self-contained HTML document.
+
+Takes a `Report` rather than a layer, so the 0.2 localhost view is a second *transport* over
+this renderer rather than a second template that drifts from it. Stdlib only; no network
+access of any kind, asserted by test.
 
 ---
 
@@ -366,5 +398,5 @@ Recorded rather than guessed. None blocks implementation.
 
 - [ ] Does `wrap()` need an async variant, or does duck-typing cover an async agent? Decide when the first async adapter is written, not before
 - [ ] Should `authorize()` accept a caller-supplied idempotency key? The prototype had a replayable request id that overwrote the evidence of a first payment — a key would help, and it needs a spec clause first
-- [ ] Is `Report` the same shape as the localhost read API, or a projection of it? [A10.1](../PLAN.md) answers this
+- [x] Is `Report` the same shape as the localhost read API, or a projection of it? **The same shape.** `as_dict()` is the wire format for `--json`, the HTML page and the 0.2 read API alike; `render()` takes a `Report` so there is nothing transport-specific to duplicate
 - [ ] Does a custom engine get a stable id it can be referenced by in a policy pack, and who owns that namespace?

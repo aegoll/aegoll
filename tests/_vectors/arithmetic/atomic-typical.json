@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/atomic-typical",
+  "clause": "AEGS-0.1-ARITH-1",
+  "operation": "usd_to_atomic",
+  "description": "A typical two-decimal amount converts exactly.",
+  "input": {
+    "amount": "2.50",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 2500000
+  }
+}

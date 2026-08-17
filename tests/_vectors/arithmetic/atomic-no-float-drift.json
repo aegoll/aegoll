@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/atomic-no-float-drift",
+  "clause": "AEGS-0.1-ARITH-1",
+  "operation": "usd_to_atomic",
+  "description": "An amount that a binary float cannot represent exactly still converts exactly.",
+  "input": {
+    "amount": "0.07",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 70000
+  },
+  "note": "0.07 is not representable in binary floating point. An implementation that multiplied a float by 1e6 would produce 69999.99999999999 and, truncating, 69999 -- one atomic unit short. This vector fails for any implementation that touches a float on the money path."
+}

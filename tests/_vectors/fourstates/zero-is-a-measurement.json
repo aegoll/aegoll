@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/zero-is-a-measurement",
+  "clause": "AEGS-0.1-STATE-3",
+  "operation": "classify_state",
+  "description": "A score of exactly zero is a measured value, not a missing one.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": true,
+        "score": "0"
+      }
+    },
+    "field": "trust"
+  },
+  "expect": {
+    "state": "zero"
+  },
+  "note": "THE ORIGINAL BUG, INVERTED. An unmeasured history rendered as 0 made every advisor treat established counterparties as strangers. Defending against that by mapping falsy values to `unknown` would be as wrong in the other direction -- and is a natural thing to write in a language where 0 and None are both falsy."
+}

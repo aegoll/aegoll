@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/overflow-negative-huge",
+  "clause": "AEGS-0.1-ARITH-5",
+  "operation": "usd_to_atomic",
+  "description": "A huge negative is refused; either category is acceptable.",
+  "input": {
+    "amount": "-1e30",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "negative"
+  },
+  "note": "Both `negative` and `overflow` are defensible reasons here. The vector expects `negative` because ARITH-4 requires the sign check to happen before evaluation, and an implementation that reports `overflow` has checked magnitude first -- which is the ordering the clause forbids."
+}

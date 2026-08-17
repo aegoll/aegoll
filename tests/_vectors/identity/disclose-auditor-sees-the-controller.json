@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/disclose-auditor-sees-the-controller",
+  "clause": "AEGS-0.1-ID-3",
+  "operation": "disclose",
+  "description": "An auditor projection includes the controller.",
+  "input": {
+    "identity": {
+      "agentId": "a-1",
+      "controller": "acme-ltd",
+      "purpose": "buy data",
+      "wallets": [
+        "0xabc"
+      ],
+      "spendingLimits": {
+        "dailyUsd": "50"
+      }
+    },
+    "audience": "auditor"
+  },
+  "expect": {
+    "includes": [
+      "agentId",
+      "controller"
+    ]
+  },
+  "note": "An audit that cannot see the controller cannot establish accountability, which is what an audit is for. The two audiences are different PROJECTIONS of one identity, decided where the knowledge is rather than by whichever caller is rendering."
+}

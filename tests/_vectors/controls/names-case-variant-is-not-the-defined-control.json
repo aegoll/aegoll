@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/names-case-variant-is-not-the-defined-control",
+  "clause": "AEGS-0.1-CTRL-1",
+  "operation": "classify_control",
+  "description": "A near-miss of a defined name is an extension, not the defined control.",
+  "input": {
+    "control": "budgetenvelope"
+  },
+  "expect": {
+    "kind": "extension"
+  },
+  "note": "If a case variant silently resolved to the defined control, a profile requiring BudgetEnvelope could be satisfied by something that merely looks like it. Names are compared exactly."
+}

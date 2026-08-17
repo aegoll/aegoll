@@ -1,0 +1,36 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/count-independent-of-amount",
+  "clause": "AEGS-0.1-ENV-7",
+  "operation": "evaluate_envelopes",
+  "description": "A count envelope refuses regardless of how small the amount is.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "counters": [
+      {
+        "name": "velocity_60s",
+        "limit": 10,
+        "used": 10,
+        "kind": "count",
+        "window": "last 60s"
+      }
+    ],
+    "amountAtomic": 1
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "velocity_60s"
+    ],
+    "binding": "velocity_60s"
+  },
+  "note": "One atomic unit, inside every value envelope, still refused. This is the control a purely value-based envelope set cannot express -- and the reason forty payments of one cent are worth refusing even though they breach no value limit."
+}

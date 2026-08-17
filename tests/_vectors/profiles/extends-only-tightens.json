@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/extends-only-tightens",
+  "clause": "AEGS-0.1-PROF-4",
+  "operation": "evaluate_profile",
+  "description": "A profile that extends another assigns no inherited control a weaker level.",
+  "input": {
+    "profile": "aegs-2",
+    "extendsProfile": "aegs-1"
+  },
+  "expect": {
+    "onlyTightens": true
+  },
+  "note": "JSON Schema cannot express this: it is a relationship between two documents rather than a property of one. Without it a higher level could be WEAKER than a lower one while both validated, and the levels would stop being ordered -- which is the only thing that makes a level worth claiming."
+}

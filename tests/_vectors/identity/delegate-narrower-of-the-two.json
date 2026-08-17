@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/delegate-narrower-of-the-two",
+  "clause": "AEGS-0.1-ID-4",
+  "operation": "clamp_delegation",
+  "description": "A delegate's authority is the narrower of its own and its delegator's.",
+  "input": {
+    "chain": [
+      {
+        "agent": "root",
+        "perActionAtomic": 10000000
+      },
+      {
+        "agent": "child",
+        "perActionAtomic": 5000000
+      }
+    ]
+  },
+  "expect": {
+    "effectiveAtomic": 5000000,
+    "limitedBy": "child"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/no-opinion",
+  "clause": "AEGS-0.1-STATE-4",
+  "operation": "classify_state",
+  "description": "A control with nothing to say reports no opinion, not APPROVE.",
+  "input": {
+    "record": {
+      "housekeeping": {
+        "measured": true,
+        "verdict": null
+      }
+    },
+    "field": "housekeeping"
+  },
+  "expect": {
+    "state": "no-opinion"
+  },
+  "note": "Silence and approval are different states. A control voting APPROVE to mean `no objection from me` would be indistinguishable in the record from one that examined the action and endorsed it."
+}

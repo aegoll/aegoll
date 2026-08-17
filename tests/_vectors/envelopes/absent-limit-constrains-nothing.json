@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/absent-limit-constrains-nothing",
+  "clause": "AEGS-0.1-ENV-8",
+  "operation": "evaluate_envelopes",
+  "description": "An absent limit does not constrain the amount.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": null,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 999000000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "A limit of 0 and no limit at all are OPPOSITE instructions: the first stops the agent entirely, the second lets it spend freely. An implementation that defaults a missing limit to zero has silently made its strictest policy the default."
+}

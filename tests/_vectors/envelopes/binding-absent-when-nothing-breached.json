@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/binding-absent-when-nothing-breached",
+  "clause": "AEGS-0.1-ENV-6",
+  "operation": "evaluate_envelopes",
+  "description": "No binding envelope is reported when nothing was breached.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 1000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": [],
+    "binding": null
+  },
+  "note": "Binding answers `why was this refused` and exists only for a refusal. Reporting one for an approval would name a cause for an effect that did not happen."
+}

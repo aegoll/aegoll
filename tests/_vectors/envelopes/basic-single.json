@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/basic-single",
+  "clause": "AEGS-0.1-ENV-1",
+  "operation": "evaluate_envelopes",
+  "description": "An envelope carries a name, a limit, a consumed amount and a window.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 1000000
+  },
+  "expect": {
+    "ok": true,
+    "headroom": {
+      "daily": 50000000
+    },
+    "breached": []
+  }
+}

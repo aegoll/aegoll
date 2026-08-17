@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/aml-absent-when-no-capability",
+  "clause": "AEGS-0.1-CTRL-6",
+  "operation": "classify_state",
+  "description": "An implementation with no screening capability omits the control.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": true,
+        "score": "0.25"
+      }
+    },
+    "field": "aml"
+  },
+  "expect": {
+    "state": "absent"
+  },
+  "note": "A boolean on a counterparty object -- no list, no matching, no jurisdiction model -- is a FLAG, not a screening. The specification says so rather than letting a schema's existence imply otherwise."
+}

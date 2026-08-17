@@ -1,0 +1,51 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/verify-reports-every-problem",
+  "clause": "AEGS-0.1-EVID-7",
+  "operation": "verify_chain",
+  "description": "Verification reports every problem rather than stopping at the first.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "A"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "B"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "C"
+        }
+      },
+      {
+        "seq": 3,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "D"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "editMany",
+      "seqs": [
+        1,
+        3
+      ]
+    }
+  },
+  "expect": {
+    "valid": false,
+    "minProblems": 2
+  },
+  "note": "A chain with four broken links is a different situation from one with a single edit, and an operator needs to know which they have before trusting anything in the journal."
+}

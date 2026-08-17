@@ -1,0 +1,17 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/levels-must-exercise-names-a-record-path",
+  "clause": "AEGS-0.1-PROF-3",
+  "operation": "evaluate_profile",
+  "description": "Every control required above OPTIONAL names where its evidence appears.",
+  "input": {
+    "profiles": [
+      "aegs-1",
+      "aegs-2"
+    ]
+  },
+  "expect": {
+    "everyRequiredNamesAPath": true
+  },
+  "note": "A requirement with nowhere to look for its evidence is not checkable, and an uncheckable requirement is the same wish this specification's conventions forbid."
+}

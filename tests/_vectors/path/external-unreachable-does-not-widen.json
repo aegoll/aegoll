@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "path/external-unreachable-does-not-widen",
+  "clause": "AEGS-0.1-PATH-3",
+  "operation": "resolve_verdict",
+  "description": "An unreachable assessor cannot widen a standing refusal.",
+  "input": {
+    "standing": "REJECT",
+    "standingControl": "treasury",
+    "proposals": [
+      {
+        "control": "external-trust",
+        "verdict": null,
+        "recordsEvidence": true
+      }
+    ],
+    "assessorUnreachable": true
+  },
+  "expect": {
+    "verdict": "REJECT"
+  },
+  "note": "The other half of the same point: neither its silence nor its absence may loosen an outcome already reached without it."
+}

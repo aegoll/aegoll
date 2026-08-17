@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-a-non-narrowing-proposal-is-not-attributed",
+  "clause": "AEGS-0.1-VERD-4",
+  "operation": "resolve_verdict",
+  "description": "A control proposing something no stricter than the standing verdict is not attributed.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "risk",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "treasury"
+  },
+  "note": "risk proposed ESCALATE against a standing REJECT, which is less severe, so it did not narrow. `Last control that narrowed` is well defined precisely because widening is impossible -- the final narrowing is unique."
+}

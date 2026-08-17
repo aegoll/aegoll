@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-policy-cannot-rescue-a-refusal",
+  "clause": "AEGS-0.1-VERD-7",
+  "operation": "resolve_verdict",
+  "description": "A policy rule saying APPROVE cannot rescue an action a budget refused.",
+  "input": {
+    "standing": "REJECT",
+    "standingControl": "treasury",
+    "proposals": [
+      {
+        "control": "policy",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": null
+  },
+  "note": "Policy is the part users write and therefore the part that will be wrong. If a rule could widen, the policy file would be an override mechanism and every envelope in the system would be advisory."
+}

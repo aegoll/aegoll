@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/roundtrip-typical",
+  "clause": "AEGS-0.1-ARITH-2",
+  "operation": "atomic_to_usd",
+  "description": "Converting back yields the original amount at full precision.",
+  "input": {
+    "atomic": 2500000,
+    "decimals": 6
+  },
+  "expect": {
+    "usd": "2.500000"
+  }
+}

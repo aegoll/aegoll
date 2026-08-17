@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/zero",
+  "clause": "AEGS-0.1-ARITH-6",
+  "operation": "usd_to_atomic",
+  "description": "Zero is a valid amount and is evaluated normally.",
+  "input": {
+    "amount": "0",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 0
+  },
+  "note": "Not an edge case to refuse. A zero-amount action is how envelope state is read without spending, and refusing it would make that state unreadable without a side effect."
+}

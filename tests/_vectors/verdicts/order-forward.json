@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/order-forward",
+  "clause": "AEGS-0.1-VERD-3",
+  "operation": "resolve_verdict",
+  "description": "Two narrowings in one order produce the most severe verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "risk",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/order-reversed",
+  "clause": "AEGS-0.1-VERD-3",
+  "operation": "resolve_verdict",
+  "description": "The same two narrowings reversed produce the same verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "risk",
+        "verdict": "ESCALATE"
+      },
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE"
+  },
+  "note": "Paired with order-forward. Narrowing to the most severe of a set is commutative, so the final verdict cannot depend on order -- which is what lets an implementation reorder or parallelise its engines without changing an outcome."
+}

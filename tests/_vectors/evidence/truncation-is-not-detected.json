@@ -1,0 +1,41 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/truncation-is-not-detected",
+  "clause": "AEGS-0.1-EVID-6",
+  "operation": "verify_chain",
+  "description": "Truncating the tail of a chain leaves it internally valid.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REVIEW"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "truncate",
+      "keep": 2
+    }
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  },
+  "note": "THE MOST IMPORTANT VECTOR IN THIS FAMILY, and the only one that asserts a WEAKNESS rather than a guarantee. Any prefix of a valid chain is itself valid, so an agent that was refused can delete the refusal and verification reports success about a history that did not happen. An implementation whose verify() FAILED here would be claiming something a bare hash chain cannot deliver -- so passing this vector is required, and disclosing the gap is what EVID-6 asks for instead."
+}

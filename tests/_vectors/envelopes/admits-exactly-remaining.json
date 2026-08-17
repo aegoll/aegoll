@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/admits-exactly-remaining",
+  "clause": "AEGS-0.1-ENV-3",
+  "operation": "evaluate_envelopes",
+  "description": "An amount equal to the remaining headroom of a partly used envelope is admitted.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 32000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 18000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/chain-middle-deletion-detected",
+  "clause": "AEGS-0.1-EVID-2",
+  "operation": "verify_chain",
+  "description": "Deleting an entry from the middle is detected.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REVIEW"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "deleteMiddle",
+      "seq": 1
+    }
+  },
+  "expect": {
+    "valid": false
+  },
+  "note": "The link across the gap fails and the sequence skips. Both are detectable, which is why middle-deletion is not the gap -- truncation is."
+}

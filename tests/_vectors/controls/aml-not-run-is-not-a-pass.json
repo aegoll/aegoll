@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/aml-not-run-is-not-a-pass",
+  "clause": "AEGS-0.1-CTRL-6",
+  "operation": "classify_state",
+  "description": "A screening that exists and did not run is not an assertion that it passed.",
+  "input": {
+    "record": {
+      "aml": {
+        "measured": false
+      }
+    },
+    "field": "aml"
+  },
+  "expect": {
+    "state": "not-run"
+  },
+  "note": "The dangerous reading of a missing AML result is `nothing was found`. This forces the record to say `nothing was looked for`."
+}

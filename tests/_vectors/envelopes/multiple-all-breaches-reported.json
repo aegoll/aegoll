@@ -1,0 +1,43 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/multiple-all-breaches-reported",
+  "clause": "AEGS-0.1-ENV-5",
+  "operation": "evaluate_envelopes",
+  "description": "Every breached envelope is reported, not merely the first.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_transaction",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": false,
+        "window": "per call"
+      },
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      },
+      {
+        "name": "monthly",
+        "limit": 300000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "this month"
+      }
+    ],
+    "amountAtomic": 500000000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "per_transaction",
+      "daily",
+      "monthly"
+    ],
+    "binding": "per_transaction"
+  },
+  "note": "An operator raising the daily limit to unblock an agent needs to know two other envelopes are also in the way. Short-circuiting hides that, and the fix appears not to work."
+}

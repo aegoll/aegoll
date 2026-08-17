@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/negative-sub-atomic",
+  "clause": "AEGS-0.1-ARITH-4",
+  "operation": "usd_to_atomic",
+  "description": "A negative amount smaller than one atomic unit is still refused.",
+  "input": {
+    "amount": "-0.0000001",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "negative"
+  },
+  "note": "It rounds to zero in magnitude. An implementation that rounded first and checked the sign afterwards would accept this as 0 and lose the refusal."
+}

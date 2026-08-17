@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/verify-empty-is-valid",
+  "clause": "AEGS-0.1-EVID-7",
+  "operation": "verify_chain",
+  "description": "Verifying an empty chain succeeds without error.",
+  "input": {
+    "entries": []
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/headroom-partial",
+  "clause": "AEGS-0.1-ENV-2",
+  "operation": "evaluate_envelopes",
+  "description": "Headroom is the limit less what is consumed.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 32000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 0
+  },
+  "expect": {
+    "ok": true,
+    "headroom": {
+      "daily": 18000000
+    },
+    "breached": []
+  }
+}

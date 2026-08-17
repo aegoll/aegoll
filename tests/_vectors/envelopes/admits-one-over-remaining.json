@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/admits-one-over-remaining",
+  "clause": "AEGS-0.1-ENV-3",
+  "operation": "evaluate_envelopes",
+  "description": "One unit above the remaining headroom is refused.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 32000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 18000001
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "daily"
+    ],
+    "binding": "daily"
+  }
+}

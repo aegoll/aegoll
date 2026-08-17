@@ -1,0 +1,33 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/disclose-vendor-hides-spending-limits",
+  "clause": "AEGS-0.1-ID-2",
+  "operation": "disclose",
+  "description": "A counterparty projection omits spending limits.",
+  "input": {
+    "identity": {
+      "agentId": "a-1",
+      "controller": "acme-ltd",
+      "purpose": "buy data",
+      "wallets": [
+        "0xabc"
+      ],
+      "spendingLimits": {
+        "dailyUsd": "50"
+      }
+    },
+    "audience": "vendor"
+  },
+  "expect": {
+    "includes": [
+      "agentId",
+      "purpose"
+    ],
+    "excludes": [
+      "spendingLimits",
+      "controller",
+      "wallets"
+    ]
+  },
+  "note": "THE SHARPEST FIELD IN THE SPECIFICATION. Telling a seller how much budget an agent has left invites it to charge exactly that -- a price oracle for the counterparty, built out of the data held to protect the buyer."
+}

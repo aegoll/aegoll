@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/verdict-identical-under-none",
+  "clause": "AEGS-0.1-PROF-1",
+  "operation": "resolve_verdict",
+  "description": "The same proposals under `none` produce the same verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      }
+    ],
+    "profile": "none"
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "treasury"
+  },
+  "note": "The strongest form of the claim: enforcing NO profile decides the same as enforcing the strictest one. A profile is about evidence completeness, and only that."
+}

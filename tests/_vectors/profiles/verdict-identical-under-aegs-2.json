@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/verdict-identical-under-aegs-2",
+  "clause": "AEGS-0.1-PROF-1",
+  "operation": "resolve_verdict",
+  "description": "The same proposals under aegs-2 produce the same verdict as under aegs-1.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      }
+    ],
+    "profile": "aegs-2"
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "treasury"
+  },
+  "note": "aegs-2 requires strictly more evidence than aegs-1 and must decide identically. If a profile could tighten a verdict, two implementations at the same profile could disagree on outcomes while both claiming conformance -- the profile would have become a second, weaker policy language with no rules written down."
+}

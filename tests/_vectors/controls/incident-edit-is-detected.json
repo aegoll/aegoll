@@ -1,0 +1,45 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/incident-edit-is-detected",
+  "clause": "AEGS-0.1-CTRL-8",
+  "operation": "verify_chain",
+  "description": "Editing an incident record after writing it is detected.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "incident": {
+            "id": "i-1",
+            "summary": "over-spend"
+          }
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:05:00+00:00",
+        "payload": {
+          "decision": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "edit",
+      "seq": 0,
+      "payload": {
+        "incident": {
+          "id": "i-1",
+          "summary": "no issue"
+        }
+      }
+    }
+  },
+  "expect": {
+    "valid": false,
+    "problemKinds": [
+      "contentHash"
+    ]
+  },
+  "note": "An incident is exactly the kind of record a system is tempted to UPDATE as understanding improves, and an editable incident history is a summary of current beliefs rather than a record of what happened. A correction is a new record referencing the earlier one."
+}

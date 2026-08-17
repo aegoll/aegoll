@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/none-enforces-nothing",
+  "clause": "AEGS-0.1-PROF-5",
+  "operation": "evaluate_profile",
+  "description": "The `none` profile requires no control.",
+  "input": {
+    "profile": "none"
+  },
+  "expect": {
+    "requiredCount": 0,
+    "enforces": false
+  },
+  "note": "A REAL opt-out, not an absence of one. A deployment that cannot opt out will fork the implementation to remove enforcement, and a fork puts it beyond the reach of every later fix including security ones. An opt-out that works keeps them inside."
+}

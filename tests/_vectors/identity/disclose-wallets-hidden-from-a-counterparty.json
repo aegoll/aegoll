@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/disclose-wallets-hidden-from-a-counterparty",
+  "clause": "AEGS-0.1-ID-2",
+  "operation": "disclose",
+  "description": "A counterparty projection omits the wallet set.",
+  "input": {
+    "identity": {
+      "agentId": "a-1",
+      "controller": "acme-ltd",
+      "purpose": "buy data",
+      "wallets": [
+        "0xabc",
+        "0xdef"
+      ],
+      "spendingLimits": {
+        "dailyUsd": "50"
+      }
+    },
+    "audience": "vendor"
+  },
+  "expect": {
+    "excludes": [
+      "wallets"
+    ]
+  },
+  "note": "A counterparty already sees the address paying it. Publishing the SET links an agent's activity across counterparties who otherwise could not correlate it."
+}

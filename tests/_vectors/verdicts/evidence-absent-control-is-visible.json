@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/evidence-absent-control-is-visible",
+  "clause": "AEGS-0.1-VERD-6",
+  "operation": "resolve_verdict",
+  "description": "A control that did not run is distinguishable from one that ran and found nothing.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "sanctions",
+        "verdict": null,
+        "recordsEvidence": false
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "APPROVE",
+    "evidenced": []
+  },
+  "note": "The test to apply to any implementation: delete a control, and does any record change? If not, that control was never really evidenced."
+}

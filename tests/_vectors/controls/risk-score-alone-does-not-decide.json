@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/risk-score-alone-does-not-decide",
+  "clause": "AEGS-0.1-CTRL-5",
+  "operation": "resolve_verdict",
+  "description": "A risk score does not determine a verdict on its own.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "risk",
+        "verdict": null,
+        "recordsEvidence": true
+      }
+    ],
+    "riskScore": "0.95"
+  },
+  "expect": {
+    "verdict": "APPROVE",
+    "evidenced": [
+      "risk"
+    ]
+  },
+  "note": "The engine measures how risky an action inherently IS; policy decides how much of that is acceptable at a given exposure. A high score with no policy acting on it changes nothing -- which is what makes the score evidence rather than a decision, and why the same score can be tolerable at one value and not at another."
+}

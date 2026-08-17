@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/severity-review-approve",
+  "clause": "AEGS-0.1-VERD-1",
+  "operation": "resolve_verdict",
+  "description": "The more severe of REVIEW and APPROVE is REVIEW.",
+  "input": {
+    "standing": "REVIEW",
+    "proposals": [
+      {
+        "control": "other",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW"
+  }
+}

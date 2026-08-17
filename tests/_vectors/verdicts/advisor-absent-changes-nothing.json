@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/advisor-absent-changes-nothing",
+  "clause": "AEGS-0.1-VERD-9",
+  "operation": "resolve_verdict",
+  "description": "A decision does not depend on the advisor being available.",
+  "input": {
+    "standing": "REVIEW",
+    "proposals": [],
+    "advisorUnavailable": true
+  },
+  "expect": {
+    "verdict": "REVIEW"
+  },
+  "note": "No fallback policy is needed: if the advisor can only tighten, its absence cannot change an outcome that was already reached without it."
+}

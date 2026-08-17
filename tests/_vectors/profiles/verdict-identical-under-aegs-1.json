@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/verdict-identical-under-aegs-1",
+  "clause": "AEGS-0.1-PROF-1",
+  "operation": "resolve_verdict",
+  "description": "The same proposals under aegs-1 produce a given verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      }
+    ],
+    "profile": "aegs-1"
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "treasury"
+  },
+  "note": "Paired with verdict-identical-under-aegs-2 and -none. Three profiles, identical inputs, identical verdict AND identical attribution. A single vector here would prove nothing -- the claim is about invariance, so it needs more than one point."
+}

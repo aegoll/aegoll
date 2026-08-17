@@ -1,0 +1,17 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-null-preserved",
+  "clause": "AEGS-0.1-EVID-3",
+  "operation": "canonical_serialise",
+  "description": "An explicit null is preserved, not dropped.",
+  "input": {
+    "payload": {
+      "intentId": null,
+      "verdict": "APPROVE"
+    }
+  },
+  "expect": {
+    "canonical": "{\"intentId\":null,\"verdict\":\"APPROVE\"}"
+  },
+  "note": "Dropping a null would erase the difference between `no intent was declared` and `this record does not say`, which is the whole of EVID-9. It would also change the hash."
+}

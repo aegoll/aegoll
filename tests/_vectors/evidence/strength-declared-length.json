@@ -1,0 +1,13 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/strength-declared-length",
+  "clause": "AEGS-0.1-EVID-5",
+  "operation": "hash_strength",
+  "description": "An implementation declares its hash function and retained length.",
+  "input": {},
+  "expect": {
+    "declaresFunction": true,
+    "declaresBits": true
+  },
+  "note": "An auditor cannot assess a chain whose strength is unstated. `Hash-chained` without a function and a length describes a shape, not a guarantee."
+}

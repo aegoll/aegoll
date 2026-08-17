@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/names-unknown-control-is-an-extension",
+  "clause": "AEGS-0.1-CTRL-1",
+  "operation": "classify_control",
+  "description": "A name outside the defined set is an extension, not a defined control.",
+  "input": {
+    "control": "house-limit"
+  },
+  "expect": {
+    "kind": "extension"
+  },
+  "note": "Extension is allowed and expected. What is forbidden is REUSING a defined name for something else, because that is the one form of extension a reader cannot detect."
+}

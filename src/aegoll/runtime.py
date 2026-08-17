@@ -54,6 +54,19 @@ class Paths:
         return cls(r / "history.db", r / "audit.jsonl", r / "review.json")
 
     @classmethod
+    def for_journal(cls, journal: Path | str) -> "Paths":
+        """Paths built around a configured journal *file*, with the rest beside it.
+
+        `under()` takes a directory and names the journal itself; this takes the journal and
+        derives the directory, because `aegoll.yaml` says `evidence: journal: <file>` and a
+        user who wrote `logs/spend.jsonl` meant that filename. Deriving the directory and then
+        writing `audit.jsonl` into it would honour half of the setting, which is worse than
+        ignoring it: the file they asked for never appears and no error says why.
+        """
+        j = Path(journal)
+        return cls(j.parent / "history.db", j, j.parent / "review.json")
+
+    @classmethod
     def ephemeral(cls, root: Path | str) -> "Paths":
         """In-memory history, on-disk audit/review. Used by scenarios and tests."""
         r = Path(root)

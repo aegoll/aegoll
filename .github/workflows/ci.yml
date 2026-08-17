@@ -72,6 +72,12 @@ jobs:
   vectors:
     # AEGS test vectors. A failure here is either a spec bug or a code bug,
     # and which one must be stated in writing. Never quietly fixed.
+    #
+    # This job used to carry `continue-on-error` and check out only this
+    # repository, so the runner searched for a sibling aegs/, found none, and
+    # skipped all 151 vectors behind a green tick. The vectors are now vendored
+    # under tests/_vectors/ against a pin, so there is nothing to be lenient
+    # about and the job is a real gate.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +89,10 @@ jobs:
           pip install -e ".[dev]"
       - name: Vectors
         run: pytest tests/test_vectors.py -q
-        continue-on-error: true  # remove once aegs/vectors exists (PLAN A8.1)
+      - name: The suite did not skip
+        # A skip here means the vendored copy is gone. Without this, a deleted
+        # fixture directory reads as a pass.
+        run: pytest tests/test_vectors.py -q -k vendored_copy_exists --no-header -rN
 
   redteam:
     # 18 attacks from the prototype. 13 defended, 3 open by design.
@@ -98,5 +107,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: Red team
-        run: pytest tests/redteam -q
-        continue-on-error: true  # remove once ported (PLAN A11.1)
+        # Not ported yet (PLAN A11.1). Skipped explicitly rather than run with
+        # `continue-on-error`: a job permanently amber against a path that does
+        # not exist is one people learn to ignore, and it would go on being
+        # ignored on the day it started meaning something.
+        run: |
+          if [ -d tests/redteam ]; then
+            pytest tests/redteam -q
+          else
+            echo "tests/redteam/ not ported yet -- see PLAN.md A11.1"
+          fi

@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/not-run-when-declared-unmeasured",
+  "clause": "AEGS-0.1-STATE-1",
+  "operation": "classify_state",
+  "description": "A present object flagged unmeasured means the control exists and did not run.",
+  "input": {
+    "record": {
+      "sanctions": {
+        "measured": false
+      }
+    },
+    "field": "sanctions"
+  },
+  "expect": {
+    "state": "not-run"
+  },
+  "note": "The distinction from `absent` is a coverage gap versus a capability gap, and an operator needs to tell them apart to know whether to fix a config or build an engine."
+}

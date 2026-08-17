@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/none-lists-every-control-explicitly",
+  "clause": "AEGS-0.1-PROF-5",
+  "operation": "evaluate_profile",
+  "description": "The `none` profile lists every control rather than listing nothing.",
+  "input": {
+    "profile": "none"
+  },
+  "expect": {
+    "listedCount": 13
+  },
+  "note": "Explicit rather than empty so a reader can see that the opt-out was designed rather than left as a gap in the manifest."
+}

@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/zero-limit-admits-zero",
+  "clause": "AEGS-0.1-ENV-8",
+  "operation": "evaluate_envelopes",
+  "description": "A limit of zero still admits an amount of zero.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 0,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 0
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "`0 <= 0`. Follows from ENV-3 and ARITH-6, and is what keeps envelope state readable when a limit is fully closed."
+}

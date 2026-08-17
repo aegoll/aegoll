@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/serialise-full-precision",
+  "clause": "AEGS-0.1-ARITH-9",
+  "operation": "atomic_to_usd",
+  "description": "A serialised amount carries the asset's full precision, with trailing zeros.",
+  "input": {
+    "atomic": 10000000,
+    "decimals": 6
+  },
+  "expect": {
+    "usd": "10.000000"
+  },
+  "note": "`10` and `10.0` are the same number and different strings. Record hashes are computed over serialised bytes, so two implementations formatting this differently produce different hashes for the same decision."
+}

@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/admits-exactly-headroom",
+  "clause": "AEGS-0.1-ENV-3",
+  "operation": "evaluate_envelopes",
+  "description": "An amount exactly equal to the headroom is admitted.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_call",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": true
+      }
+    ],
+    "amountAtomic": 10000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "The boundary two implementations most often split on. An implementation that refused this would have a real limit of 9999999 and records saying 10000000."
+}

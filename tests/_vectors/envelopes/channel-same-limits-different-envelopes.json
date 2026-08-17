@@ -1,0 +1,36 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/channel-same-limits-different-envelopes",
+  "clause": "AEGS-0.1-ENV-9",
+  "operation": "evaluate_envelopes",
+  "description": "Identical limits in both channels are still separate envelopes.",
+  "input": {
+    "channel": "internal",
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 20000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "otherChannel": {
+      "envelopes": [
+        {
+          "name": "daily",
+          "limit": 50000000,
+          "used": 45000000,
+          "cumulative": true,
+          "window": "today"
+        }
+      ]
+    },
+    "amountAtomic": 25000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "An implementation MAY apply the same limits to both channels. It may not apply the same ENVELOPE, because an envelope carries consumption: 25000000 fits this channel's headroom of 30000000 and would breach the other channel's headroom of 5000000. An implementation sharing one envelope refuses this."
+}

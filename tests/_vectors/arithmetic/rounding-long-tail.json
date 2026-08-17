@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/rounding-long-tail",
+  "clause": "AEGS-0.1-ARITH-3",
+  "operation": "usd_to_atomic",
+  "description": "Excess precision is rounded, not rejected.",
+  "input": {
+    "amount": "1.23456789",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 1234568
+  },
+  "note": "An implementation may not refuse an over-precise amount: the caller has expressed a real intent and the asset simply cannot hold it. Rounding is specified so that two implementations round it the same way."
+}

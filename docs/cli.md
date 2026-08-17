@@ -9,6 +9,7 @@ aegoll check           # validate before an agent holds a wallet
 aegoll policy explain  # what will this policy actually do?
 aegoll decide ...      # one decision, full engine breakdown
 aegoll report          # what was spent, what was refused, and why
+aegoll report --html   # the same, as one self-contained page
 aegoll conformance     # were the profile's required controls exercised?
 aegoll audit           # verify the evidence chain
 ```
@@ -141,6 +142,50 @@ Two details that are deliberate rather than cosmetic:
 
 Exits `3` if the chain does not verify, because a report whose evidence is broken should
 not exit `0`.
+
+### `--html` — the same report as a page
+
+```
+aegoll report --html -o spend.html     # write a file
+aegoll report --html > spend.html      # or pipe; stdout is the default
+```
+
+One self-contained HTML file: four panels, no server, no port, no listener, and **no
+outbound request of any kind** — no CDN, no webfont, no analytics. That last part is a
+tested property rather than an intention, because a page describing what an agent spends,
+generated on a machine next to a wallet, should not phone anywhere. `tests/test_html.py`
+greps the rendered bytes for absolute URLs, `src` attributes, `<link>` elements, `@import`
+and every call that can reach the network.
+
+It is an **artifact**, not an app. You can attach it to a ticket or mail it to whoever asks
+why the agent stopped, which is most of the value of a dashboard without any of its attack
+surface. A live view is `aegoll serve` in 0.2, and it will feed *this same renderer* rather
+than a second template — `render()` takes a `Report`, so there is nothing transport-specific
+in it to duplicate.
+
+The panels, and the question each answers:
+
+| Panel | Answers |
+|---|---|
+| **Policy** | *What will this do?* — the pack, its content hash, and every rule **in evaluation order** with its condition in plain terms |
+| **Envelopes** | *How much is left?* — both channels, every limit, headroom, and which envelope **binds** |
+| **Decisions** | *Why did my agent stop?* — newest first, each with its **attributed control** |
+| **Evidence** | *Can I trust this record?* — chain length, state, hash function and length, and the caveat |
+
+Three things the page does deliberately:
+
+- An **unset limit renders as `absent`**, never as `$0.00`. Rendering it as zero would state
+  the *tightest possible* ceiling where there is in fact no ceiling — exactly inverted, and
+  this is the place a reader misreads it fastest.
+- The rules are shown **in evaluation order**, because the first matching rule decides. A
+  count tells you the pack is not empty; the order tells you what will stop you.
+- The **chain caveat sits next to the chain state**, not in a footnote. A page saying `VALID`
+  above an unqualified tick claims more than a hash chain delivers.
+
+`--html` and `--json` together is a usage error (exit `4`) rather than one silently winning:
+a user who passes both has a wrong expectation about one of them. `-o` without `--html` is
+likewise an error, because accepting it and ignoring it would discard the file they asked
+for.
 
 ## `aegoll conformance`
 

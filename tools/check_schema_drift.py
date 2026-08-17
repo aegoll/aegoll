@@ -8,7 +8,8 @@ vendored copies here silently kept a dead one. Nothing failed.
     python tools/check_schema_drift.py             # compare against the pinned commit
     python tools/check_schema_drift.py --refresh   # update the copies and the pin
 
-Covers `_schemas/` and `_profiles/`, each with its own `PROVENANCE.txt` and its own pin,
+Covers `_schemas/`, `_profiles/` and `tests/_vectors/`, each with its own `PROVENANCE.txt`
+and its own pin,
 because they are separate artifacts of the standard and change for different reasons. A
 stale schema makes validation wrong; a stale profile makes a *conformance claim* wrong.
 
@@ -41,6 +42,7 @@ HERE = Path(__file__).resolve().parents[1]
 VENDORED = (
     HERE / "src" / "aegoll" / "_schemas",
     HERE / "src" / "aegoll" / "_profiles",
+    HERE / "tests" / "_vectors",
 )
 API = "https://api.github.com/repos/{repo}/contents/{path}{name}?ref={commit}"
 RAW = "https://raw.githubusercontent.com/{repo}/{commit}/{path}{name}"
@@ -64,7 +66,18 @@ def read_pin(provenance: Path) -> tuple[str, str, str]:
 
 
 def vendored(directory: Path) -> list[Path]:
-    return sorted(directory.glob("*.json"))
+    """Every vendored JSON file, recursively.
+
+    Recursive because the vectors are organised into per-family subdirectories, unlike the flat
+    `_schemas/` and `_profiles/`. `schema.json` is skipped: it is the standard's *validator* for
+    vector files rather than vendored content this package reads, and `check_vectors.py` in the
+    standard is what holds it to account.
+
+    One request per file, which is 151 for the vectors. Tolerable for a job that runs on push,
+    and worth replacing with a single recursive tree-API call if it ever becomes the slow part —
+    compare git blob SHAs, and fetch content only for the ones that differ.
+    """
+    return sorted(p for p in directory.rglob("*.json") if p.name != "schema.json")
 
 
 def fetch(repo: str, commit: str, path: str, name: str) -> str:
@@ -100,6 +113,12 @@ def canonical(text: str) -> str:
     return json.dumps(json.loads(text), sort_keys=True, separators=(",", ":"))
 
 
+def _name(local: Path, directory: Path) -> str:
+    """A vendored file's name relative to its directory, so `arithmetic/negative.json` reads
+    as itself rather than as `negative.json` in a list of nine files called that."""
+    return local.relative_to(directory).as_posix()
+
+
 def check(directory: Path, *, refresh: bool) -> int:
     """One vendored directory against its own pin."""
     provenance = directory / "PROVENANCE.txt"
@@ -120,7 +139,7 @@ def check(directory: Path, *, refresh: bool) -> int:
     args_refresh = refresh
     for local in files:
         try:
-            remote = fetch(repo, commit, path, local.name)
+            remote = fetch(repo, commit, path, local.relative_to(directory).as_posix())
         except urllib.error.HTTPError as exc:
             if exc.code in (401, 403, 404) and not token():
                 print(
@@ -133,7 +152,7 @@ def check(directory: Path, *, refresh: bool) -> int:
                 )
                 return 0
             if exc.code == 404:
-                missing.append(local.name)
+                missing.append(_name(local, directory))
                 continue
             raise
         except (urllib.error.URLError, TimeoutError) as exc:
@@ -141,14 +160,14 @@ def check(directory: Path, *, refresh: bool) -> int:
             return 0
 
         if canonical(remote) == canonical(local.read_text(encoding="utf-8")):
-            print(f"  ok      {local.name}")
+            print(f"  ok      {_name(local, directory)}")
         elif args_refresh:
             local.write_text(remote, encoding="utf-8")
-            refreshed.append(local.name)
-            print(f"  updated {local.name}")
+            refreshed.append(_name(local, directory))
+            print(f"  updated {_name(local, directory)}")
         else:
-            drifted.append(local.name)
-            print(f"  DRIFT   {local.name}")
+            drifted.append(_name(local, directory))
+            print(f"  DRIFT   {_name(local, directory)}")
 
     if missing:
         print(

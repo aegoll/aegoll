@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/boundary-one-unit-under",
+  "clause": "AEGS-0.1-ARITH-8",
+  "operation": "usd_to_atomic",
+  "description": "One atomic unit below a limit is below it.",
+  "input": {
+    "amount": "9.999999",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 9999999
+  }
+}

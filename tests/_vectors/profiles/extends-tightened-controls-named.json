@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/extends-tightened-controls-named",
+  "clause": "AEGS-0.1-PROF-4",
+  "operation": "evaluate_profile",
+  "description": "The controls a profile tightens relative to its parent are identifiable.",
+  "input": {
+    "profile": "aegs-2",
+    "extendsProfile": "aegs-1"
+  },
+  "expect": {
+    "tightened": [
+      "AgentIdentity",
+      "RiskAssessment",
+      "TrustAssessment"
+    ]
+  },
+  "note": "aegs-2 adds counterparty screening and risk, and raises identity from MUST_RECORD to MUST_EXERCISE: paying a stranger without a stated actor leaves nobody accountable."
+}

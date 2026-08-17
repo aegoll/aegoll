@@ -1,0 +1,37 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/incident-correction-is-a-new-entry",
+  "clause": "AEGS-0.1-CTRL-8",
+  "operation": "verify_chain",
+  "description": "A corrected incident is a new entry referencing the earlier one.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "incident": {
+            "id": "i-1",
+            "summary": "over-spend"
+          }
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:30:00+00:00",
+        "payload": {
+          "incident": {
+            "id": "i-2",
+            "supersedes": "i-1",
+            "summary": "misattributed; envelope was stale"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": true,
+    "problems": [],
+    "entryCount": 2
+  }
+}

@@ -1,0 +1,60 @@
+Vendored AEGS test vectors — test fixtures, not a source of truth.
+
+The canonical vectors live in the standard's own repository:
+
+    https://github.com/aegoll/aegs   ->   vectors/
+
+Why vendored
+------------
+Because the CI job that claimed to run them was running nothing.
+
+`tests/test_vectors.py` located the vectors by searching for a sibling `aegs/` checkout,
+and skipped cleanly when it found none — which is right for a contributor who has only
+this repository, and wrong for CI, which checks out only this repository. The job was
+green, marked `continue-on-error`, and executed zero vectors. That is the same shape as
+PLAN.md F-A11: a coverage count is not a coverage claim unless something executes.
+
+Vendoring makes the CI job real without a cross-repository token, which the schema-drift
+job needs and which is unavailable to a fork.
+
+Not shipped in the wheel
+------------------------
+These live under `tests/` rather than inside the package, unlike `_schemas/` and
+`_profiles/`. Those two are read at runtime by `record.py` and `profiles.py`; these are
+read only by the test suite, and 393 KB of test data in every user's site-packages buys
+that user nothing.
+
+Source
+------
+  repo:    aegoll/aegs
+  commit:  24c12e0a43011e6789b1335fc97ea546aff9094c
+  path:    vectors/
+  copied:  2026-08-17
+  count:   151 vectors across 9 families, covering 56 clauses
+
+Drift
+-----
+Two checks, because there are two ways these can go stale:
+
+  1. `tools/check_schema_drift.py` fails when a vendored file differs from the standard
+     at the pinned commit. Same rule as `_schemas/` and `_profiles/`; the pin is raised
+     deliberately, never drifted into.
+
+  2. `tests/test_vectors.py::test_the_vendored_vectors_match_the_standard` fails when a
+     sibling `aegs/` checkout is present and disagrees with this copy. This is the check
+     that matters day to day: whoever is writing a new clause has the standard beside
+     them, and would otherwise see green locally against vectors CI never sees.
+
+One consequence worth knowing: `README.md` here is the standard's own, so its relative links
+(`../conformance/`, `../spec/`) resolve against the *standard's* layout and not this
+repository's. They are left broken rather than rewritten, because a vendored file edited to
+suit its new home is no longer a copy of anything, and the drift check would then fail forever.
+
+Never edit a file in this directory. A change to a vector is a change to the standard,
+made in `aegs` and copied down afterwards — a vector edited here to make a test pass is
+an implementation quietly rewriting the specification it claims to conform to.
+
+Licence
+-------
+The AEGS specification, its schemas and its vectors are CC-BY-4.0. Attribution:
+Jayzilva, https://github.com/aegoll/aegs

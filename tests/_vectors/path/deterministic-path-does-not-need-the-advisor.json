@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "path/deterministic-path-does-not-need-the-advisor",
+  "clause": "AEGS-0.1-PATH-2",
+  "operation": "resolve_verdict",
+  "description": "A decision is reached without consulting any model.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "treasury"
+  },
+  "note": "No advisor in the proposals at all, and a complete decision with an attributed control. That is what `deterministic decision path` means operationally: the model is not on the path, so its absence is not a degraded mode."
+}

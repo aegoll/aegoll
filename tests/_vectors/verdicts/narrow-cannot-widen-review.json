@@ -1,0 +1,21 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-cannot-widen-review",
+  "clause": "AEGS-0.1-VERD-2",
+  "operation": "resolve_verdict",
+  "description": "A control proposing APPROVE against a standing REVIEW cannot widen it.",
+  "input": {
+    "standing": "REVIEW",
+    "proposals": [
+      {
+        "control": "wishful",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": null
+  },
+  "note": "The load-bearing invariant. A badly written rule can make the system stricter and cannot make it looser, so the worst outcome of a mistake is a refused payment rather than an unguarded one."
+}

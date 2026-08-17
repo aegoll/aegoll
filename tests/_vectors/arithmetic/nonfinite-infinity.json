@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/nonfinite-infinity",
+  "clause": "AEGS-0.1-ARITH-7",
+  "operation": "usd_to_atomic",
+  "description": "Infinity is refused.",
+  "input": {
+    "amount": "Infinity",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "nonfinite"
+  }
+}

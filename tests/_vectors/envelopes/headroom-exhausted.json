@@ -1,0 +1,27 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/headroom-exhausted",
+  "clause": "AEGS-0.1-ENV-2",
+  "operation": "evaluate_envelopes",
+  "description": "A fully consumed envelope has zero headroom.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 50000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 0
+  },
+  "expect": {
+    "ok": true,
+    "headroom": {
+      "daily": 0
+    },
+    "breached": []
+  },
+  "note": "Zero headroom still admits an amount of zero. Refusing a zero-amount action would make envelope state unreadable without spending -- see ARITH-6."
+}

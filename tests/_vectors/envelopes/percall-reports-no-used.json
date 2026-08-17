@@ -1,0 +1,27 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/percall-reports-no-used",
+  "clause": "AEGS-0.1-ENV-4",
+  "operation": "evaluate_envelopes",
+  "description": "A per-call ceiling reports no consumed amount.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_transaction",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": false,
+        "window": "per call"
+      }
+    ],
+    "amountAtomic": 2500000
+  },
+  "expect": {
+    "ok": true,
+    "breached": [],
+    "used": {
+      "per_transaction": null
+    }
+  },
+  "note": "THIS WAS A REAL DEFECT in the reference implementation's own report output: the per-call ceiling rendered as `$0.00 of $10.00` beside cumulative windows and read as an untouched budget. Technically true, practically false."
+}

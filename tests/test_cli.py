@@ -319,6 +319,161 @@ def test_report_always_carries_the_chain_caveat(project):
     assert "truncation" in human
 
 
+def test_decide_uses_the_pack_the_config_names(project):
+    """The worst bug this tool can have, and it was live.
+
+    `_aegl()` called `load_bundle()` with no path, which resolves to the *packaged* starter
+    pack. So a user could edit `policies/default.yaml`, watch `aegoll check` confirm the edit by
+    name and content hash, and then have `aegoll decide` govern the agent by entirely different
+    numbers — with nothing reporting a conflict, because nothing knew there was one.
+
+    A governance layer quietly enforcing a policy other than the one on disk is worse than one
+    that fails to start.
+
+    The edit here drops the per-transaction ceiling to half a cent, so `$1.00` must breach it.
+    The assertion is on `binding`, not on the verdict: both packs produce a non-approval for
+    $1.00 by different routes, and only the binding envelope distinguishes which pack was read.
+    """
+    pack = project / "policies" / "default.yaml"
+    pack.write_text(
+        pack.read_text(encoding="utf-8")
+        .replace('per_transaction_usd: "10"', 'per_transaction_usd: "0.005"')
+        .replace("name: default", "name: edited-by-the-user"),
+        encoding="utf-8",
+    )
+
+    check = run("check", cwd=project, expect=EXIT_OK).stdout
+    assert "edited-by-the-user" in check, "check does not even see the edit"
+
+    data = json.loads(
+        run("decide", "--amount", "1.00", "--vendor", "acme", "--resource", "/r",
+            "--json", cwd=project).stdout
+    )
+    assert data["budget"]["ok"] is False, (
+        "the $0.005 ceiling was not applied, so `decide` read the packaged pack rather than "
+        "the project's -- the config's `policy:` setting is being ignored"
+    )
+    assert data["budget"]["binding"] == "per_transaction", data["budget"]
+
+
+def test_every_command_agrees_which_pack_is_in_force(project):
+    """`check` and `report` must name the same pack. Two commands reading two policies from one
+    config is how the defect above stayed invisible: each was self-consistent."""
+    pack = project / "policies" / "default.yaml"
+    pack.write_text(
+        pack.read_text(encoding="utf-8").replace("name: default", "name: one-true-pack"),
+        encoding="utf-8",
+    )
+
+    checked = run("check", cwd=project, expect=EXIT_OK).stdout
+    reported = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)
+
+    assert "one-true-pack" in checked
+    assert reported["policy"]["name"] == "one-true-pack", (
+        f"check and report disagree: report says {reported['policy']['name']!r}"
+    )
+
+
+def test_an_explicit_policy_flag_still_wins(project):
+    """Precedence: `--policy` over the config, so a pack can be inspected without editing
+    config."""
+    other = project / "other.yaml"
+    other.write_text(
+        (project / "policies" / "default.yaml")
+        .read_text(encoding="utf-8")
+        .replace("name: default", "name: explicitly-chosen"),
+        encoding="utf-8",
+    )
+    data = json.loads(
+        run("--policy", str(other), "report", "--json", cwd=project, expect=EXIT_OK).stdout
+    )
+    assert data["policy"]["name"] == "explicitly-chosen"
+
+
+def test_the_configured_journal_path_is_honoured(project):
+    """`evidence: journal:` was a setting that did nothing — no reader anywhere.
+
+    A user could point it at `logs/spend.jsonl`, get no error, and find their evidence in
+    `./.aegoll` instead. Honouring the *filename* matters as much as the directory: writing
+    `audit.jsonl` into the named folder would satisfy half the setting, and the file they asked
+    for would still never appear.
+    """
+    config = project / "aegoll.yaml"
+    config.write_text(
+        config.read_text(encoding="utf-8").replace(
+            "journal: .aegoll/audit.jsonl", "journal: logs/spend.jsonl"
+        ),
+        encoding="utf-8",
+    )
+
+    run("decide", "--amount", "0.01", "--vendor", "acme", "--resource", "/r", cwd=project)
+
+    assert (project / "logs" / "spend.jsonl").is_file(), (
+        "the configured journal path was ignored; evidence went somewhere else"
+    )
+    assert not (project / ".aegoll" / "audit.jsonl").exists(), (
+        "evidence was also written to the default path -- two journals means neither is the "
+        "record"
+    )
+
+
+def test_report_html_writes_a_self_contained_file(project):
+    """A10a.2. The end-to-end path, as a user runs it.
+
+    `tests/test_html.py` checks the renderer against a constructed `Report`; this checks that
+    the flag reaches it, that a real layer produces a page, and that the file on disk is the
+    whole artifact — a renderer that was correct but wired to nothing would pass the other
+    suite entirely.
+    """
+    run("decide", "--amount", "0.01", "--vendor", "acme", "--resource", "/r", cwd=project)
+    out = project / "spend.html"
+    run("report", "--html", "-o", str(out), cwd=project, expect=EXIT_OK)
+
+    page = out.read_text(encoding="utf-8")
+    assert page.startswith("<!DOCTYPE html>")
+    assert "https://" not in page and "http://" not in page
+    assert "Attributed control" in page
+    assert "truncation" in page, "the chain caveat must survive into the page"
+
+
+def test_report_html_defaults_to_stdout(project):
+    """So it pipes. `aegoll report --html > spend.html` should work without a flag, because
+    that is what everything else on a shell does."""
+    page = run("report", "--html", cwd=project, expect=EXIT_OK).stdout
+    assert page.lstrip().startswith("<!DOCTYPE html>")
+    assert "</html>" in page
+
+
+def test_report_refuses_html_and_json_together(project):
+    """Two renderings of the same report. Silently honouring one teaches the user that the
+    flag they asked for does nothing."""
+    result = run("report", "--html", "--json", cwd=project, expect=EXIT_USAGE)
+    assert "pick one" in result.stderr
+
+
+def test_output_without_html_is_a_usage_error(project):
+    """`-o` writes a rendered page. Accepting it for the terminal renderer and ignoring it
+    would silently discard the user's file."""
+    result = run("report", "-o", "x.html", cwd=project, expect=EXIT_USAGE)
+    assert "--html" in result.stderr
+
+
+def test_report_html_shows_the_rules_not_just_a_count(project):
+    """A count says the pack is not empty. The question before a run is which rule will stop
+    me, and that needs the rules in evaluation order."""
+    page = run("report", "--html", cwd=project, expect=EXIT_OK).stdout
+    data = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)
+
+    rules = data["policy"]["ruleList"]
+    assert len(rules) == data["policy"]["rules"], "the list and the count disagree"
+    assert [r["priority"] for r in rules] == sorted(r["priority"] for r in rules), (
+        "rules are not in evaluation order"
+    )
+    for rule in rules:
+        assert rule["id"] in page, f"{rule['id']} is missing from the page"
+        assert rule["condition"], f"{rule['id']} has no readable condition"
+
+
 def test_report_separates_the_two_channels(project):
     """They never share an envelope: different currency, counterparty, failure mode."""
     data = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)

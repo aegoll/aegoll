@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/negative-zero",
+  "clause": "AEGS-0.1-ARITH-4",
+  "operation": "usd_to_atomic",
+  "description": "Negative zero is accepted as zero, not refused as negative.",
+  "input": {
+    "amount": "-0.0",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 0
+  },
+  "note": "Deliberate, and the one place this family permits a normalisation: negative zero IS zero, it expresses no negative intent, and refusing it would make an implementation's behaviour depend on how its caller happened to format nothing."
+}

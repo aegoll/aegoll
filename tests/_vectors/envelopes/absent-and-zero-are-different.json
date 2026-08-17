@@ -1,0 +1,32 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/absent-and-zero-are-different",
+  "clause": "AEGS-0.1-ENV-8",
+  "operation": "evaluate_envelopes",
+  "description": "An absent limit and a zero limit produce different outcomes for the same amount.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "unlimited",
+        "limit": null,
+        "used": 0,
+        "cumulative": true
+      },
+      {
+        "name": "closed",
+        "limit": 0,
+        "used": 0,
+        "cumulative": true
+      }
+    ],
+    "amountAtomic": 1000000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "closed"
+    ],
+    "binding": "closed"
+  },
+  "note": "Both envelopes in one evaluation, so an implementation conflating absent with zero fails this vector whichever way it conflates them."
+}

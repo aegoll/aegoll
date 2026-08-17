@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-order-changes-it",
+  "clause": "AEGS-0.1-VERD-4",
+  "operation": "resolve_verdict",
+  "description": "Reversing the order changes the attributed control while the verdict stays the same.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "risk",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "treasury",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE",
+    "attributedControl": "treasury"
+  },
+  "note": "THE ASYMMETRY THIS SECTION EXISTS FOR. Compare with attribution-last-narrowing-wins: same verdict, different attributed control, because the order differed. The verdict is order-independent; attribution is not, and conformance scores attribution."
+}

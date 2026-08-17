@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-storage-order-irrelevant",
+  "clause": "AEGS-0.1-EVID-4",
+  "operation": "chain_hash",
+  "description": "The hash is unaffected by the key order an entry was stored in.",
+  "input": {
+    "seq": 0,
+    "at": "2026-08-17T12:00:00+00:00",
+    "prevHash": null,
+    "payload": {
+      "b": 2,
+      "a": 1
+    },
+    "alsoPayload": {
+      "a": 1,
+      "b": 2
+    }
+  },
+  "expect": {
+    "hashesEqual": true
+  },
+  "note": "Verification reconstructs the canonical form from whatever was stored, so a journal may be stored in any faithful form. The reference implementation writes unsorted keys and verifies correctly, which makes EVID-4 real rather than theoretical."
+}

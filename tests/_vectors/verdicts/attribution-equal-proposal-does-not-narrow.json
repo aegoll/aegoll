@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-equal-proposal-does-not-narrow",
+  "clause": "AEGS-0.1-VERD-4",
+  "operation": "resolve_verdict",
+  "description": "A control proposing exactly the standing verdict has not narrowed it.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "risk",
+        "verdict": "REVIEW"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "treasury"
+  },
+  "note": "Equality is not narrowing. An implementation using `>=` rather than `>` when deciding whether a control changed the verdict would attribute this to risk, and an operator would go looking at the wrong engine."
+}

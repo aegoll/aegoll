@@ -84,8 +84,54 @@ evidence:
 
 
 def _aegl(args: argparse.Namespace, ephemeral: bool = False) -> Aegoll:
-    bundle = load_bundle(args.policy) if args.policy else load_bundle()
-    paths = Paths.ephemeral(".data-cli") if ephemeral else Paths.under()
+    """The layer, configured the way the project says.
+
+    Precedence for the policy pack, most specific first:
+
+    1. `--policy PATH` — an explicit override, for inspecting a pack without editing config.
+    2. **`aegoll.yaml`'s `policy:`** — the project's own pack. This is the normal case.
+    3. the packaged starter pack, when there is no config at all.
+
+    Step 2 was missing, and its absence was the worst kind of bug this tool can have: a user
+    edited `policies/default.yaml`, `aegoll check` confirmed the edit by name and content hash,
+    and `aegoll decide` then governed the agent by the *packaged* numbers instead. Nothing
+    reported a conflict, because nothing knew there was one. A governance layer quietly
+    enforcing a policy other than the one on disk is worse than a governance layer that fails.
+
+    `Config.policy()` already applied this precedence correctly; eleven call sites reached this
+    helper and none of them asked it. The same defect was fixed once before in `policy explain`
+    alone, which is exactly why it survived everywhere else -- so it is fixed here, in the one
+    place every command shares.
+    """
+    from .settings import Config  # noqa: PLC0415
+
+    config = None
+    if not args.policy:
+        try:
+            config = Config.load(getattr(args, "config", None))
+        except (ConfigError, PolicyError):
+            # No config, or a broken one. `aegoll check` is the command that reports why; the
+            # others fall back to the packaged pack rather than refusing to start, which keeps
+            # `aegoll decide` usable in a bare directory.
+            config = None
+
+    if args.policy:
+        bundle = load_bundle(args.policy)
+    elif config is not None:
+        bundle = config.policy()
+    else:
+        bundle = load_bundle()
+
+    if ephemeral:
+        paths = Paths.ephemeral(".data-cli")
+    elif config is not None and config.evidence_path:
+        # The journal belongs where the project says it does. Nothing read this key before,
+        # so `evidence: journal:` was a setting that did nothing -- a user could point it at
+        # `logs/spend.jsonl`, see no error, and find their evidence in `./.aegoll` instead.
+        paths = Paths.for_journal(config.evidence_path)
+    else:
+        paths = Paths.under()
+
     clock = FixedClock(BASE_TIME) if getattr(args, "fixed_time", False) else None
     return Aegoll(bundle=bundle, paths=paths, clock=clock)
 
@@ -573,6 +619,37 @@ def cmd_report(args: argparse.Namespace) -> int:
     finally:
         aegoll.close()
 
+    # Before `--json`, and mutually exclusive with it rather than one quietly winning. A
+    # user who passes both has a wrong expectation about one of them, and silently honouring
+    # the other teaches them the flag they asked for does nothing.
+    if args.html and args.json:
+        print(
+            "report: --html and --json are different renderings of the same report; "
+            "pick one.",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+
+    if args.html:
+        from .html import render  # noqa: PLC0415
+
+        page = render(report)
+        if args.output:
+            Path(args.output).write_text(page, encoding="utf-8")
+            print(f"wrote {args.output}  ({len(page):,} bytes, self-contained)")
+        else:
+            # Defaults to stdout so it pipes. `aegoll report --html > spend.html` should
+            # work without a flag, because that is what everything else on a shell does.
+            print(page)
+        return EXIT_OK if report.chain and report.chain.valid else EXIT_CHAIN
+
+    if args.output:
+        print(
+            "report: -o/--output writes a rendered page, so it needs --html.",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+
     if args.json:
         print(json.dumps(report.as_dict(), indent=2))
         return EXIT_OK if report.chain and report.chain.valid else EXIT_CHAIN
@@ -853,6 +930,14 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--config", help="path to aegoll.yaml or aegoll.json")
     rep.add_argument("--limit", type=int, default=20, help="decisions to show")
     rep.add_argument("--json", action="store_true", help="machine-readable output")
+    rep.add_argument(
+        "--html", action="store_true",
+        help="render a self-contained HTML page (no network, no external resources)",
+    )
+    rep.add_argument(
+        "-o", "--output", metavar="PATH",
+        help="write to PATH instead of stdout; only meaningful with --html",
+    )
     rep.set_defaults(func=cmd_report)
 
     pex = sub.add_parser("policy", help="explain what a policy would do")

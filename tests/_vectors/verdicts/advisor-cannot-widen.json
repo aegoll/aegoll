@@ -1,0 +1,21 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/advisor-cannot-widen",
+  "clause": "AEGS-0.1-VERD-9",
+  "operation": "resolve_verdict",
+  "description": "An advisory model cannot widen a verdict.",
+  "input": {
+    "standing": "REJECT",
+    "proposals": [
+      {
+        "control": "advisor",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": null
+  },
+  "note": "Constraining the advisor to narrowing is what makes its absence safe by construction. An implementation that failed OPEN when its advisor was unreachable would have a control that stops governing exactly when it is under attack."
+}

@@ -1,0 +1,17 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-present-on-approval",
+  "clause": "AEGS-0.1-VERD-5",
+  "operation": "resolve_verdict",
+  "description": "An approval is attributed to whatever produced the standing verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": []
+  },
+  "expect": {
+    "verdict": "APPROVE",
+    "attributedControl": "policy"
+  },
+  "note": "Easy to overlook: if nothing narrowed, something still DECIDED. An implementation attributing only refusals has records that go quiet exactly when an auditor asks why something was allowed."
+}

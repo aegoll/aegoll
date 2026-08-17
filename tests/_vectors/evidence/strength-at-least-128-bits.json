@@ -1,0 +1,12 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/strength-at-least-128-bits",
+  "clause": "AEGS-0.1-EVID-5",
+  "operation": "hash_strength",
+  "description": "The retained hash length is at least 128 bits.",
+  "input": {},
+  "expect": {
+    "minBits": 128
+  },
+  "note": "THE REFERENCE IMPLEMENTATION CURRENTLY FAILS THIS: it retains 64 bits. Recorded as a known non-conformance rather than accommodated by lowering the clause. A second preimage at 64 bits is 2^64 work, reachable with commodity GPUs in months; at 128 bits nobody reaches it. That difference is the difference between evidence and evidence-shaped."
+}

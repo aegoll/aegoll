@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/zero-limit-refuses-any-spend",
+  "clause": "AEGS-0.1-ENV-8",
+  "operation": "evaluate_envelopes",
+  "description": "A limit of zero refuses every non-zero amount.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 0,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 1
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "daily"
+    ],
+    "binding": "daily"
+  }
+}

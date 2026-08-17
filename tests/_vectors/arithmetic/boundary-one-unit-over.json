@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/boundary-one-unit-over",
+  "clause": "AEGS-0.1-ARITH-8",
+  "operation": "usd_to_atomic",
+  "description": "One atomic unit above a limit is above it.",
+  "input": {
+    "amount": "10.000001",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 10000001
+  }
+}

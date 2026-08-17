@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-no-whitespace",
+  "clause": "AEGS-0.1-EVID-3",
+  "operation": "canonical_serialise",
+  "description": "Insignificant whitespace is omitted.",
+  "input": {
+    "payload": {
+      "a": 1,
+      "b": [
+        1,
+        2
+      ]
+    }
+  },
+  "expect": {
+    "canonical": "{\"a\":1,\"b\":[1,2]}"
+  },
+  "note": "A pretty-printed form is the same object and different bytes. This is why the clause names separators rather than leaving them to a default."
+}

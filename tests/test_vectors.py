@@ -9,10 +9,14 @@ The two vectors that matter most are the ones that exist because of real defects
 `-$1000` payment that was **approved**, and a 30-digit amount that **crashed** the layer.
 Both shipped in the prototype. Neither can come back without a red test here.
 
-Vectors are read from `aegs/vectors/`, located by search rather than by a hard-coded path,
-and the whole module skips cleanly when the standard is not checked out beside this
-repository — a contributor with only this repo should not see a wall of red for something
-they cannot fix.
+Vectors are read from `tests/_vectors/`, a **vendored copy pinned to a commit** of the
+standard, exactly as `_schemas/` and `_profiles/` are. Previously they were located by
+searching for a sibling `aegs/` checkout, which meant CI — checking out only this repository —
+ran none of them behind a green job. See `tests/_vectors/PROVENANCE.txt`.
+
+A sibling checkout still takes precedence when present, because whoever is writing a new clause
+wants the live copy. `test_the_vendored_vectors_match_the_standard` is what stops that being a
+way to be green locally against vectors CI never sees.
 """
 
 from __future__ import annotations
@@ -24,16 +28,16 @@ import pytest
 
 from aegoll.domain import atomic_to_usd, usd_to_atomic
 
-#: Where the standard might be. Two repos side by side is the normal layout; a vendored
-#: copy is the fallback once the vectors are pinned like the schemas are.
-_SEARCH = (
-    Path(__file__).resolve().parents[2] / "aegs" / "vectors",
-    Path(__file__).resolve().parents[1] / "src" / "aegoll" / "_vectors",
-)
+#: The vendored copy, pinned. Always present, so the suite always runs.
+VENDORED = Path(__file__).resolve().parent / "_vectors"
+
+#: A sibling checkout of the standard, if there is one. Preferred when present: whoever is
+#: writing a clause wants the vectors they just wrote, not yesterday's pin.
+SIBLING = Path(__file__).resolve().parents[2] / "aegs" / "vectors"
 
 
 def _vectors_dir() -> Path | None:
-    return next((p for p in _SEARCH if p.is_dir()), None)
+    return next((p for p in (SIBLING, VENDORED) if p.is_dir()), None)
 
 
 def _load() -> list[tuple[str, dict]]:
@@ -56,9 +60,10 @@ VECTORS = _load()
 pytestmark = pytest.mark.skipif(
     not VECTORS,
     reason=(
-        "the AEGS vectors are not available. Check out aegoll/aegs beside this repository, "
-        "or vendor them. A contributor without the standard should not see red for "
-        "something they cannot fix."
+        "the AEGS vectors are not available, which should now be impossible -- "
+        "tests/_vectors/ is vendored and committed. If this skip fires, the vendored copy "
+        "has been deleted rather than the standard being absent, and "
+        "test_the_vendored_copy_exists says so as a failure rather than a skip."
     ),
 )
 
@@ -764,6 +769,59 @@ def _assert_evidence(clause: str, vector: dict, expected: dict, got: dict) -> No
 
 
 # --- the suite's own integrity --------------------------------------------
+
+
+def test_the_vendored_copy_exists():
+    """A skip is the wrong signal for a deleted fixture.
+
+    `pytestmark` above skips when no vectors load, which is the right behaviour for an absent
+    *sibling* and the wrong behaviour for a deleted *vendored* copy — one is a contributor
+    without the standard, the other is this repository having lost its own test data. Only the
+    second is a defect, and only a failure says so.
+    """
+    assert VENDORED.is_dir(), (
+        f"{VENDORED} is missing. It is vendored and committed, so this is a deletion rather "
+        "than an absent standard -- see tests/_vectors/PROVENANCE.txt"
+    )
+    count = len([p for p in VENDORED.rglob("*.json") if p.name != "schema.json"])
+    assert count >= 151, f"only {count} vendored vectors; the copy is incomplete"
+
+
+def test_the_vendored_vectors_match_the_standard():
+    """When a sibling checkout is present, the pin must agree with it.
+
+    This is the check that earns its keep day to day. Whoever is writing a clause has `aegs/`
+    beside them, so the suite reads the live vectors and goes green — while CI, which has only
+    the vendored copy, runs a different set. That is how a vector gets written, passed locally,
+    and never actually enforced.
+
+    Skipped rather than failed without a sibling: a contributor with one repository cannot
+    check a pin against a repository they do not have.
+    """
+    if not SIBLING.is_dir():
+        pytest.skip("no sibling aegs/ checkout; nothing to compare the pin against")
+
+    def index(root: Path) -> dict[str, str]:
+        return {
+            p.relative_to(root).as_posix(): p.read_text(encoding="utf-8")
+            for p in sorted(root.rglob("*.json"))
+        }
+
+    live, pinned = index(SIBLING), index(VENDORED)
+
+    added = sorted(set(live) - set(pinned))
+    removed = sorted(set(pinned) - set(live))
+    changed = sorted(k for k in set(live) & set(pinned) if live[k] != pinned[k])
+
+    assert not (added or removed or changed), (
+        "the vendored vectors have drifted from the standard beside them.\n"
+        f"  new in aegs/, not vendored: {added or 'none'}\n"
+        f"  vendored, gone from aegs/:  {removed or 'none'}\n"
+        f"  differing content:          {changed or 'none'}\n"
+        "  Re-vendor and raise the pin in tests/_vectors/PROVENANCE.txt. Do not edit the "
+        "vendored copy to match -- a vector edited here is an implementation rewriting the "
+        "specification it claims to conform to."
+    )
 
 
 def test_the_vectors_were_actually_found():

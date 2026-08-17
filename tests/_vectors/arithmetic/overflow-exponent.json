@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/overflow-exponent",
+  "clause": "AEGS-0.1-ARITH-5",
+  "operation": "usd_to_atomic",
+  "description": "An exponent-notation magnitude beyond the maximum is refused.",
+  "input": {
+    "amount": "1e30",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "overflow"
+  }
+}

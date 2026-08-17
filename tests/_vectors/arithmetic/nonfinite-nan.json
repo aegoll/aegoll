@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/nonfinite-nan",
+  "clause": "AEGS-0.1-ARITH-7",
+  "operation": "usd_to_atomic",
+  "description": "Not-a-number is refused.",
+  "input": {
+    "amount": "NaN",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "nonfinite"
+  },
+  "note": "Every comparison with NaN is false, including `NaN <= headroom`. An implementation refusing on false REJECTS it; one checking `amount > headroom` and refusing on true APPROVES it. Same input, two reasonable implementations, opposite outcomes."
+}

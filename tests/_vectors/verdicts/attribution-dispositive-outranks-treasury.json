@@ -1,0 +1,29 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-dispositive-outranks-treasury",
+  "clause": "AEGS-0.1-VERD-4a",
+  "operation": "resolve_verdict",
+  "description": "A dispositive control outranks a narrowing one.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "sanctions",
+        "verdict": "REJECT",
+        "recordsEvidence": true
+      }
+    ],
+    "dispositive": [
+      "sanctions"
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "sanctions"
+  },
+  "note": "Some findings are categorical rather than quantitative. A counterparty is barred or it is not, and that does not become less true because a spending limit happened to bite first."
+}

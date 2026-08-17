@@ -1,0 +1,27 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/order-three-permuted",
+  "clause": "AEGS-0.1-VERD-3",
+  "operation": "resolve_verdict",
+  "description": "Three narrowings in an arbitrary order still produce the most severe verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "c",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "a",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "b",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT"
+  }
+}

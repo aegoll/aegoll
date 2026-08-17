@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/levels-absent-control-is-optional",
+  "clause": "AEGS-0.1-PROF-2",
+  "operation": "evaluate_profile",
+  "description": "A control absent from a profile's list is treated as OPTIONAL.",
+  "input": {
+    "profile": "aegs-1",
+    "control": "__not-in-any-list__"
+  },
+  "expect": {
+    "requirement": "OPTIONAL"
+  }
+}

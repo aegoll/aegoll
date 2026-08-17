@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/delegate-chain-of-three-takes-the-narrowest",
+  "clause": "AEGS-0.1-ID-4",
+  "operation": "clamp_delegation",
+  "description": "A three-deep chain is clamped by its narrowest step, not by its root.",
+  "input": {
+    "chain": [
+      {
+        "agent": "root",
+        "perActionAtomic": 100000000
+      },
+      {
+        "agent": "middle",
+        "perActionAtomic": 2000000
+      },
+      {
+        "agent": "leaf",
+        "perActionAtomic": 50000000
+      }
+    ]
+  },
+  "expect": {
+    "effectiveAtomic": 2000000,
+    "limitedBy": "middle"
+  },
+  "note": "Why the rule is stated as `narrower of its own and its delegator's` rather than `not more than the root`: a tightly limited middle agent must constrain the leaf even when the root is generous."
+}

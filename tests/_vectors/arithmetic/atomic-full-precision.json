@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/atomic-full-precision",
+  "clause": "AEGS-0.1-ARITH-1",
+  "operation": "usd_to_atomic",
+  "description": "An amount at the asset's full precision converts without loss.",
+  "input": {
+    "amount": "1.234567",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 1234567
+  }
+}

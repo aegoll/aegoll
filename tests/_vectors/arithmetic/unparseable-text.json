@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/unparseable-text",
+  "clause": "AEGS-0.1-ARITH-7",
+  "operation": "usd_to_atomic",
+  "description": "A value that is not a decimal amount is refused.",
+  "input": {
+    "amount": "ten dollars",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "unparseable"
+  }
+}

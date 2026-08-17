@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/overflow-thirty-digits",
+  "clause": "AEGS-0.1-ARITH-5",
+  "operation": "usd_to_atomic",
+  "description": "An unrepresentable magnitude is refused, not raised.",
+  "input": {
+    "amount": "100000000000000000000000000000",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "overflow"
+  },
+  "note": "THIS WAS A LIVE VULNERABILITY. A 30-digit amount CRASHED the reference implementation rather than being refused by it -- the decimal arithmetic raised from inside the engine. Found as RT-NUM-004. A layer that crashes on malformed input can be removed from the path by sending it garbage."
+}

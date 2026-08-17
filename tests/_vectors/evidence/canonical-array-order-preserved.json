@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-array-order-preserved",
+  "clause": "AEGS-0.1-EVID-3",
+  "operation": "canonical_serialise",
+  "description": "Array order is significant and is preserved.",
+  "input": {
+    "payload": {
+      "reasons": [
+        "b",
+        "a",
+        "c"
+      ]
+    }
+  },
+  "expect": {
+    "canonical": "{\"reasons\":[\"b\",\"a\",\"c\"]}"
+  },
+  "note": "Keys are sorted; arrays are NOT. An implementation that sorted arrays too would destroy evaluation order, which VERD-4 makes normative because attribution depends on it."
+}

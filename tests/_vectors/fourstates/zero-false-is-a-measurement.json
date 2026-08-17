@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/zero-false-is-a-measurement",
+  "clause": "AEGS-0.1-STATE-3",
+  "operation": "classify_state",
+  "description": "A boolean false is a measured value.",
+  "input": {
+    "record": {
+      "sanctions": {
+        "measured": true,
+        "listed": false
+      }
+    },
+    "field": "sanctions"
+  },
+  "expect": {
+    "state": "zero"
+  },
+  "note": "`Screened, not listed` is the most common successful outcome of a sanctions check. An implementation treating it as absent would report its healthiest state as a gap."
+}

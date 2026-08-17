@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/unknown-when-measured-without-a-value",
+  "clause": "AEGS-0.1-STATE-1",
+  "operation": "classify_state",
+  "description": "A control that ran and could not determine an answer reports unknown.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": true,
+        "score": null
+      }
+    },
+    "field": "trust"
+  },
+  "expect": {
+    "state": "unknown"
+  },
+  "note": "`We ran and could not tell` is not `we did not run`. The first is an outage or a genuine indeterminacy; the second is a skip."
+}

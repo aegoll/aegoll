@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/rounding-half-up",
+  "clause": "AEGS-0.1-ARITH-3",
+  "operation": "usd_to_atomic",
+  "description": "A value exactly halfway rounds away from zero.",
+  "input": {
+    "amount": "0.0000005",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 1
+  },
+  "note": "The clause that separates half-up from half-even. An implementation inheriting Python's Decimal default, or Python's round(), gets 0 here."
+}

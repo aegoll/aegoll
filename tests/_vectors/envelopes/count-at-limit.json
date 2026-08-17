@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/count-at-limit",
+  "clause": "AEGS-0.1-ENV-7",
+  "operation": "evaluate_envelopes",
+  "description": "A count envelope already at its limit refuses the action.",
+  "input": {
+    "envelopes": [],
+    "counters": [
+      {
+        "name": "velocity_60s",
+        "limit": 10,
+        "used": 10,
+        "kind": "count",
+        "window": "last 60s"
+      }
+    ],
+    "amountAtomic": 1000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "velocity_60s"
+    ],
+    "binding": "velocity_60s"
+  },
+  "note": "A count envelope is evaluated against occurrences already recorded, independent of the amount. Ten have happened and the limit is ten, so the eleventh is refused -- there is no amount for which this action is admissible."
+}

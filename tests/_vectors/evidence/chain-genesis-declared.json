@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/chain-genesis-declared",
+  "clause": "AEGS-0.1-EVID-2",
+  "operation": "verify_chain",
+  "description": "The first entry commits to the declared genesis value.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "decision": "APPROVE"
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  },
+  "note": "Without a declared genesis the first entry has nothing to commit to, and an implementation could drop the whole journal and start again with a plausible-looking chain of one."
+}

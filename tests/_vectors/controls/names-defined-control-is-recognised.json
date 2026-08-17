@@ -1,0 +1,13 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/names-defined-control-is-recognised",
+  "clause": "AEGS-0.1-CTRL-1",
+  "operation": "classify_control",
+  "description": "A control name from the defined set is recognised as such.",
+  "input": {
+    "control": "BudgetEnvelope"
+  },
+  "expect": {
+    "kind": "defined"
+  }
+}

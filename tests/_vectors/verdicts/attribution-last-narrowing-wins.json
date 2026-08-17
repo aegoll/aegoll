@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-last-narrowing-wins",
+  "clause": "AEGS-0.1-VERD-4",
+  "operation": "resolve_verdict",
+  "description": "The attributed control is the last one that narrowed the verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "risk",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE",
+    "attributedControl": "risk"
+  }
+}

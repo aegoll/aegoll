@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/rounding-half-up-even-target",
+  "clause": "AEGS-0.1-ARITH-3",
+  "operation": "usd_to_atomic",
+  "description": "Halfway rounds away from zero even when the result would be even.",
+  "input": {
+    "amount": "0.0000015",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 2
+  },
+  "note": "Half-even gives 2 here too, so this vector alone does not discriminate. It is paired with rounding-half-up, where half-even gives 0 and half-up gives 1. Both are needed: one vector cannot distinguish the modes."
+}

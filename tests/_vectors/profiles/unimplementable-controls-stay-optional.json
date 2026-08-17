@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/unimplementable-controls-stay-optional",
+  "clause": "AEGS-0.1-PROF-6",
+  "operation": "evaluate_profile",
+  "description": "No profile requires a control for which no implementation has an engine.",
+  "input": {
+    "profiles": [
+      "none",
+      "aegs-1",
+      "aegs-2"
+    ],
+    "controls": [
+      "AMLAssessment",
+      "IncidentRecord"
+    ]
+  },
+  "expect": {
+    "allOptional": true
+  },
+  "note": "Requiring AMLAssessment at MUST_EXERCISE would make aegs-2 look considerably more serious and would make it unsatisfiable -- so every implementation would claim aegs-1, the higher level would go unused, and the specification would have gained a decoration. Requiring the impossible moves the real bar DOWN."
+}

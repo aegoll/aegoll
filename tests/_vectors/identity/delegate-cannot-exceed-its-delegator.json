@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/delegate-cannot-exceed-its-delegator",
+  "clause": "AEGS-0.1-ID-4",
+  "operation": "clamp_delegation",
+  "description": "A delegate claiming more than its delegator is clamped to the delegator.",
+  "input": {
+    "chain": [
+      {
+        "agent": "root",
+        "perActionAtomic": 10000000
+      },
+      {
+        "agent": "child",
+        "perActionAtomic": 1000000000
+      }
+    ]
+  },
+  "expect": {
+    "effectiveAtomic": 10000000,
+    "limitedBy": "root"
+  },
+  "note": "Without this an authority limit is a suggestion: an agent limited to ten dollars that can create a sub-agent limited to a thousand has a limit of a thousand, reached by one extra function call -- and the record would show a compliant parent and a compliant child."
+}

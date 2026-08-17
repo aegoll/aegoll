@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/severity-review-escalate",
+  "clause": "AEGS-0.1-VERD-1",
+  "operation": "resolve_verdict",
+  "description": "The more severe of REVIEW and ESCALATE is ESCALATE.",
+  "input": {
+    "standing": "REVIEW",
+    "proposals": [
+      {
+        "control": "other",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE"
+  },
+  "note": "REVIEW and ESCALATE are the pair that invites disagreement: both defer to a human. ESCALATE is the more severe because REVIEW is pausable and ESCALATE is blocking -- the agent cannot proceed at all."
+}

@@ -1,0 +1,34 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/truncation-to-one-entry",
+  "clause": "AEGS-0.1-EVID-6",
+  "operation": "verify_chain",
+  "description": "Truncating to a single entry still verifies.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "truncate",
+      "keep": 1
+    }
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  },
+  "note": "The degenerate case: one entry, genesis link intact, nothing to notice. Closing this needs a value published where the agent cannot reach it -- and NOT a head file beside the journal, which an attacker who can truncate can also rewrite."
+}

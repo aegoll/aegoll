@@ -1,0 +1,21 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-policy-may-tighten",
+  "clause": "AEGS-0.1-VERD-7",
+  "operation": "resolve_verdict",
+  "description": "A policy rule may narrow a verdict a control set.",
+  "input": {
+    "standing": "REVIEW",
+    "standingControl": "treasury",
+    "proposals": [
+      {
+        "control": "policy",
+        "verdict": "REJECT"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "policy"
+  }
+}

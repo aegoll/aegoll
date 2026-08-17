@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/roundtrip-zero",
+  "clause": "AEGS-0.1-ARITH-2",
+  "operation": "atomic_to_usd",
+  "description": "Zero converts back to zero at full precision.",
+  "input": {
+    "atomic": 0,
+    "decimals": 6
+  },
+  "expect": {
+    "usd": "0.000000"
+  }
+}

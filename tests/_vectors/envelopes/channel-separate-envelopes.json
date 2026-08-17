@@ -1,0 +1,36 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/channel-separate-envelopes",
+  "clause": "AEGS-0.1-ENV-9",
+  "operation": "evaluate_envelopes",
+  "description": "Consumption in one channel does not reduce headroom in the other.",
+  "input": {
+    "channel": "external",
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "otherChannel": {
+      "envelopes": [
+        {
+          "name": "daily",
+          "limit": 150000,
+          "used": 150000,
+          "cumulative": true,
+          "window": "today"
+        }
+      ]
+    },
+    "amountAtomic": 100000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "The internal channel is fully exhausted and the external action is unaffected. Sharing an envelope means a talkative agent exhausts its ability to buy anything and a shopping agent stops being able to think -- and the record cannot tell an operator which happened."
+}

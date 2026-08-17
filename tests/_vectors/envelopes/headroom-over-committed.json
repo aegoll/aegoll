@@ -1,0 +1,27 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/headroom-over-committed",
+  "clause": "AEGS-0.1-ENV-2",
+  "operation": "evaluate_envelopes",
+  "description": "Consumption beyond the limit reports zero headroom, never a negative number.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 62000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 0
+  },
+  "expect": {
+    "ok": true,
+    "headroom": {
+      "daily": 0
+    },
+    "breached": []
+  },
+  "note": "Not an error state. A limit can be lowered after spending happened, and a settlement can land after the decision that authorised it. Reporting -$12 as headroom invites a caller to treat it as arithmetic and add to it."
+}

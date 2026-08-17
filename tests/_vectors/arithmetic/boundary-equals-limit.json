@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/boundary-equals-limit",
+  "clause": "AEGS-0.1-ARITH-8",
+  "operation": "usd_to_atomic",
+  "description": "An amount equal to a limit converts to exactly that limit.",
+  "input": {
+    "amount": "10",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 10000000
+  },
+  "note": "The boundary a test suite most often omits and two implementations most often split on. A limit of ten dollars admits a payment of exactly ten dollars: this vector fixes the conversion so the comparison in ARITH-8 has an unambiguous operand."
+}

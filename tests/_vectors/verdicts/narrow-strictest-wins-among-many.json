@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-strictest-wins-among-many",
+  "clause": "AEGS-0.1-VERD-2",
+  "operation": "resolve_verdict",
+  "description": "The most severe proposal stands, whatever the others say.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "a",
+        "verdict": "REVIEW"
+      },
+      {
+        "control": "b",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "c",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "b"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/chain-three-entries-valid",
+  "clause": "AEGS-0.1-EVID-2",
+  "operation": "verify_chain",
+  "description": "A well-formed chain of three entries verifies.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REVIEW"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  }
+}

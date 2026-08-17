@@ -1,0 +1,39 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/chain-reorder-detected",
+  "clause": "AEGS-0.1-EVID-2",
+  "operation": "verify_chain",
+  "description": "Reordering entries is detected.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REVIEW"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "swap",
+      "seq": 1
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

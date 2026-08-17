@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/severity-reject-escalate",
+  "clause": "AEGS-0.1-VERD-1",
+  "operation": "resolve_verdict",
+  "description": "The more severe of REJECT and ESCALATE is REJECT.",
+  "input": {
+    "standing": "REJECT",
+    "proposals": [
+      {
+        "control": "other",
+        "verdict": "ESCALATE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT"
+  }
+}

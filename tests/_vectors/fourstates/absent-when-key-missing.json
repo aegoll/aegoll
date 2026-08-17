@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/absent-when-key-missing",
+  "clause": "AEGS-0.1-STATE-1",
+  "operation": "classify_state",
+  "description": "A missing key means the control does not exist.",
+  "input": {
+    "record": {},
+    "field": "sanctions"
+  },
+  "expect": {
+    "state": "absent"
+  },
+  "note": "Omission means ABSENT and nothing else -- STATE-2. If omission also meant not-run, deleting a control entirely would change nothing observable."
+}

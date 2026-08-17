@@ -1,0 +1,772 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegoll.github.io/aegs/vectors/schema.json",
+  "title": "AEGS test vector",
+  "version": "0.1",
+  "description": "One input, one expected output, and the normative clause it checks. The clause is required: a vector without one is a test of somebody's implementation rather than of this specification.",
+  "type": "object",
+  "required": [
+    "aegsVersion",
+    "id",
+    "clause",
+    "operation",
+    "description",
+    "input",
+    "expect"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "aegsVersion": {
+      "const": "0.1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/[a-z0-9-]+$",
+      "description": "`<family>/<name>`, matching the file path. Checked against the path by tools/check_vectors.py, because an id that disagrees with its filename makes a failure report point at the wrong file."
+    },
+    "clause": {
+      "type": "string",
+      "pattern": "^AEGS-0\\.1-[A-Z]+-[0-9]+[a-z]?$",
+      "description": "The normative clause this vector checks. A clause identifier. A lowercase suffix (VERD-4a) inserts a clause without renumbering its neighbours, which matters because renumbering breaks every existing citation -- in the vectors, in the conformance cases, and anywhere outside this repository."
+    },
+    "operation": {
+      "enum": [
+        "usd_to_atomic",
+        "atomic_to_usd",
+        "evaluate_envelopes",
+        "resolve_verdict",
+        "canonical_serialise",
+        "chain_hash",
+        "verify_chain",
+        "hash_strength",
+        "classify_state",
+        "classify_control",
+        "clamp_delegation",
+        "disclose",
+        "evaluate_profile"
+      ],
+      "description": "A closed set. A vector naming an operation no implementation is required to expose cannot be run, and an unrunnable vector is worse than an absent one because it looks like coverage."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence, imperative."
+    },
+    "note": {
+      "type": "string",
+      "description": "Why this vector exists, when that is not self-evident. Used heavily for vectors that exist because something once went wrong."
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "string",
+          "description": "A decimal amount, ALWAYS as a string, including for integers. A vector writing 2.5 as a JSON number would have lost precision before any implementation read it \u2014 which would make this suite unable to test the very thing ARITH-9 requires."
+        },
+        "atomic": {
+          "type": "integer",
+          "description": "A count of atomic units. An integer here is safe: that is the point of ARITH-1."
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18,
+          "description": "The asset's precision. A property of the asset, not of this specification."
+        },
+        "envelopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "limit",
+              "used"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Atomic units, or null for an ABSENT limit. Null and 0 are opposite instructions and MUST NOT be conflated -- see ENV-8."
+              },
+              "used": {
+                "type": "integer"
+              },
+              "window": {
+                "type": "string"
+              },
+              "cumulative": {
+                "type": "boolean",
+                "default": true,
+                "description": "False for a per-call ceiling: checked fresh against every action, nothing accumulates. A per-call ceiling MUST NOT report a consumed amount -- see ENV-4."
+              }
+            }
+          }
+        },
+        "counters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "limit",
+              "used",
+              "kind"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "const": "count"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "used": {
+                "type": "integer"
+              },
+              "window": {
+                "type": "string"
+              }
+            },
+            "description": "A count envelope constrains occurrences, not amounts. Evaluated against the count already recorded, independent of the amount being decided -- see ENV-7."
+          }
+        },
+        "channel": {
+          "enum": [
+            "internal",
+            "external"
+          ],
+          "description": "Which channel this action belongs to."
+        },
+        "otherChannel": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "envelopes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "limit",
+                  "used"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "limit": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Atomic units, or null for an ABSENT limit. Null and 0 are opposite instructions and MUST NOT be conflated -- see ENV-8."
+                  },
+                  "used": {
+                    "type": "integer"
+                  },
+                  "window": {
+                    "type": "string"
+                  },
+                  "cumulative": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "False for a per-call ceiling: checked fresh against every action, nothing accumulates. A per-call ceiling MUST NOT report a consumed amount -- see ENV-4."
+                  }
+                }
+              }
+            }
+          },
+          "description": "The opposite channel's state. Present only in vectors checking that channels never share an envelope -- ENV-9."
+        },
+        "repeat": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Perform the action this many times in succession. Used to show that a per-call ceiling does not accumulate."
+        },
+        "amountAtomic": {
+          "type": "integer",
+          "description": "An amount already in atomic units. An integer here is safe by construction -- that is what ARITH-1 buys. Distinct from `amount`, which is a decimal string because ARITH-9 requires one."
+        },
+        "standing": {
+          "enum": [
+            "APPROVE",
+            "REVIEW",
+            "ESCALATE",
+            "REJECT",
+            null
+          ],
+          "description": "The verdict already reached before these proposals are applied. Null where no rule matched at all."
+        },
+        "standingControl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Which control produced the standing verdict. Needed by VERD-5: if nothing narrows, attribution falls to whatever decided, and an implementation attributing only refusals has records that go quiet when an auditor asks why something was allowed."
+        },
+        "proposals": {
+          "type": "array",
+          "description": "Controls' proposals, IN EVALUATION ORDER. Order does not affect the final verdict (VERD-3) and does affect attribution (VERD-4), which is the asymmetry this family exists to pin down.",
+          "items": {
+            "type": "object",
+            "required": [
+              "control",
+              "verdict"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "control": {
+                "type": "string",
+                "minLength": 1
+              },
+              "verdict": {
+                "enum": [
+                  "APPROVE",
+                  "REVIEW",
+                  "ESCALATE",
+                  "REJECT",
+                  null
+                ],
+                "description": "Null means NO OPINION, which is not approval. A control with nothing to say must not vote APPROVE, or a silent control looks like an endorsing one."
+              },
+              "recordsEvidence": {
+                "type": "boolean",
+                "description": "Whether this control leaves a trace in the record. VERD-6 requires evidence that a control RAN, independently of whether it changed the verdict."
+              }
+            }
+          }
+        },
+        "noRuleMatched": {
+          "type": "boolean",
+          "description": "No policy rule matched the action. VERD-8 requires that this not approve."
+        },
+        "advisorUnavailable": {
+          "type": "boolean",
+          "description": "The advisory model could not be reached. VERD-9 requires the decision not to depend on its availability."
+        },
+        "dispositive": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Controls declared dispositive: the finding determines attribution whenever present, whether or not it narrowed the verdict. VERD-4a requires the set and its precedence to be DOCUMENTED -- an undeclared dispositive control is indistinguishable from arbitrary attribution."
+        },
+        "payload": {
+          "type": "object",
+          "description": "An entry payload to canonicalise or hash."
+        },
+        "alsoPayload": {
+          "type": "object",
+          "description": "A second payload, semantically identical to `payload` but written differently. Used to show that the stored form does not affect the hash -- EVID-4."
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "seq",
+              "at",
+              "payload"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "seq": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "at": {
+                "type": "string"
+              },
+              "payload": {
+                "type": "object"
+              }
+            },
+            "description": "An entry without its hashes. The runner computes those, because the point is to test how an implementation computes them."
+          }
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "at": {
+          "type": "string"
+        },
+        "prevHash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The preceding entry's hash, or null for the first entry, which commits to the declared genesis value instead."
+        },
+        "tamper": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "edit",
+                "editMany",
+                "deleteMiddle",
+                "swap",
+                "truncate"
+              ],
+              "description": "How to alter the chain after building it. `truncate` is the one a hash chain cannot detect, and its vector asserts that verification SUCCEEDS -- see EVID-6."
+            },
+            "seq": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "seqs": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "payload": {
+              "type": "object"
+            },
+            "keep": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Entries to retain when truncating."
+            }
+          }
+        },
+        "record": {
+          "type": "object",
+          "description": "A record fragment to classify a field of."
+        },
+        "field": {
+          "type": "string",
+          "description": "Which field of `record` to classify."
+        },
+        "control": {
+          "type": "string",
+          "description": "A control name to classify as defined or an extension."
+        },
+        "chain": {
+          "type": "array",
+          "description": "A delegation chain, delegator first. ID-4 clamps to the narrowest step, not to the root.",
+          "items": {
+            "type": "object",
+            "required": [
+              "agent",
+              "perActionAtomic"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "agent": {
+                "type": "string"
+              },
+              "perActionAtomic": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Null means this step declares no limit of its own, which inherits rather than widens."
+              }
+            }
+          }
+        },
+        "identity": {
+          "type": "object",
+          "description": "An identity to project for an audience."
+        },
+        "audience": {
+          "enum": [
+            "vendor",
+            "auditor"
+          ],
+          "description": "Who the projection is for. Different audiences are different projections of one identity, decided where the knowledge is."
+        },
+        "assessorUnreachable": {
+          "type": "boolean",
+          "description": "An external assessor could not be reached. PATH-3 requires not-run, never a pass."
+        },
+        "riskScore": {
+          "type": "string",
+          "description": "A risk score present in the record. CTRL-5 requires that it not decide on its own."
+        },
+        "profile": {
+          "type": "string",
+          "description": "A profile id from ../profiles/. On `resolve_verdict` its purpose is to be IGNORED: PROF-1 forbids a profile from affecting a verdict, so vectors differing only in this field must produce identical results."
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extendsProfile": {
+          "type": "string",
+          "description": "The profile the one under test extends."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "expect": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "atomic"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "atomic": {
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "usd"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "usd": {
+              "type": "string",
+              "pattern": "^-?[0-9]+\\.[0-9]+$",
+              "description": "Plain decimal, never exponent notation. Some languages format 0.000001 as 1e-06 \u2014 the same number and a different hash."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "refused",
+            "reason"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "refused": {
+              "const": true
+            },
+            "reason": {
+              "enum": [
+                "negative",
+                "overflow",
+                "nonfinite",
+                "unparseable"
+              ],
+              "description": "A CATEGORY, not a message. An implementation's wording is its own business; a vector checks that it refused for the right kind of reason. Matching exact strings would make this suite a test of one implementation's vocabulary, which is precisely what a conformance suite must not be."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "breached": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "EVERY envelope the amount exceeds, not merely the first. Order is not significant; an implementation may report them in any order."
+            },
+            "binding": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The envelope whose breach determined the refusal. MUST be null when nothing was breached -- see ENV-6."
+            },
+            "tightest": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The envelope with the least headroom, whether or not anything was breached. A different question from `binding`, and most useful when nothing has been refused."
+            },
+            "headroom": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "description": "Expected headroom per envelope name, floored at zero."
+            },
+            "used": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "description": "Expected consumed amount per envelope name. Null asserts that no consumed amount is reported, which is what ENV-4 requires of a per-call ceiling."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "verdict": {
+              "enum": [
+                "APPROVE",
+                "REVIEW",
+                "ESCALATE",
+                "REJECT"
+              ]
+            },
+            "verdictNot": {
+              "enum": [
+                "APPROVE",
+                "REVIEW",
+                "ESCALATE",
+                "REJECT"
+              ],
+              "description": "The verdict MUST NOT be this. Used where AEGS constrains the outcome without fixing it -- VERD-8 forbids approving an unmatched action without dictating which non-approving verdict to use."
+            },
+            "attributedControl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last control that narrowed. Null asserts that NONE of the proposals narrowed -- not that attribution is absent, which VERD-5 forbids."
+            },
+            "evidenced": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Controls that must have left evidence they ran."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "canonical"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "canonical": {
+              "type": "string",
+              "description": "The exact canonical serialisation. Compared byte for byte, because every difference here is a different hash for the same decision."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "hashesEqual"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "hashesEqual": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "valid"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "An empty array asserts NO problems. Problem wording is an implementation's own business, so a non-empty expectation uses `problemKinds` or `minProblems` instead."
+            },
+            "problemKinds": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "contentHash",
+                  "prevHash",
+                  "sequence"
+                ]
+              },
+              "description": "Categories of problem, not messages -- the same discipline as the arithmetic family's refusal reasons."
+            },
+            "minProblems": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "At least this many problems. Used where the exact count depends on how an implementation attributes a single tamper to multiple broken invariants."
+            },
+            "entryCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "declaresFunction": {
+              "type": "boolean"
+            },
+            "declaresBits": {
+              "type": "boolean"
+            },
+            "minBits": {
+              "type": "integer",
+              "description": "The minimum retained hash length in bits. The reference implementation currently fails this at 64."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "state"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "enum": [
+                "absent",
+                "not-run",
+                "unknown",
+                "zero",
+                "measured",
+                "no-opinion"
+              ],
+              "description": "One of the four states, plus `measured` for a non-zero measurement and `no-opinion` for STATE-4."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "defined",
+                "extension"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "effectiveAtomic"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "effectiveAtomic": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "limitedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Which step of the chain the clamp came from. Naming it is what makes the clamp auditable."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "includes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "excludes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields that MUST NOT appear in the projection. `spendingLimits` is the sharpest -- disclosing remaining budget invites a seller to charge exactly that."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "onlyTightens": {
+              "type": "boolean"
+            },
+            "tightened": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "requiredCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "listedCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "enforces": {
+              "type": "boolean"
+            },
+            "allOptional": {
+              "type": "boolean"
+            },
+            "requirement": {
+              "enum": [
+                "OPTIONAL",
+                "MUST_RECORD",
+                "MUST_EXERCISE"
+              ]
+            },
+            "everyRequiredNamesAPath": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

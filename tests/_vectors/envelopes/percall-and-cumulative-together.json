@@ -1,0 +1,34 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/percall-and-cumulative-together",
+  "clause": "AEGS-0.1-ENV-4",
+  "operation": "evaluate_envelopes",
+  "description": "A per-call ceiling and a cumulative window are evaluated independently.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_transaction",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": false,
+        "window": "per call"
+      },
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 45000000,
+        "cumulative": true,
+        "window": "today"
+      }
+    ],
+    "amountAtomic": 8000000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "daily"
+    ],
+    "binding": "daily"
+  },
+  "note": "Inside the per-call ceiling and outside the daily window. The per-call envelope must not be reported as breached, and the daily one must."
+}

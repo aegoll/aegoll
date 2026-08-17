@@ -1,0 +1,28 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-default-rule-when-no-dispositive-finding",
+  "clause": "AEGS-0.1-VERD-4a",
+  "operation": "resolve_verdict",
+  "description": "Where no dispositive finding is present, the default attribution rule applies unchanged.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "treasury",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "risk",
+        "verdict": "ESCALATE"
+      }
+    ],
+    "dispositive": [
+      "sanctions"
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "treasury"
+  },
+  "note": "Declaring a control dispositive must not change attribution for decisions that control had no opinion on. Otherwise the declaration would be a licence to reattribute everything."
+}

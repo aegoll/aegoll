@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/advisor-may-narrow",
+  "clause": "AEGS-0.1-VERD-9",
+  "operation": "resolve_verdict",
+  "description": "An advisory model may narrow a verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "advisor",
+        "verdict": "REVIEW"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "advisor"
+  }
+}

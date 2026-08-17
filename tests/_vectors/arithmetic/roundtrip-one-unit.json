@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/roundtrip-one-unit",
+  "clause": "AEGS-0.1-ARITH-2",
+  "operation": "atomic_to_usd",
+  "description": "One atomic unit converts back to the asset's smallest decimal.",
+  "input": {
+    "atomic": 1,
+    "decimals": 6
+  },
+  "expect": {
+    "usd": "0.000001"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/binding-tightest-of-breached",
+  "clause": "AEGS-0.1-ENV-6",
+  "operation": "evaluate_envelopes",
+  "description": "The binding envelope is identified when a decision is refused.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 30000000,
+        "cumulative": true,
+        "window": "today"
+      },
+      {
+        "name": "monthly",
+        "limit": 300000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "this month"
+      }
+    ],
+    "amountAtomic": 40000000
+  },
+  "expect": {
+    "ok": false,
+    "breached": [
+      "daily"
+    ],
+    "binding": "daily"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/negative-simple",
+  "clause": "AEGS-0.1-ARITH-4",
+  "operation": "usd_to_atomic",
+  "description": "A negative amount is refused rather than normalised.",
+  "input": {
+    "amount": "-0.01",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "negative"
+  },
+  "note": "THIS WAS A LIVE VULNERABILITY. A -$1000 request was APPROVED by the reference implementation: every envelope asks `amount <= headroom`, and any negative satisfies that, so one minus sign inverted the whole treasury. Found as RT-NUM-001."
+}

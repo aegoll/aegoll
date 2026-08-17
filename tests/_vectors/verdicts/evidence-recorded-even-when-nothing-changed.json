@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/evidence-recorded-even-when-nothing-changed",
+  "clause": "AEGS-0.1-VERD-6",
+  "operation": "resolve_verdict",
+  "description": "A control whose only trace is its clamp records that clamp even when it changed nothing.",
+  "input": {
+    "standing": "REJECT",
+    "proposals": [
+      {
+        "control": "sanctions",
+        "verdict": "REJECT",
+        "recordsEvidence": true
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "evidenced": [
+      "sanctions"
+    ]
+  },
+  "note": "THIS COMES FROM A REAL DEFECT. A sanctions bar could be recorded as a POLICY refusal: the clamp was written only when it changed the verdict, so when a policy rule refused first the record showed no screening at all. Deleting the screening would have left every record identical."
+}

@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/trust-cold-start-is-not-measured",
+  "clause": "AEGS-0.1-CTRL-4",
+  "operation": "classify_state",
+  "description": "A cold-start trust value is distinguishable from a measured one.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": false,
+        "coldStart": true
+      }
+    },
+    "field": "trust"
+  },
+  "expect": {
+    "state": "not-run"
+  },
+  "note": "A new counterparty is not a distrusted one. An implementation reporting a cold-start score as measured asserts knowledge it does not have."
+}

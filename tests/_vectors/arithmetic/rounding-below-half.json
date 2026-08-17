@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/rounding-below-half",
+  "clause": "AEGS-0.1-ARITH-3",
+  "operation": "usd_to_atomic",
+  "description": "Below halfway rounds down.",
+  "input": {
+    "amount": "0.0000004",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 0
+  }
+}

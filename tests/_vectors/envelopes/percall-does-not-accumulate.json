@@ -1,0 +1,25 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/percall-does-not-accumulate",
+  "clause": "AEGS-0.1-ENV-4",
+  "operation": "evaluate_envelopes",
+  "description": "A per-call ceiling admits the same amount repeatedly; nothing accumulates against it.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_transaction",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": false,
+        "window": "per call"
+      }
+    ],
+    "repeat": 3,
+    "amountAtomic": 10000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  },
+  "note": "Three consecutive actions at exactly the ceiling. A cumulative envelope would refuse the second."
+}

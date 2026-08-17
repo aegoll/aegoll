@@ -1,0 +1,33 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/binding-tightest-still-reported",
+  "clause": "AEGS-0.1-ENV-6",
+  "operation": "evaluate_envelopes",
+  "description": "The tightest envelope is reported even when nothing was breached.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 30000000,
+        "cumulative": true,
+        "window": "today"
+      },
+      {
+        "name": "monthly",
+        "limit": 300000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "this month"
+      }
+    ],
+    "amountAtomic": 1000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": [],
+    "binding": null,
+    "tightest": "daily"
+  },
+  "note": "FOUND WHILE BUILDING THE REFERENCE REPORT: it displayed `binding` under a heading meaning `closest to biting`, so an approved decision showed no envelope at all -- the column went blank precisely when the agent was healthy and someone was checking headroom. Two questions, two answers."
+}

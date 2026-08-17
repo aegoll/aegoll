@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-present-when-nothing-narrowed",
+  "clause": "AEGS-0.1-VERD-5",
+  "operation": "resolve_verdict",
+  "description": "A standing refusal that no control narrowed is still attributed.",
+  "input": {
+    "standing": "REVIEW",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "risk",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "attributedControl": "policy"
+  },
+  "note": "The control that tried and failed to widen is never the attributed one."
+}

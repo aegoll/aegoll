@@ -1,0 +1,35 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/append-settlement-is-a-new-entry",
+  "clause": "AEGS-0.1-EVID-1",
+  "operation": "verify_chain",
+  "description": "A settlement arriving later is a new entry, not an edit to the decision.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "decision": "APPROVE",
+          "requestId": "r-1"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "settlementUpdate": {
+            "requestId": "r-1",
+            "settled": true
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": true,
+    "problems": [],
+    "entryCount": 2
+  },
+  "note": "Fusing the settlement into the authorisation would make that entry describe a decision nobody made -- verdict and outcome in one row, with no way to tell which came first or what the state was at decision time."
+}

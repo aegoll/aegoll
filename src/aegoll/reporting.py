@@ -41,6 +41,87 @@ def _usd(atomic: int | None) -> str | None:
 
 
 @dataclass(frozen=True)
+class RuleView:
+    """One policy rule, in the order it will be evaluated, in terms a reader can check.
+
+    `condition` is prose built from the pack's fixed comparator vocabulary rather than the raw
+    `when` mapping. The mapping is precise and unreadable — `{"budget.binding": {"in": [...]}}`
+    is not what somebody debugging a refusal at 2am wants to parse — and because the vocabulary
+    is closed, prose can be generated for all of it without an expression language.
+    """
+
+    id: str
+    priority: int
+    verdict: str
+    condition: str
+    reason: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "priority": self.priority,
+            "verdict": self.verdict,
+            "condition": self.condition,
+            "reason": self.reason,
+        }
+
+
+#: How each comparator reads in prose. Closed, exactly as the comparator vocabulary is closed:
+#: an unknown key falls back to naming the comparator rather than guessing, so a new comparator
+#: added to `config.py` without a phrase here renders awkwardly instead of misleadingly.
+_PHRASES = {
+    "in": "is one of",
+    "not_in": "is not one of",
+    "gt": "is over",
+    "gte": "is at least",
+    "lt": "is under",
+    "lte": "is at most",
+    "ne": "is not",
+    "eq": "is",
+    "contains": "contains",
+    "startswith": "starts with",
+    "endswith": "ends with",
+}
+
+
+def _condition(when: dict[str, Any]) -> str:
+    """`when` as prose. Every clause must hold, so they are joined with "and"."""
+    parts = []
+    for fact, matcher in when.items():
+        if isinstance(matcher, dict):
+            for comparator, operand in matcher.items():
+                phrase = _PHRASES.get(comparator, comparator)
+                if isinstance(operand, (list, tuple)):
+                    operand = ", ".join(str(o) for o in operand)
+                parts.append(f"{fact} {phrase} {operand}")
+        elif isinstance(matcher, bool):
+            # `vendor.sanctioned: true` reads as a state, not as a comparison to a literal.
+            parts.append(f"{fact}" if matcher else f"not {fact}")
+        else:
+            parts.append(f"{fact} is {matcher}")
+    return " and ".join(parts) if parts else "always"
+
+
+def _rule_views(bundle: Any) -> tuple[RuleView, ...]:
+    """Rules in evaluation order — by priority, and by id within a priority.
+
+    The order is the point. Two rules at the same priority are a latent ambiguity, and sorting
+    by id as the tiebreak means the report shows the same order the engine uses rather than
+    whatever order the file happened to list them in.
+    """
+    return tuple(
+        RuleView(
+            id=rule.id,
+            priority=rule.priority,
+            verdict=rule.then,
+            condition=_condition(rule.when),
+            reason=rule.reason,
+        )
+        for rule in sorted(bundle.rules, key=lambda r: (r.priority, r.id))
+    )
+
+
+@dataclass(frozen=True)
 class EnvelopeView:
     """One limit and how much of it is left."""
 
@@ -148,6 +229,10 @@ class Report:
     decisions_total: int
     settled: int
     spent_usd: str
+    #: The rules themselves, in evaluation order. `policy_rules` is kept as the count too:
+    #: it is already in the wire format, and a reader may want the number without the list.
+    rules: tuple[RuleView, ...] = ()
+
     by_verdict: dict[str, int] = field(default_factory=dict)
     by_attributed_control: dict[str, int] = field(default_factory=dict)
 
@@ -171,6 +256,7 @@ class Report:
                 "name": self.policy_name,
                 "hash": self.policy_hash,
                 "rules": self.policy_rules,
+                "ruleList": [r.as_dict() for r in self.rules],
             },
             "profile": self.profile,
             "spend": {
@@ -299,6 +385,7 @@ def build(layer: Any, *, profile: str | None = None, limit: int = DEFAULT_LIMIT)
         policy_name=layer.bundle.name,
         policy_hash=layer.bundle.hash,
         policy_rules=len(layer.bundle.rules),
+        rules=_rule_views(layer.bundle),
         profile=profile,
         decisions_total=len(entries),
         settled=summary["settled"],

@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/trust-measured-zero-is-a-measurement",
+  "clause": "AEGS-0.1-CTRL-4",
+  "operation": "classify_state",
+  "description": "A measured trust score of zero is a measurement, not an absence of one.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": true,
+        "score": "0"
+      }
+    },
+    "field": "trust"
+  },
+  "expect": {
+    "state": "zero"
+  },
+  "note": "`We know they are untrustworthy` and `we know nothing` are different findings. Reporting the second as the first is where the original four-state bug came from."
+}

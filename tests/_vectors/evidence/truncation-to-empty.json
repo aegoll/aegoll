@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/truncation-to-empty",
+  "clause": "AEGS-0.1-EVID-6",
+  "operation": "verify_chain",
+  "description": "An empty journal verifies, because there is nothing to contradict.",
+  "input": {
+    "entries": []
+  },
+  "expect": {
+    "valid": true,
+    "problems": []
+  },
+  "note": "The limit of the previous two. A deleted journal is indistinguishable from one that never recorded anything, which is the same gap stated at its extreme."
+}

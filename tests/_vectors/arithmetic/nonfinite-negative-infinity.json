@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/nonfinite-negative-infinity",
+  "clause": "AEGS-0.1-ARITH-7",
+  "operation": "usd_to_atomic",
+  "description": "Negative infinity is refused.",
+  "input": {
+    "amount": "-Infinity",
+    "decimals": 6
+  },
+  "expect": {
+    "refused": true,
+    "reason": "nonfinite"
+  },
+  "note": "Either `negative` or `nonfinite` is defensible. `nonfinite` is expected because -Infinity is not a quantity with a sign, it is not a quantity."
+}

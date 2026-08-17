@@ -1,0 +1,26 @@
+{
+  "aegsVersion": "0.1",
+  "id": "path/external-unreachable-is-not-run",
+  "clause": "AEGS-0.1-PATH-3",
+  "operation": "resolve_verdict",
+  "description": "An unreachable external assessor is recorded as not-run, never as a pass.",
+  "input": {
+    "standing": "REVIEW",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "external-trust",
+        "verdict": null,
+        "recordsEvidence": true
+      }
+    ],
+    "assessorUnreachable": true
+  },
+  "expect": {
+    "verdict": "REVIEW",
+    "evidenced": [
+      "external-trust"
+    ]
+  },
+  "note": "FAIL-OPEN IS A GOVERNANCE LAYER THAT STOPS GOVERNING EXACTLY WHEN IT IS ATTACKED. An assessor that cannot be reached has not approved anything; recording its silence as a pass would let an attacker who can disrupt a network call disable the control."
+}

@@ -1,0 +1,23 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/risk-policy-acts-on-the-score",
+  "clause": "AEGS-0.1-CTRL-5",
+  "operation": "resolve_verdict",
+  "description": "Policy acting on a risk score is what produces a verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "standingControl": "policy",
+    "proposals": [
+      {
+        "control": "risk",
+        "verdict": "ESCALATE",
+        "recordsEvidence": true
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "ESCALATE",
+    "attributedControl": "risk"
+  },
+  "note": "Paired with the previous vector. The score alone does nothing; a threshold applied to it decides. Fusing the two produces a control whose threshold is invisible -- the record shows a refusal attributed to risk and nobody can see what number would have been acceptable."
+}

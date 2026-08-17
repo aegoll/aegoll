@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/atomic-accumulation",
+  "clause": "AEGS-0.1-ARITH-1",
+  "operation": "usd_to_atomic",
+  "description": "A sum of amounts that drift in floating point converts exactly.",
+  "input": {
+    "amount": "0.30",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 300000
+  },
+  "note": "0.1 + 0.2 == 0.30000000000000004 in binary floating point. Any implementation accumulating in floats and converting at the end will produce 300000.00000000006 here."
+}

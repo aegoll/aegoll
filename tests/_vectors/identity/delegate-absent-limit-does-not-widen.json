@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "identity/delegate-absent-limit-does-not-widen",
+  "clause": "AEGS-0.1-ID-4",
+  "operation": "clamp_delegation",
+  "description": "A delegate with no limit of its own inherits its delegator's rather than becoming unlimited.",
+  "input": {
+    "chain": [
+      {
+        "agent": "root",
+        "perActionAtomic": 10000000
+      },
+      {
+        "agent": "child",
+        "perActionAtomic": null
+      }
+    ]
+  },
+  "expect": {
+    "effectiveAtomic": 10000000,
+    "limitedBy": "root"
+  },
+  "note": "An absent limit constrains NOTHING on its own (ENV-8), which is exactly why it must not be read as widening here. `I declare no limit` is not `I am unlimited` when someone above you declared one."
+}

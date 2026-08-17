@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/admits-under",
+  "clause": "AEGS-0.1-ENV-3",
+  "operation": "evaluate_envelopes",
+  "description": "An amount below the headroom is admitted.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "per_call",
+        "limit": 10000000,
+        "used": 0,
+        "cumulative": true
+      }
+    ],
+    "amountAtomic": 9999999
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  }
+}

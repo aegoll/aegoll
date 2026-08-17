@@ -1,0 +1,30 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/multiple-none-breached",
+  "clause": "AEGS-0.1-ENV-5",
+  "operation": "evaluate_envelopes",
+  "description": "An amount inside every envelope breaches none of them.",
+  "input": {
+    "envelopes": [
+      {
+        "name": "daily",
+        "limit": 50000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "today"
+      },
+      {
+        "name": "per_vendor",
+        "limit": 15000000,
+        "used": 0,
+        "cumulative": true,
+        "window": "vendor 30d"
+      }
+    ],
+    "amountAtomic": 1000000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  }
+}

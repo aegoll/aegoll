@@ -1,0 +1,29 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/attribution-dispositive-wins-without-narrowing",
+  "clause": "AEGS-0.1-VERD-4a",
+  "operation": "resolve_verdict",
+  "description": "A dispositive control is attributed even though it did not narrow the verdict.",
+  "input": {
+    "standing": "APPROVE",
+    "proposals": [
+      {
+        "control": "policy",
+        "verdict": "REJECT"
+      },
+      {
+        "control": "sanctions",
+        "verdict": "REJECT",
+        "recordsEvidence": true
+      }
+    ],
+    "dispositive": [
+      "sanctions"
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": "sanctions"
+  },
+  "note": "THIS VECTOR CAUGHT A BUG IN THE SPECIFICATION, not in an implementation. VERD-4 originally required the last control that NARROWED, which attributes this to policy -- so the record would say an agent was stopped by a rule when the truth is it tried to pay a sanctioned party. An operator raising the limit would find the payment still refused and no explanation on the record."
+}

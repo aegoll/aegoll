@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-cannot-widen-reject",
+  "clause": "AEGS-0.1-VERD-2",
+  "operation": "resolve_verdict",
+  "description": "A control proposing APPROVE against a standing REJECT cannot widen it.",
+  "input": {
+    "standing": "REJECT",
+    "proposals": [
+      {
+        "control": "wishful",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": null
+  }
+}

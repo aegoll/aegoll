@@ -1,0 +1,14 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/atomic-one-unit",
+  "clause": "AEGS-0.1-ARITH-1",
+  "operation": "usd_to_atomic",
+  "description": "One atomic unit is the smallest representable amount.",
+  "input": {
+    "amount": "0.000001",
+    "decimals": 6
+  },
+  "expect": {
+    "atomic": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "arithmetic/serialise-no-exponent",
+  "clause": "AEGS-0.1-ARITH-9",
+  "operation": "atomic_to_usd",
+  "description": "A small amount is serialised in plain decimal, never in exponent notation.",
+  "input": {
+    "atomic": 1,
+    "decimals": 6
+  },
+  "expect": {
+    "usd": "0.000001"
+  },
+  "note": "Some languages format 0.000001 as 1e-06. That is the same number and a different hash."
+}

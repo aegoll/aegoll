@@ -1,0 +1,20 @@
+{
+  "aegsVersion": "0.1",
+  "id": "fourstates/omission-is-not-zero-filling",
+  "clause": "AEGS-0.1-STATE-2",
+  "operation": "classify_state",
+  "description": "A control that does not exist is omitted rather than zero-filled.",
+  "input": {
+    "record": {
+      "trust": {
+        "measured": true,
+        "score": "0.25"
+      }
+    },
+    "field": "aml"
+  },
+  "expect": {
+    "state": "absent"
+  },
+  "note": "This is what makes the count of thirteen schemas honest. An implementation emitting all thirteen zero-filled would assert thirteen capabilities and possess fewer, so the PRESENCE of an object has to be the claim."
+}

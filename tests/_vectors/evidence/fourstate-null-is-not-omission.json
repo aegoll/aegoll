@@ -1,0 +1,22 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/fourstate-null-is-not-omission",
+  "clause": "AEGS-0.1-EVID-9",
+  "operation": "canonical_serialise",
+  "description": "A control that did not run is recorded as such, not by omitting its field.",
+  "input": {
+    "payload": {
+      "sanctions": {
+        "measured": false
+      },
+      "trust": {
+        "measured": true,
+        "score": "0.25"
+      }
+    }
+  },
+  "expect": {
+    "canonical": "{\"sanctions\":{\"measured\":false},\"trust\":{\"measured\":true,\"score\":\"0.25\"}}"
+  },
+  "note": "A record simply LACKING a sanctions field could mean the screening ran and found nothing, or that none exists, or that one exists and failed. An auditor cannot tell, and the most favourable reading is the one a reader will assume."
+}

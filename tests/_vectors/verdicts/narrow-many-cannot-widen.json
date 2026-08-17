@@ -1,0 +1,29 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/narrow-many-cannot-widen",
+  "clause": "AEGS-0.1-VERD-2",
+  "operation": "resolve_verdict",
+  "description": "Several controls all proposing APPROVE still cannot widen a refusal.",
+  "input": {
+    "standing": "REJECT",
+    "proposals": [
+      {
+        "control": "a",
+        "verdict": "APPROVE"
+      },
+      {
+        "control": "b",
+        "verdict": "APPROVE"
+      },
+      {
+        "control": "c",
+        "verdict": "APPROVE"
+      }
+    ]
+  },
+  "expect": {
+    "verdict": "REJECT",
+    "attributedControl": null
+  },
+  "note": "Widening must be unreachable, not outvoted. An implementation tallying proposals rather than narrowing would let three optimistic controls carry a refusal."
+}

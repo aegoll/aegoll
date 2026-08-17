@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "envelopes/count-within-limit",
+  "clause": "AEGS-0.1-ENV-7",
+  "operation": "evaluate_envelopes",
+  "description": "A count envelope below its limit admits the action.",
+  "input": {
+    "envelopes": [],
+    "counters": [
+      {
+        "name": "velocity_60s",
+        "limit": 10,
+        "used": 3,
+        "kind": "count",
+        "window": "last 60s"
+      }
+    ],
+    "amountAtomic": 1000
+  },
+  "expect": {
+    "ok": true,
+    "breached": []
+  }
+}

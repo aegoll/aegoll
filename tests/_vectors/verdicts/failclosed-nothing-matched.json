@@ -1,0 +1,17 @@
+{
+  "aegsVersion": "0.1",
+  "id": "verdicts/failclosed-nothing-matched",
+  "clause": "AEGS-0.1-VERD-8",
+  "operation": "resolve_verdict",
+  "description": "An action no rule matched is not approved.",
+  "input": {
+    "standing": null,
+    "standingControl": "policy",
+    "proposals": [],
+    "noRuleMatched": true
+  },
+  "expect": {
+    "verdictNot": "APPROVE"
+  },
+  "note": "AEGS does not fix WHICH non-approving verdict is the fall-through -- REVIEW and REJECT are both defensible. APPROVE is not: an implementation whose fall-through approves has built a system where forgetting to write a rule authorises payment, and the failure is silent because an approval produces no complaint."
+}

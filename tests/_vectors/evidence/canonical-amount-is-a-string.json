@@ -1,0 +1,16 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/canonical-amount-is-a-string",
+  "clause": "AEGS-0.1-EVID-3",
+  "operation": "canonical_serialise",
+  "description": "A monetary amount serialises as a decimal string, never a JSON number.",
+  "input": {
+    "payload": {
+      "amountUsd": "2.500000"
+    }
+  },
+  "expect": {
+    "canonical": "{\"amountUsd\":\"2.500000\"}"
+  },
+  "note": "Per ARITH-9. A JSON number would have lost precision before a reader parsed it, and two parsers may not agree on what they got."
+}
