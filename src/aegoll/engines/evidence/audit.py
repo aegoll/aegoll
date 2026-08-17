@@ -10,7 +10,7 @@ diff, and easy for a third party to verify without our code.
 
 from __future__ import annotations
 
-import hashlib
+from ...hashing import HASH_HEX, digest
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -19,7 +19,10 @@ from typing import Any, Iterator
 
 from ...domain import Decision, PaymentRequest, atomic_to_usd
 
-GENESIS = "0" * 16
+#: What the first entry commits to. AEGS-0.1-EVID-2 requires a *declared*
+#: genesis: without one the first entry has nothing to commit to, and a whole
+#: journal could be dropped and replaced with a plausible chain of one.
+GENESIS = "0" * HASH_HEX
 
 
 @dataclass(frozen=True)
@@ -50,7 +53,7 @@ def _hash_entry(seq: int, at: str, prev_hash: str, payload: dict[str, Any]) -> s
         sort_keys=True,
         separators=(",", ":"),
     )
-    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+    return digest(blob)
 
 
 class AuditLog:

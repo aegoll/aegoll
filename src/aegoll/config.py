@@ -8,7 +8,7 @@ weights drift without the audit trail noticing.
 
 from __future__ import annotations
 
-import hashlib
+from .hashing import digest as hash_digest
 import json
 from dataclasses import dataclass, field
 from importlib import resources
@@ -378,7 +378,7 @@ def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> Pol
     )
 
     canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"), default=str)
-    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+    digest = hash_digest(canonical)
 
     return PolicyBundle(
         version=int(raw.get("version", 1)),

@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .domain import atomic_to_usd
+from .hashing import HASH_BITS, HASH_NAME
 
 #: How many decisions the decision stream carries by default. A report is read, not
 #: archived — the journal is the archive, and `aegoll audit` reads it in full.
@@ -109,6 +110,13 @@ class ChainView:
     valid: bool
     problems: tuple[str, ...] = ()
 
+    #: AEGS-0.1-EVID-5 requires the hash function and retained length to be *declared*: an
+    #: auditor cannot assess a chain whose strength is unstated, and "hash-chained" without
+    #: a function and a length describes a shape rather than a guarantee. So it goes in the
+    #: report, next to the verdict on the chain, rather than only in the source.
+    hash_name: str = ""
+    hash_bits: int = 0
+
     #: Printed wherever `valid` is. A page or table reporting VALID without this overstates
     #: what a hash chain proves: any *prefix* of a valid chain is itself valid, so an agent
     #: that was refused can delete the refusal and the chain still verifies. Editing and
@@ -123,6 +131,7 @@ class ChainView:
             "entries": self.entries,
             "valid": self.valid,
             "problems": list(self.problems),
+            "hash": {"function": self.hash_name, "bits": self.hash_bits},
             "caveat": self.caveat,
         }
 
@@ -299,7 +308,13 @@ def build(layer: Any, *, profile: str | None = None, limit: int = DEFAULT_LIMIT)
         envelopes=envelopes,
         decisions=tuple(reversed(views[-limit:])),  # newest first: the question is "why did it just stop"
         pending_reviews=summary["pendingReviews"],
-        chain=ChainView(entries=len(layer.audit.entries()), valid=ok, problems=tuple(problems)),
+        chain=ChainView(
+            entries=len(layer.audit.entries()),
+            valid=ok,
+            problems=tuple(problems),
+            hash_name=HASH_NAME,
+            hash_bits=HASH_BITS,
+        ),
         aegoll_version=__version__,
         aegs_version=AEGS_VERSION,
     )

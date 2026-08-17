@@ -13,7 +13,7 @@ are the load-bearing part of the whole design:
 
 from __future__ import annotations
 
-import hashlib
+from .hashing import digest
 import json
 import time
 from dataclasses import dataclass
@@ -342,4 +342,4 @@ def _decision_hash(
         "verdict": verdict.value,
     }
     blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+    return digest(blob)

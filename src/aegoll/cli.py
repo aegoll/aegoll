@@ -636,6 +636,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         print(
             f"chain    : {report.chain.entries} entries, "
             f"{'VALID' if report.chain.valid else 'BROKEN'}"
+            f"  [{report.chain.hash_name}, {report.chain.hash_bits} bits]"
         )
         for problem in report.chain.problems:
             print(f"  ! {problem}")

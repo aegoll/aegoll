@@ -19,7 +19,7 @@ not receive a broken one.
 
 from __future__ import annotations
 
-import hashlib
+from .hashing import digest as hash_digest
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -188,7 +188,7 @@ def _hash(raw: Any) -> str:
     different deployment.
     """
     canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+    return hash_digest(canonical)
 
 
 def validate_config(raw: Any, *, source: str = "aegoll.yaml") -> list[Problem]:

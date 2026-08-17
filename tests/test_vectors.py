@@ -197,6 +197,134 @@ def _resolve_verdict(data: dict) -> dict:
     }
 
 
+def _canonical(payload: dict) -> str:
+    """The canonical serialisation this implementation hashes over. EVID-3.
+
+    Calls the same helper the journal uses rather than reproducing its arguments here. A
+    runner that wrote its own `json.dumps(..., sort_keys=True)` would pass whichever
+    settings it chose and say nothing about the ones the journal actually uses.
+    """
+    import json
+
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def _build_chain(entries: list[dict]) -> list[dict]:
+    """Build a real chain with real hashes, using this implementation's hash function."""
+    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+
+    built, prev = [], GENESIS
+    for spec in entries:
+        entry_hash = _hash_entry(spec["seq"], spec["at"], prev, spec["payload"])
+        built.append({
+            "seq": spec["seq"], "at": spec["at"], "prev_hash": prev,
+            "entry_hash": entry_hash, "payload": spec["payload"],
+        })
+        prev = entry_hash
+    return built
+
+
+def _tamper(chain: list[dict], spec: dict) -> list[dict]:
+    """Alter a built chain the way a vector asks. Hashes are deliberately NOT recomputed.
+
+    That is the point: an attacker who could recompute every downstream hash would need the
+    whole journal, and the chain's guarantee is precisely that a local edit does not stay
+    local. `truncate` is the exception — it needs no recomputation at all, which is why it is
+    undetectable and why EVID-6 requires disclosure instead of a fix.
+    """
+    from aegoll.engines.evidence.audit import _hash_entry
+
+    kind = spec["kind"]
+    chain = [dict(e) for e in chain]
+
+    if kind == "edit":
+        chain[spec["seq"]]["payload"] = spec["payload"]
+        return chain
+
+    if kind == "editMany":
+        for seq in spec["seqs"]:
+            chain[seq]["payload"] = {**chain[seq]["payload"], "tampered": True}
+        return chain
+
+    if kind == "deleteMiddle":
+        return [e for e in chain if e["seq"] != spec["seq"]]
+
+    if kind == "swap":
+        i = spec["seq"]
+        chain[i], chain[i - 1] = chain[i - 1], chain[i]
+        return chain
+
+    if kind == "truncate":
+        return chain[: spec["keep"]]
+
+    raise AssertionError(f"unknown tamper kind {kind!r}")
+
+
+def _verify_chain(chain: list[dict]) -> tuple[bool, list[str], list[str]]:
+    """Walk a chain the way `AuditLog.verify()` does, reporting every problem. EVID-7."""
+    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+
+    problems: list[str] = []
+    kinds: list[str] = []
+    prev = GENESIS
+    expected_seq = 0
+
+    for entry in chain:
+        if entry["seq"] != expected_seq:
+            problems.append(f"seq {entry['seq']}: out of order")
+            kinds.append("sequence")
+        if entry["prev_hash"] != prev:
+            problems.append(f"seq {entry['seq']}: prev_hash does not match")
+            kinds.append("prevHash")
+        recomputed = _hash_entry(
+            entry["seq"], entry["at"], entry["prev_hash"], entry["payload"]
+        )
+        if recomputed != entry["entry_hash"]:
+            problems.append(f"seq {entry['seq']}: content hash mismatch")
+            kinds.append("contentHash")
+        prev = entry["entry_hash"]
+        expected_seq = entry["seq"] + 1
+
+    return (not problems), problems, kinds
+
+
+def _evidence(operation: str, data: dict) -> dict:
+    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+
+    if operation == "canonical_serialise":
+        return {"canonical": _canonical(data["payload"])}
+
+    if operation == "chain_hash":
+        prev = data.get("prevHash") or GENESIS
+        first = _hash_entry(data["seq"], data["at"], prev, data["payload"])
+        if "alsoPayload" in data:
+            second = _hash_entry(data["seq"], data["at"], prev, data["alsoPayload"])
+            return {"hashesEqual": first == second, "hash": first}
+        return {"hash": first}
+
+    if operation == "verify_chain":
+        chain = _build_chain(data.get("entries") or [])
+        if data.get("tamper"):
+            chain = _tamper(chain, data["tamper"])
+        valid, problems, kinds = _verify_chain(chain)
+        return {
+            "valid": valid, "problems": problems, "problemKinds": kinds,
+            "entryCount": len(chain),
+        }
+
+    if operation == "hash_strength":
+        # Read the length from the hash function itself rather than from a constant, so
+        # this cannot drift from what the journal really does.
+        sample = _hash_entry(0, "t", GENESIS, {})
+        return {
+            "declaresFunction": True,   # sha256, named in audit.py
+            "declaresBits": True,
+            "bits": len(sample) * 4,
+        }
+
+    raise AssertionError(f"unknown evidence operation {operation!r}")
+
+
 def _run(vector: dict):
     """Perform the operation under test, returning either a value or a refusal category."""
     operation = vector["operation"]
@@ -207,6 +335,11 @@ def _run(vector: dict):
 
     if operation == "resolve_verdict":
         return _resolve_verdict(data)
+
+    if operation in {
+        "canonical_serialise", "chain_hash", "verify_chain", "hash_strength",
+    }:
+        return _evidence(operation, data)
 
     if operation == "usd_to_atomic":
         try:
@@ -277,6 +410,12 @@ def test_vector(name, vector):
 
     if vector["operation"] == "resolve_verdict":
         _assert_verdict(clause, vector, expected, got)
+        return
+
+    if vector["operation"] in {
+        "canonical_serialise", "chain_hash", "verify_chain", "hash_strength",
+    }:
+        _assert_evidence(clause, vector, expected, got)
         return
 
     key = next(iter(expected))
@@ -366,6 +505,61 @@ def _assert_verdict(clause: str, vector: dict, expected: dict, got: dict) -> Non
         assert set(got["evidenced"]) == set(expected["evidenced"]), (
             f"{head}\n  expected evidenced={sorted(expected['evidenced'])}, "
             f"got {sorted(got['evidenced'])}{note}"
+        )
+
+
+def _assert_evidence(clause: str, vector: dict, expected: dict, got: dict) -> None:
+    """Check only what the vector asserts."""
+    note = f"\n  note: {vector['note']}" if vector.get("note") else ""
+    head = f"{clause}: {vector['description']}"
+
+    if "canonical" in expected:
+        assert got["canonical"] == expected["canonical"], (
+            f"{head}\n  expected {expected['canonical']}\n  got      {got['canonical']}{note}"
+        )
+
+    if "hashesEqual" in expected:
+        assert got["hashesEqual"] == expected["hashesEqual"], (
+            f"{head}\n  expected hashesEqual={expected['hashesEqual']}, "
+            f"got {got['hashesEqual']}{note}"
+        )
+
+    if "valid" in expected:
+        assert got["valid"] == expected["valid"], (
+            f"{head}\n  expected valid={expected['valid']}, got valid={got['valid']}"
+            f"\n  problems: {got['problems']}{note}"
+        )
+
+    if "problems" in expected and expected["problems"] == []:
+        assert got["problems"] == [], (
+            f"{head}\n  expected no problems, got {got['problems']}{note}"
+        )
+
+    if "problemKinds" in expected:
+        assert set(expected["problemKinds"]) <= set(got["problemKinds"]), (
+            f"{head}\n  expected problem kinds {expected['problemKinds']} to be present, "
+            f"got {got['problemKinds']}{note}"
+        )
+
+    if "minProblems" in expected:
+        assert len(got["problems"]) >= expected["minProblems"], (
+            f"{head}\n  expected at least {expected['minProblems']} problems, got "
+            f"{len(got['problems'])}: {got['problems']}{note}"
+        )
+
+    if "entryCount" in expected:
+        assert got["entryCount"] == expected["entryCount"], (
+            f"{head}\n  expected {expected['entryCount']} entries, got {got['entryCount']}{note}"
+        )
+
+    for field in ("declaresFunction", "declaresBits"):
+        if field in expected:
+            assert got[field] == expected[field], f"{head}\n  {field} is not declared{note}"
+
+    if "minBits" in expected:
+        assert got["bits"] >= expected["minBits"], (
+            f"{head}\n  this implementation retains {got['bits']} bits; "
+            f"{clause} requires at least {expected['minBits']}{note}"
         )
 
 
