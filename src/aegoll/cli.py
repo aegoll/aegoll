@@ -376,7 +376,7 @@ def cmd_identity(args: argparse.Namespace) -> int:
     Pseudonymous by default. `--controller` is stored but never disclosed to a
     counterparty, and `--show vendor` prints exactly what one would see.
     """
-    from .identity import Party  # noqa: PLC0415
+    from .engines.evidence.identity import Party  # noqa: PLC0415
 
     aegoll = _aegl(args)
     try:

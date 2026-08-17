@@ -18,10 +18,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from aegoll import identity as identity_engine
+from aegoll.engines.evidence import identity as identity_engine
 from aegoll.clock import FixedClock
 from aegoll.domain import Vendor, Verdict
-from aegoll.identity import Credential, Identity, IdentityStore, Party
+from aegoll.engines.evidence.identity import Credential, Identity, IdentityStore, Party
 from aegoll.plugin import Governor
 from aegoll.runtime import Aegoll, Paths
 

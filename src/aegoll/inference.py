@@ -135,7 +135,7 @@ class InferenceGate:
 
     def budget_state(self) -> dict[str, Any]:
         """Internal-channel envelope state, for the UI."""
-        from . import treasury as treasury_engine
+        from .engines.economic import treasury as treasury_engine
 
         probe = self.aegoll.build_request(
             resource="llm:probe",

@@ -12,11 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .audit import AuditLog
+from .engines.evidence.audit import AuditLog
 from .authorize import Governor
 from .clock import Clock, SystemClock
 from .config import PolicyBundle, load_bundle
-from .escalation import ReviewItem, ReviewQueue
+from .engines.evidence.escalation import ReviewItem, ReviewQueue
 from .store import Store
 from .domain import (
     Channel,
@@ -78,10 +78,10 @@ class Aegoll:
         self.advisor = advisor
 
         self.store = Store(self.paths.history)
-        from .intent import IntentStore  # noqa: PLC0415
+        from .engines.economic.intent import IntentStore  # noqa: PLC0415
 
         self.intents = IntentStore(self.paths.audit.parent / "intents.json")
-        from .identity import IdentityStore  # noqa: PLC0415
+        from .engines.evidence.identity import IdentityStore  # noqa: PLC0415
 
         self.identities = IdentityStore(self.paths.audit.parent / "identities.json")
         # `labels` records which host produced each decision, for the
@@ -141,7 +141,7 @@ class Aegoll:
         declared no intent still gets a verdict -- one that says so explicitly --
         because "not checked" and "checked and fine" must never look alike.
         """
-        from . import intent as intent_engine  # noqa: PLC0415
+        from .engines.economic import intent as intent_engine  # noqa: PLC0415
 
         moment = now or self.clock.now()
         if request.metadata.get("intent_id"):
@@ -179,7 +179,7 @@ class Aegoll:
         being refused -- but the verdict is explicit, so "unknown actor" and
         "known and cleared" never look alike in a record.
         """
-        from . import identity as identity_engine  # noqa: PLC0415
+        from .engines.evidence import identity as identity_engine  # noqa: PLC0415
 
         moment = now or self.clock.now()
         registered = self.identities.get(request.agent_id)

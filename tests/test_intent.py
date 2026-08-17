@@ -22,10 +22,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from aegoll import intent as intent_engine
+from aegoll.engines.economic import intent as intent_engine
 from aegoll.clock import FixedClock
 from aegoll.domain import Channel, Purpose, Vendor, Verdict
-from aegoll.intent import Intent, IntentStore
+from aegoll.engines.economic.intent import Intent, IntentStore
 from aegoll.plugin import Governor
 from aegoll.runtime import Aegoll, Paths
 

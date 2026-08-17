@@ -728,7 +728,7 @@ class Governor:
         return self.inference.budget_state()
 
     def external_budget(self) -> dict[str, Any]:
-        from . import treasury as treasury_engine  # noqa: PLC0415
+        from .engines.economic import treasury as treasury_engine  # noqa: PLC0415
 
         probe = self.aegoll.build_request(
             resource="/market/snapshot", amount_usd="0",

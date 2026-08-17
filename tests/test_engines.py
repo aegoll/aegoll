@@ -104,33 +104,43 @@ def test_engines_depend_only_on_value_types(family):
     assert not offenders, "\n  ".join(offenders)
 
 
-# --- the move did not break the old paths ---------------------------------
+# --- one import route, not two --------------------------------------------
 
 
 @pytest.mark.parametrize(
     "engine", sorted({e for names in FAMILIES.values() for e in names})
 )
-def test_the_old_import_path_still_works(engine):
-    """A regrouping that forced every caller to be edited would be a rewrite wearing
-    a refactor's clothes."""
+def test_there_is_no_top_level_module_for_an_engine(engine):
+    """Exactly one import path per engine.
+
+    The prototype kept ten 13-line re-export shims at the package root, so that the
+    S6 regrouping did not force every caller to be edited. That was the right call
+    for a move inside a monorepo and the wrong one for a package about to be
+    published: two import routes to the same code means two things to document, two
+    things to deprecate, and a public surface twice the size of the intended one.
+
+    They are also precisely the shape that once defeated a purity test — it named
+    files that had become shims, so it passed while checking nothing.
+    """
+    assert not (PACKAGE / f"{engine}.py").exists(), (
+        f"aegoll/{engine}.py is back. An engine lives in its family and nowhere else; "
+        "a compatibility shim for zero published users is pure carrying cost."
+    )
+
+
+@pytest.mark.parametrize(
+    "engine", sorted({e for names in FAMILIES.values() for e in names})
+)
+def test_the_engine_is_importable_from_its_family(engine):
+    """The one route that does exist must work, and must carry the exports."""
     import importlib
 
-    shim = importlib.import_module(f"aegoll.{engine}")
     family = next(f for f, names in FAMILIES.items() if engine in names)
     real = importlib.import_module(f"aegoll.engines.{family}.{engine}")
+    assert [n for n in dir(real) if not n.startswith("_")], f"{engine} exports nothing"
 
-    exported = [n for n in dir(real) if not n.startswith("_")]
-    missing = [n for n in exported if not hasattr(shim, n)]
-    assert not missing, f"aegoll.{engine} no longer re-exports {missing}"
-
-
-def test_no_engine_file_remains_at_the_top_level():
-    """Other than the shims, which are three lines and say so."""
-    for names in FAMILIES.values():
-        for engine in names:
-            source = (PACKAGE / f"{engine}.py").read_text(encoding="utf-8")
-            assert "Moved to" in source, f"{engine}.py is not a shim"
-            assert len(source.splitlines()) < 20, f"{engine}.py has grown real code again"
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(f"aegoll.{engine}")
 
 
 # --- the purity claim survives the move -----------------------------------
