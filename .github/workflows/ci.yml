@@ -50,6 +50,25 @@ jobs:
       - name: Core imports nothing unexpected
         run: python -c "import aegoll, sys; print(sorted(m for m in sys.modules if not m.startswith('_')))"
 
+  schema-drift:
+    # The vendored AEGS schemas must match the standard at the commit they are
+    # pinned to. This drifted within hours of the first pin -- the standard
+    # rewrote every $id and the copies here silently kept a dead one -- so the
+    # check exists because it has already been needed once.
+    #
+    # Needs a token while aegoll/aegs is private, and skips without one rather
+    # than guessing whether a 404 means "no access" or "file deleted".
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Vendored schemas match the pin
+        env:
+          GITHUB_TOKEN: ${{ secrets.AEGS_READ_TOKEN }}
+        run: python tools/check_schema_drift.py
+
   vectors:
     # AEGS test vectors. A failure here is either a spec bug or a code bug,
     # and which one must be stated in writing. Never quietly fixed.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aegs.dev/schemas/economic-intent-0.1.json",
+  "$id": "https://aegoll.github.io/aegs/schemas/economic-intent-0.1.json",
   "title": "AEGS Economic Intent",
   "version": "0.1",
   "description": "What an autonomous agent was sent out to do, expressed in machine-readable economic terms, declared before it acts. Authorization asks whether an agent is *permitted* to spend. Intent asks whether the spend it proposes is what it was *sent to do*. Those are different questions, and an agent can pass the first while failing the second -- a compromised agent with valid credentials and budget headroom is exactly that case.",

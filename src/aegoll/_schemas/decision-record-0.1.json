@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aegs.dev/schemas/decision-record-0.1.json",
+  "$id": "https://aegoll.github.io/aegs/schemas/decision-record-0.1.json",
   "title": "AEGS Autonomous Economic Decision Record",
   "version": "0.1",
   "description": "The evidence one governed economic action produces. An implementation that can emit a valid record for every action it authorises is demonstrating AEGS-1 evidence requirements, whatever engines it uses internally. Fields for capabilities an implementation has not built are null rather than absent, so a reader can tell 'assessed and found nothing' apart from 'never assessed' -- a distinction this project has already been burned by once, when an unmeasured vendor history was rendered as zero and every advisor read it as a fact.",

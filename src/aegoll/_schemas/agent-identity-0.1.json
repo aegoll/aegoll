@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aegs.dev/schemas/agent-identity-0.1.json",
+  "$id": "https://aegoll.github.io/aegs/schemas/agent-identity-0.1.json",
   "title": "AEGS Agent Identity (Know Your Agent)",
   "version": "0.1",
   "description": "What an ecosystem participant may need to know about an autonomous economic actor. Deliberately pseudonymous at its core: `agentId` is a stable handle, not a person. Everything that could identify a human or an organisation is optional, separately grouped, and excluded from counterparty disclosure by default -- because a standard that makes real-world identity the price of transacting has answered the accountability question by abolishing privacy.",
