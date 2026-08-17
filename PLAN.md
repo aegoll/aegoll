@@ -299,11 +299,11 @@ against a spec rather than against itself.
 - [x] A8.1 **Located by search, not vendored yet.** Two repos side by side is the normal layout; the module skips cleanly when the standard is absent, so a contributor with only this repo does not face red for something they cannot fix. Vendoring with a pin (like `_schemas/` and `_profiles/`) is the next step once the vectors stabilise
 - [x] A8.2 [`tests/test_vectors.py`](tests/test_vectors.py) — one test per vector, and a failure names the **clause in dispute** so the argument is *either the spec is wrong or this implementation is*, not a mystery
 - [x] A8.3 **Arithmetic family passes: 33 vectors, 0 divergences.** Refusal categories are *mapped* rather than string-compared — a vector checks the right *kind* of reason, and matching wording would make the suite a test of our vocabulary
-- [ ] A8.4 Envelope family passes — headroom, cumulative vs per-transaction, windows
+- [x] A8.4 **Envelope family passes: 27 vectors.** The runner builds `Envelope` directly rather than driving a whole decision, so a failure names the envelope rule rather than implicating policy, trust and risk as well
 - [ ] A8.5 Verdict family passes — narrowing, attribution, evaluation order
 - [ ] A8.6 Evidence family passes — record projection, canonical serialisation, chain hashes
 - [x] A8.7 Both covered, and asserted **by name** — "we have arithmetic vectors" is not the same claim as "the minus-sign bug is covered"
-- [ ] A8.8 Every failure classified in writing as *spec bug* or *code bug*, never quietly fixed
+- [x] A8.8 Two classified so far, both **code bugs in this repository**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). A third was a **vector bug** — an amount that genuinely breached the envelope it claimed to fit — corrected in the standard
 
 **Exit:** 100% of vectors green, and a written list of what the spec failed to say.
 
@@ -438,6 +438,21 @@ Full list and reasoning in [`../CONTEXT.md`](../CONTEXT.md).
 ## Findings
 
 Recorded as work lands. A plan with the wrong turns removed is not a plan.
+
+### F-A5 · `binding` is not `tightest` — 2026-08-17
+
+Found while writing [AEGS-0.1-ENV-6](../aegs/spec/03-envelopes.md), not by any test here.
+
+`Report` marked the **binding** envelope under a heading meaning *the limit closest to
+biting*. Those are two questions: `binding` answers *why was this refused* and is `None` for
+an approved decision; `tightest` answers *what will bite next* and always exists. So the
+envelope panel's most useful column was blank on every approved decision — precisely when a
+developer is checking headroom.
+
+None of the 449 tests here could have caught it. The code did exactly what it said; the
+defect was in what the two concepts *meant*. Only writing them down as separate normative
+requirements made the conflation visible, which is the case for writing the spec and the
+implementation in the same session rather than one after the other.
 
 ### F-A1 · The prototype was never a package — 2026-08-17
 
