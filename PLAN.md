@@ -220,24 +220,35 @@ meaningful exit codes.
 
 ---
 
-## A6 — Custom policies, custom engines, and the LLM option ⬜
+## A6 — Custom policies, custom engines, and the LLM option ✅
 
 The vision's extensibility ask: users add their own policy types, and optionally their
 own API keys for LLM-based policies.
 
-- [ ] A6.1 Registry for user-defined **rule kinds** — declarative predicates over existing engine outputs, still data
-- [ ] A6.2 Registry for user-defined **engines** — a Python entry point, because anything a pack cannot express is a missing engine, and the answer is a new engine rather than an escape hatch
-- [ ] A6.3 Engine contract documented: pure function, integer atomic units in, verdict + attribution out, **may only narrow**
-- [ ] A6.4 Test: a third-party engine that tries to *widen* a verdict is refused at registration, not at runtime
-- [ ] A6.5 Test: a third-party engine that performs I/O fails the purity test like a first-party one
-- [ ] A6.6 BYOK key handling — migrate `advisors/keys.py` (180 LOC). Keys are **never stored, logged, or journalled**; `masked()` remains the only display path
-- [ ] A6.7 Four advisor backends carried over: Anthropic, OpenAI, Gemini, Groq (`advisors/`, ~1,200 LOC total)
-- [ ] A6.8 `aegoll[advisors]` extra — core installs none of them
-- [ ] A6.9 **The advisor stays clamped:** it may tighten a verdict, never widen one. Behind an economic gate (`eiap.py`). Carry the existing clamp tests verbatim
-- [ ] A6.10 Document loudly in `docs/advisors.md`: **there is no model in the decision path.** A layer that needs a model to authorize a payment has lost its cost and latency guarantees
-- [ ] A6.11 `docs/custom-policies.md` — a worked example of a user adding a rule kind and an engine end to end
+- [x] A6.1 **Derived facts** — `all`/`any`/`not` over existing facts, declared in the pack. Still data: fixed combinators, the same fixed comparator vocabulary, nothing to `eval`. Declaration order is evaluation order, so **a cycle cannot be written** rather than being written and then detected
+- [x] A6.2 **Engine registry** — [`extend.py`](src/aegoll/extend.py): `Engine` protocol, `Context`, `Assessment`, `register_engine()`
+- [x] A6.3 Contract documented in [`docs/custom-policies.md`](docs/custom-policies.md) and enforced in code: pure function, values in, opinion + attribution out, may only narrow
+- [x] A6.4 **Corrected, not followed.** Widening is not *refused* — it is **unreachable**. An engine returns an opinion and the composition root applies `narrower()`, so one answering `APPROVE` against a standing `REJECT` has no effect. There is nothing to check because there is nothing to get wrong. Asserted by effect instead: a `Widener` voting APPROVE on everything leaves REVIEW as REVIEW and REJECT as REJECT, and the discarded opinion is recorded as `opinion_did_not_narrow`
+- [x] A6.5 **Refused at registration**, by reading the callable's own source: I/O, network, subprocess, sqlite3, clock reads, randomness, model clients, `open`/`eval`/`exec`/`compile`/`__import__`/`input`, and `global`. Twelve cases parametrized over arbitrary source. Unreadable source is itself refused unless explicitly opted into
+- [x] A6.6 BYOK handling carried over; keys never stored, logged or journalled, and `aegoll check` **refuses a key in the config file** — that file gets committed
+- [x] A6.7 Four advisor backends carried across in the A1 port
+- [x] A6.8 `aegoll[advisors]` extra; the core installs no model client
+- [x] A6.9 The advisor clamp and its tests carried intact
+- [x] A6.10 [`docs/advisors.md`](docs/advisors.md) — why the exclusion is *structural*, with the numbers, and what a model in the path costs in cost, latency, determinism and injection resistance
+- [x] A6.11 [`docs/custom-policies.md`](docs/custom-policies.md) — both extension points, when to use which, and why the data one comes first
 
-**Exit:** a user can add a policy type and an engine without forking, and cannot use either to weaken the layer.
+**Exit:** ✅ a user can add a policy type and an engine without forking, and cannot use
+either to weaken the layer. 350 tests, AEGS-CONF 7/7.
+
+> **Found — the `exec` trap, and why the fix mattered.** The impure-engine tests originally
+> built their subjects with `exec`, and `inspect.getsource()` cannot read exec'd code — so
+> every case failed on *"no readable source"* rather than on the purity problem it was
+> written to check. Twelve tests were green-adjacent for the wrong reason. The helper now
+> writes a real module and imports it, which is the only way to test a gate that reads
+> source. A second self-inflicted one: a test replaced `Tightener.assess` and restored it
+> *from* `Tightener.assess` — which by then was the replacement — leaving the class broken
+> and taking thirteen other tests with it. A test that reaches into shared state breaks its
+> neighbours; the fix is not to reach.
 
 ---
 
