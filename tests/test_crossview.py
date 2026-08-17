@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from aegl import crossview
-from aegl.plugin import Governor
+from aegoll import crossview
+from aegoll.plugin import Governor
 
 
 class Entry:
@@ -222,7 +222,7 @@ def test_a_real_governor_stamps_a_framework_that_the_rollup_reads(tmp_path):
     gov = Governor(advisor=None, data_dir=tmp_path, framework="langgraph")
     try:
         gov.authorize_run(model="gemini-flash-latest", provider="gemini", budget_usd=0.02)
-        summary = crossview.summarise(gov.aegl.audit.entries())
+        summary = crossview.summarise(gov.aegoll.audit.entries())
     finally:
         gov.close()
 
@@ -244,7 +244,7 @@ def test_two_governors_appear_side_by_side(tmp_path):
 
     gov = Governor(advisor=None, data_dir=tmp_path)
     try:
-        summary = crossview.summarise(gov.aegl.audit.entries())
+        summary = crossview.summarise(gov.aegoll.audit.entries())
     finally:
         gov.close()
 
@@ -256,6 +256,6 @@ def test_labelling_does_not_touch_agent_id(tmp_path):
     """Envelopes are agent-scoped; labelling must not split a shared budget."""
     gov = Governor(advisor=None, data_dir=tmp_path, framework="langgraph")
     try:
-        assert gov.aegl.agent_id == "agent-1"
+        assert gov.aegoll.agent_id == "agent-1"
     finally:
         gov.close()

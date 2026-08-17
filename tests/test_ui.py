@@ -102,14 +102,14 @@ class Recorder:
 
 @pytest.fixture
 def st(monkeypatch):
-    """Install the recorder as `streamlit` before `aegl.ui` imports it."""
+    """Install the recorder as `streamlit` before `aegoll.ui` imports it."""
     rec = Recorder()
     # `progress` collides with the dataclass field name, so bind it here.
     monkeypatch.setattr(Recorder, "progress",
                         lambda self, value=0.0, **kw: self.__dict__.setdefault("_p", []).append(value),
                         raising=False)
     monkeypatch.setitem(sys.modules, "streamlit", rec)
-    for name in [m for m in sys.modules if m.startswith("aegl.ui")]:
+    for name in [m for m in sys.modules if m.startswith("aegoll.ui")]:
         monkeypatch.delitem(sys.modules, name, raising=False)
     return rec
 
@@ -118,7 +118,7 @@ def st(monkeypatch):
 def ui(st):
     import importlib
 
-    module = importlib.import_module("aegl.ui")
+    module = importlib.import_module("aegoll.ui")
     return importlib.reload(module)
 
 
@@ -127,7 +127,7 @@ def ui(st):
 
 @pytest.fixture
 def governor(tmp_path):
-    from aegl.plugin import Governor
+    from aegoll.plugin import Governor
 
     g = Governor(advisor=None, data_dir=tmp_path)
     yield g

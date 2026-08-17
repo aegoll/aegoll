@@ -3,7 +3,7 @@
 `package_dir()` resolves the package from the *imported module*, never from a path
 relative to this file. Four tests used to do
 
-    Path(__file__).resolve().parents[1] / "aegl"
+    Path(__file__).resolve().parents[1] / "aegoll"
 
 which silently assumed the package sat next to `tests/`. Moving to a `src/` layout
 broke all four at once — and the failure mode that matters is the opposite one: had
@@ -20,13 +20,13 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import aegl
+import aegoll
 
 
 def package_dir() -> Path:
-    """Where the importable `aegl` package actually lives."""
-    assert aegl.__file__ is not None, "aegl is a namespace package, not a real one"
-    return Path(aegl.__file__).resolve().parent
+    """Where the importable `aegoll` package actually lives."""
+    assert aegoll.__file__ is not None, "aegoll is a namespace package, not a real one"
+    return Path(aegoll.__file__).resolve().parent
 
 
 def module_source(*parts: str) -> Path:

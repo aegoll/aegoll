@@ -1,23 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "aegl"
+name = "aegoll"
 version = "0.1.0"
-description = "Autonomous Economic Governance Layer (Phase 1: deterministic, zero-LLM) above x402"
+description = "Autonomous Economic Governance Layer — decide, cap and prove what an autonomous agent spends"
+readme = "README.md"
 requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "Jayzilva" }]
+keywords = [
+    "agent", "governance", "budget", "spend-control", "x402",
+    "autonomous", "payments", "audit", "aegs",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+
+# The core decides whether a payment may happen. It needs a YAML parser and
+# nothing else -- no web framework, no model client, no network library.
+# Anything heavier is an extra, so nobody pays for a dependency they do not use.
 dependencies = [
     "pyyaml>=6.0",
-    "streamlit>=1.40",
 ]
 
 [project.optional-dependencies]
-# Only needed for the live x402 adapter; the engines themselves need nothing.
+# Validating what we emit against the AEGS schemas. Optional because the layer
+# still governs correctly without it -- `record.validate()` says so rather than
+# failing.
+schema = ["jsonschema>=4.20"]
+
+# The x402 payment rail. The engines need none of it.
 x402 = ["x402[evm,httpx]>=2.18.0"]
-dev = ["pytest>=8.0"]
+
+# Advisory models. Never in the decision path -- see docs/api-surface.md §5 and
+# the clamp in eiap.py. Each backend is separately installable.
+advisors = ["anthropic>=0.40", "openai>=1.50", "google-genai>=0.3", "groq>=0.13"]
+
+dev = ["pytest>=8.0", "build>=1.2", "twine>=5.0"]
 
 [project.scripts]
-aegl = "aegl.cli:main"
+aegoll = "aegoll.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/aegoll/aegoll"
+Standard = "https://github.com/aegoll/aegs"
+Examples = "https://github.com/aegoll/aegoll-integrations"
+Changelog = "https://github.com/aegoll/aegoll/blob/main/CHANGELOG.md"
+
+# src/ layout. The prototype used a flat one, which hid eleven places where the
+# package resolved paths outside itself -- see PLAN.md F-A1. A src/ layout makes
+# "works in the source tree, broken in the wheel" fail immediately instead.
 [tool.setuptools.packages.find]
-include = ["aegl*"]
+where = ["src"]
+include = ["aegoll*"]
+
+# Starter policies and the vendored AEGS schemas ship inside the package and are
+# read through importlib.resources. If this stanza is wrong the wheel installs
+# without them and `Governor.load()` fails on a fresh install -- which is exactly
+# what tests/test_paths.py checks.
+[tool.setuptools.package-data]
+aegoll = ["policies/*.yaml", "_schemas/*.json", "_schemas/PROVENANCE.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

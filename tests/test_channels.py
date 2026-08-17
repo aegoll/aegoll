@@ -12,72 +12,72 @@ from datetime import datetime, timezone
 
 import pytest
 
-from aegl import Aegl, FixedClock, Paths, Vendor, Verdict, load_bundle
-from aegl.domain import Channel
-from aegl.inference import InferenceGate
+from aegoll import Aegoll, FixedClock, Paths, Vendor, Verdict, load_bundle
+from aegoll.domain import Channel
+from aegoll.inference import InferenceGate
 
 BASE = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
 SELLER = Vendor(id="x402-poc-desk", name="POC Desk")
 
 
 @pytest.fixture
-def aegl(tmp_path):
-    a = Aegl(bundle=load_bundle(), paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
+def aegoll(tmp_path):
+    a = Aegoll(bundle=load_bundle(), paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
     yield a
     a.close()
 
 
-def test_channels_have_separate_envelopes(aegl):
+def test_channels_have_separate_envelopes(aegoll):
     """The internal per-transaction limit is $0.04; external is $10."""
-    internal = aegl.build_request(
+    internal = aegoll.build_request(
         resource="llm:claude-haiku-4-5",
         amount_usd="0.04",
         vendor=Vendor(id="anthropic-api"),
         channel=Channel.INTERNAL,
     )
-    external = aegl.build_request(
+    external = aegoll.build_request(
         resource="/market/snapshot", amount_usd="0.04", vendor=SELLER,
         channel=Channel.EXTERNAL,
     )
-    i_limit = aegl.decide(internal).budget.envelopes[0].limit_atomic
-    e_limit = aegl.decide(external).budget.envelopes[0].limit_atomic
+    i_limit = aegoll.decide(internal).budget.envelopes[0].limit_atomic
+    e_limit = aegoll.decide(external).budget.envelopes[0].limit_atomic
     assert i_limit != e_limit, "both channels resolved to the same treasury config"
     assert i_limit == 40_000      # $0.04
     assert e_limit == 10_000_000  # $10.00
 
 
-def test_internal_spend_does_not_consume_the_external_budget(aegl):
+def test_internal_spend_does_not_consume_the_external_budget(aegoll):
     """Burn the whole internal budget; external headroom must be untouched."""
-    gate = InferenceGate(aegl)
-    probe = aegl.build_request(
+    gate = InferenceGate(aegoll)
+    probe = aegoll.build_request(
         resource="/market/snapshot", amount_usd="0.001", vendor=SELLER
     )
-    before = aegl.decide(probe).budget.headroom_atomic
+    before = aegoll.decide(probe).budget.headroom_atomic
 
     for _ in range(3):
         auth = gate.authorize_run(model="claude-haiku-4-5", budget_usd=0.04)
         if auth.allowed:
             gate.settle_run(auth.request_id, actual_cost_usd=0.04)
 
-    after = aegl.decide(probe).budget.headroom_atomic
+    after = aegoll.decide(probe).budget.headroom_atomic
     assert after == before, (
         f"internal spend leaked into the external envelope: {before} -> {after}"
     )
 
 
-def test_external_spend_does_not_consume_the_internal_budget(aegl):
-    gate = InferenceGate(aegl)
+def test_external_spend_does_not_consume_the_internal_budget(aegoll):
+    gate = InferenceGate(aegoll)
     before = gate.budget_state()
 
     for i in range(5):
-        req = aegl.build_request(
+        req = aegoll.build_request(
             resource="/market/snapshot",
             amount_usd="0.001",
             vendor=SELLER,
             request_id=f"ext-{i}",
         )
-        if aegl.authorize(req).verdict is Verdict.APPROVE:
-            aegl.record_settlement(req.id, success=True, tx_hash=f"0x{i}")
+        if aegoll.authorize(req).verdict is Verdict.APPROVE:
+            aegoll.record_settlement(req.id, success=True, tx_hash=f"0x{i}")
 
     after = gate.budget_state()
     assert after["envelopes"] == before["envelopes"], (
@@ -85,13 +85,13 @@ def test_external_spend_does_not_consume_the_internal_budget(aegl):
     )
 
 
-def test_exhausted_token_budget_rejects_rather_than_reviews(aegl):
+def test_exhausted_token_budget_rejects_rather_than_reviews(aegoll):
     """An over-budget run must REJECT, not REVIEW.
 
     There is no human to ask mid-run, and starting a run that cannot finish wastes
     the very budget that is already short.
     """
-    gate = InferenceGate(aegl)
+    gate = InferenceGate(aegoll)
     auth = gate.authorize_run(model="claude-opus-5", budget_usd=0.10)  # per-tx is $0.04
     assert auth.decision.verdict is Verdict.REJECT
     assert not auth.allowed
@@ -99,23 +99,23 @@ def test_exhausted_token_budget_rejects_rather_than_reviews(aegl):
     assert auth.decision.budget.binding == "per_transaction"
 
 
-def test_settle_run_records_actual_not_budgeted(aegl):
+def test_settle_run_records_actual_not_budgeted(aegoll):
     """Authorization reserves the ceiling; settlement records what was spent."""
-    gate = InferenceGate(aegl)
+    gate = InferenceGate(aegoll)
     auth = gate.authorize_run(model="claude-haiku-4-5", budget_usd=0.04)
     assert auth.allowed
     gate.settle_run(auth.request_id, actual_cost_usd=0.0223)
 
-    rows = [t for t in aegl.store.all_transactions() if t.id == auth.request_id]
+    rows = [t for t in aegoll.store.all_transactions() if t.id == auth.request_id]
     assert rows and rows[0].amount_atomic == 22_300, (
         "settlement should overwrite the reserved budget with the actual cost"
     )
     assert rows[0].channel == "internal"
 
 
-def test_channel_is_part_of_the_decision_hash(aegl):
+def test_channel_is_part_of_the_decision_hash(aegoll):
     """Otherwise two different spends could collide in the audit trail."""
     common = dict(resource="same", amount_usd="0.01", vendor=SELLER, request_id="fixed")
-    a = aegl.decide(aegl.build_request(channel=Channel.INTERNAL, **common))
-    b = aegl.decide(aegl.build_request(channel=Channel.EXTERNAL, **common))
+    a = aegoll.decide(aegoll.build_request(channel=Channel.INTERNAL, **common))
+    b = aegoll.decide(aegoll.build_request(channel=Channel.EXTERNAL, **common))
     assert a.decision_hash != b.decision_hash

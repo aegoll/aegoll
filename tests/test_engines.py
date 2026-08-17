@@ -115,13 +115,13 @@ def test_the_old_import_path_still_works(engine):
     a refactor's clothes."""
     import importlib
 
-    shim = importlib.import_module(f"aegl.{engine}")
+    shim = importlib.import_module(f"aegoll.{engine}")
     family = next(f for f, names in FAMILIES.items() if engine in names)
-    real = importlib.import_module(f"aegl.engines.{family}.{engine}")
+    real = importlib.import_module(f"aegoll.engines.{family}.{engine}")
 
     exported = [n for n in dir(real) if not n.startswith("_")]
     missing = [n for n in exported if not hasattr(shim, n)]
-    assert not missing, f"aegl.{engine} no longer re-exports {missing}"
+    assert not missing, f"aegoll.{engine} no longer re-exports {missing}"
 
 
 def test_no_engine_file_remains_at_the_top_level():

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from aegl.advisors import keys as keymod
+from aegoll.advisors import keys as keymod
 
 SAMPLE = "sk-test-abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -151,7 +151,7 @@ def test_persist_refuses_empty(tmp_path):
 
 
 def test_advisor_picks_up_a_runtime_key(monkeypatch):
-    from aegl.advisors import build_advisor
+    from aegoll.advisors import build_advisor
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     keymod.clear_runtime_key("openai")
@@ -163,7 +163,7 @@ def test_advisor_picks_up_a_runtime_key(monkeypatch):
 
 
 def test_key_test_reports_missing_key_without_calling_out():
-    from aegl.advisors import test_key
+    from aegoll.advisors import test_key
 
     keymod.clear_runtime_key("openai")
     result = test_key("openai", "gpt-4o-mini", api_key="")

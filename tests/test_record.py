@@ -19,8 +19,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from aegl import record as record_mod
-from aegl.plugin import Governor
+from aegoll import record as record_mod
+from aegoll.plugin import Governor
 
 BASE = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 
@@ -33,7 +33,7 @@ def gov(tmp_path):
 
 
 def records_for(gov) -> list[dict]:
-    return record_mod.records_from_journal(gov.aegl.audit.entries())
+    return record_mod.records_from_journal(gov.aegoll.audit.entries())
 
 
 class FakeQuote:
@@ -235,7 +235,7 @@ def test_a_record_is_bound_to_the_chain(gov):
 
 def test_the_evidence_hash_matches_the_journal_entry(gov):
     gov.authorize_run(model="m", budget_usd=0.03)
-    entry = [e for e in gov.aegl.audit.entries() if e.payload.get("decision")][0]
+    entry = [e for e in gov.aegoll.audit.entries() if e.payload.get("decision")][0]
     assert records_for(gov)[0]["evidence"]["evidenceHash"] == entry.entry_hash
 
 
@@ -284,7 +284,7 @@ def test_the_record_names_the_implementation_that_made_it(gov):
     """Comparing two implementations requires knowing which produced which record."""
     gov.authorize_run(model="m", budget_usd=0.03)
     impl = records_for(gov)[0]["implementation"]
-    assert impl["name"] == "aegl"
+    assert impl["name"] == "aegoll"
     assert impl["framework"] == "test-harness"
     assert impl["rail"] == "x402"
 
@@ -299,7 +299,7 @@ def test_a_settlement_update_alone_yields_no_record(gov):
     import asyncio
 
     asyncio.run(gov.wrap(FakeBuyer()).get_paid("/market/snapshot"))
-    entries = gov.aegl.audit.entries()
+    entries = gov.aegoll.audit.entries()
 
     assert len(entries) > len(records_for(gov))
     update = [e for e in entries if e.payload.get("settlement_update")][0]

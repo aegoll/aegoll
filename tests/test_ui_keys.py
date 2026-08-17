@@ -116,9 +116,9 @@ def st(monkeypatch):
 def ui_keys(st, monkeypatch):
     import importlib
 
-    module = importlib.import_module("aegl.ui_keys")
+    module = importlib.import_module("aegoll.ui_keys")
     module = importlib.reload(module)
-    from aegl.advisors import keys as keymod
+    from aegoll.advisors import keys as keymod
 
     # Runtime keys are process-global; keep each test's writes out of the others.
     monkeypatch.setattr(keymod, "_runtime", {}, raising=False)
@@ -145,8 +145,8 @@ CATALOGUE = [
 
 def test_a_loaded_key_is_never_rendered(ui_keys, st, tmp_path):
     """The core property. Only `masked()` output may reach the screen."""
-    st.text_inputs["aegl_byok_input_groq"] = SECRET
-    st.buttons["aegl_byok_use_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = SECRET
+    st.buttons["aegoll_byok_use_groq"] = True
 
     ui_keys.render(CATALOGUE, env_path=tmp_path / ".env")
 
@@ -160,8 +160,8 @@ def test_a_rejected_key_is_not_echoed_back(ui_keys, st, tmp_path):
     # A distinctive value, so a hit means an echo rather than a coincidence --
     # the rejection message legitimately contains the word "shorter".
     bad = "zq7"
-    st.text_inputs["aegl_byok_input_groq"] = bad
-    st.buttons["aegl_byok_use_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = bad
+    st.buttons["aegoll_byok_use_groq"] = True
 
     ui_keys.render(CATALOGUE, env_path=tmp_path / ".env")
 
@@ -171,10 +171,10 @@ def test_a_rejected_key_is_not_echoed_back(ui_keys, st, tmp_path):
 
 def test_a_rejected_key_is_not_left_half_loaded(ui_keys, st, tmp_path):
     """Rejecting must clear, not merely decline to confirm."""
-    from aegl.advisors import keys as keymod
+    from aegoll.advisors import keys as keymod
 
-    st.text_inputs["aegl_byok_input_groq"] = "zq7"
-    st.buttons["aegl_byok_use_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = "zq7"
+    st.buttons["aegoll_byok_use_groq"] = True
 
     ui_keys.render(CATALOGUE, env_path=tmp_path / ".env")
 
@@ -184,8 +184,8 @@ def test_a_rejected_key_is_not_left_half_loaded(ui_keys, st, tmp_path):
 
 def test_an_accepted_key_is_held_in_memory_only_by_default(ui_keys, st, tmp_path):
     env = tmp_path / ".env"
-    st.text_inputs["aegl_byok_input_groq"] = SECRET
-    st.buttons["aegl_byok_use_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = SECRET
+    st.buttons["aegoll_byok_use_groq"] = True
     # Save box deliberately left unticked.
 
     ui_keys.render(CATALOGUE, env_path=env)
@@ -197,9 +197,9 @@ def test_an_accepted_key_is_held_in_memory_only_by_default(ui_keys, st, tmp_path
 def test_saving_to_env_is_explicit(ui_keys, st, tmp_path):
     env = tmp_path / ".env"
     env.write_text("EXISTING=1\n", encoding="utf-8")
-    st.text_inputs["aegl_byok_input_groq"] = SECRET
-    st.buttons["aegl_byok_use_groq"] = True
-    st.checkboxes["aegl_byok_persist_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = SECRET
+    st.buttons["aegoll_byok_use_groq"] = True
+    st.checkboxes["aegoll_byok_persist_groq"] = True
 
     ui_keys.render(CATALOGUE, env_path=env)
 
@@ -212,9 +212,9 @@ def test_a_key_containing_a_newline_cannot_write_extra_variables(ui_keys, st, tm
     """A newline in the input would otherwise inject arbitrary .env lines."""
     env = tmp_path / ".env"
     injected = "gsk_" + "a" * 40 + "\nSELLER_ADDRESS=0xattacker"
-    st.text_inputs["aegl_byok_input_groq"] = injected
-    st.buttons["aegl_byok_use_groq"] = True
-    st.checkboxes["aegl_byok_persist_groq"] = True
+    st.text_inputs["aegoll_byok_input_groq"] = injected
+    st.buttons["aegoll_byok_use_groq"] = True
+    st.checkboxes["aegoll_byok_persist_groq"] = True
 
     ui_keys.render(CATALOGUE, env_path=env)
 
@@ -232,7 +232,7 @@ def test_the_no_login_warning_is_on_screen(ui_keys, st, tmp_path):
 
 
 def test_an_existing_key_is_shown_masked(ui_keys, st, tmp_path, monkeypatch):
-    from aegl.advisors import keys as keymod
+    from aegoll.advisors import keys as keymod
 
     keymod.set_runtime_key("groq", SECRET)
     catalogue = [{"provider": "groq", "keyPresent": True, "models": ["m"]}]
@@ -244,11 +244,11 @@ def test_an_existing_key_is_shown_masked(ui_keys, st, tmp_path, monkeypatch):
 
 
 def test_forgetting_a_key_clears_it(ui_keys, st, tmp_path):
-    from aegl.advisors import keys as keymod
+    from aegoll.advisors import keys as keymod
 
     keymod.set_runtime_key("groq", SECRET)
     st.session_state[ui_keys.SESSION_SLOT] = {"groq": SECRET}
-    st.buttons["aegl_byok_forget_groq"] = True
+    st.buttons["aegoll_byok_forget_groq"] = True
     catalogue = [{"provider": "groq", "keyPresent": True, "models": ["m"]}]
 
     ui_keys.render(catalogue, env_path=tmp_path / ".env")
@@ -262,7 +262,7 @@ def test_forgetting_a_key_clears_it(ui_keys, st, tmp_path):
 
 def test_session_keys_are_reapplied_on_rerun(ui_keys, st):
     """Streamlit reruns the script per interaction; without this, keys evaporate."""
-    from aegl.advisors import keys as keymod
+    from aegoll.advisors import keys as keymod
 
     st.session_state[ui_keys.SESSION_SLOT] = {"groq": SECRET}
     ui_keys.apply_session_keys()
