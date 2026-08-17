@@ -1,7 +1,14 @@
 # Public API surface — `aegoll`
 
-**Status: design, not yet implemented.** Written before the code on purpose. A bad early
-API is the only permanent mistake available in this project; everything else can be revised.
+**Status: implemented.** Written before the code on purpose — a bad early API is the only
+permanent mistake available in this project, and everything else can be revised.
+
+Writing it first worked, and then nearly failed for a reason worth recording: the code grew a
+different shape underneath, and `from aegoll import Governor` returned the internal rules
+evaluator instead of the surface below. The README's own opening snippet raised `AttributeError`
+on its third line. A designed API is only a contract if something checks that it exists —
+`tests/test_governor.py` now does, including a test that runs this page's ten-line snippet
+verbatim.
 
 **Version:** draft 1 · 2026-08-17 · Task [A0.6](../PLAN.md) · Applies to `aegoll 0.1.x`
 

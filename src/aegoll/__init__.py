@@ -11,7 +11,7 @@ its cost and latency guarantees are gone.
 """
 
 from .engines.evidence.audit import AuditLog
-from .authorize import Governor
+from .governor import Governor
 from .clock import FixedClock, SystemClock
 from .config import PolicyBundle, load_bundle
 from .engines.evidence.escalation import ReviewItem, ReviewQueue

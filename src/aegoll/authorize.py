@@ -41,7 +41,7 @@ from .domain import (
 
 
 @dataclass(frozen=True)
-class Governor:
+class RuleEngine:
     """Holds the bundle and the clock; produces decisions."""
 
     bundle: PolicyBundle

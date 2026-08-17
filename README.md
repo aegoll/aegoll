@@ -14,6 +14,21 @@ pip install aegoll
 aegoll init
 ```
 
+```python
+from aegoll import Governor
+
+gov = Governor.load()                     # reads ./aegoll.yaml
+decision = gov.authorize(amount_usd="2.50", vendor="acme", resource="/market/snapshot")
+
+if decision.approved:
+    pay(...)                              # your payment call, on any rail
+    gov.settle(decision, success=True)    # envelopes consume here, not above
+else:
+    print(decision.verdict, decision.attributed_control, decision.reason)
+```
+
+Or from the terminal, which is the same layer and the same evidence:
+
 ```bash
 aegoll check                                    # validate before an agent holds a wallet
 aegoll decide --amount 2.50 --vendor acme --resource /market/snapshot
@@ -21,15 +36,12 @@ echo $?                                         # 0 approved · 2 refused · 1 i
 aegoll report --html -o spend.html              # one self-contained page, no server
 ```
 
-The Python surface is specified in [`docs/api-surface.md`](docs/api-surface.md) and is being
-finalised for `0.1.0`; the CLI above is the stable one today. Start with
-[`docs/quickstart.md`](docs/quickstart.md).
+Start with [`docs/quickstart.md`](docs/quickstart.md).
 
 > **Status: pre-release.** Nothing is published yet. Ported from a working prototype and now
 > at **597 tests**, a 7/7 [AEGS](https://github.com/aegoll/aegs) conformance score with both
 > levels claimable, and **151 specification test vectors executing** against 56 normative
-> clauses. The Python API in [`docs/api-surface.md`](docs/api-surface.md) is not yet fully
-> implemented — the CLI is. See [`PLAN.md`](PLAN.md) and [`CHANGELOG.md`](CHANGELOG.md).
+> clauses. See [`PLAN.md`](PLAN.md) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

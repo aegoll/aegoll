@@ -447,6 +447,36 @@ class Decision:
     def approved(self) -> bool:
         return self.verdict is Verdict.APPROVE
 
+    @property
+    def attributed_control(self) -> str:
+        """Which control determined this verdict. AEGS-0.1-VERD-4 and VERD-4a.
+
+        The field worth logging, and the reason a `REJECT` is auditable rather than merely
+        recorded: *what* was decided is rarely the question, and *which control decided it* is.
+
+        Computed by `record._deciding_engine`, which is the same projection AEGS-CONF scores.
+        Deliberately not a second implementation here — a report, a conformance run and this
+        property disagreeing about which control refused would be three answers to a question
+        that has one, and only one of them would be under test.
+        """
+        from .record import _deciding_engine  # noqa: PLC0415
+
+        return _deciding_engine(self.as_dict()) or "unattributed"
+
+    @property
+    def reason(self) -> str | None:
+        """The reason that carried the verdict, not merely the first one logged.
+
+        A `REJECT` whose displayed reason is an unrelated informational line is worse than no
+        reason at all: it sends the reader to a control that did nothing.
+        """
+        control = self.attributed_control
+        deciding = next(
+            (r for r in self.reasons if r.source == control and r.verdict),
+            next((r for r in self.reasons if r.verdict), None),
+        )
+        return deciding.detail if deciding else None
+
     def explain(self) -> list[str]:
         return [f"[{r.source}/{r.code}] {r.detail}" for r in self.reasons]
 

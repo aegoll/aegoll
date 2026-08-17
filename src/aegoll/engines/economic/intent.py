@@ -466,9 +466,17 @@ class IntentStore:
         return [Intent.from_dict(raw) for raw in self._load().values()]
 
     def revoke(self, intent_id: str) -> bool:
-        """Withdraw authority without deleting the record of it having been granted."""
+        """Withdraw authority without deleting the record of it having been granted.
+
+        `True` means this call revoked something. `False` means there was nothing to revoke --
+        either no such intent, or one already revoked. Reporting `True` for a second revocation
+        told a caller it had just withdrawn authority that was withdrawn long ago, which reads
+        as an event where there was none.
+        """
         data = self._load()
         if intent_id not in data:
+            return False
+        if data[intent_id].get("status") == "revoked":
             return False
         data[intent_id]["status"] = "revoked"
         self._save(data)

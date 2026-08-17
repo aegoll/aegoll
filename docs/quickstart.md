@@ -118,12 +118,7 @@ it governs cannot be told apart from one that is broken.
 
 ## 5 · Govern the actual agent
 
-> **The Python API is being finalised for `0.1.0`.** The shape below is what
-> [`api-surface.md`](api-surface.md) specifies and what this section will show; the working
-> call sequence today is `Aegoll.build_request(...)` then `authorize(request)`. Use the CLI
-> above, which is stable, until this note is gone. Recorded here rather than shown as though
-> it worked: a quickstart whose first snippet raises `AttributeError` is worse than one that
-> says which part is not ready.
+Two lines. The governor wraps the agent, not the other way round:
 
 ```python
 from aegoll import Governor
@@ -148,14 +143,22 @@ else:
     print(decision.verdict, decision.attributed_control, decision.reason)
 ```
 
-Three things in that snippet are load-bearing:
+**`settle()` is where envelopes consume**, not `authorize()`. A decision is made before money
+moves; a settlement records what actually happened. So an abandoned decision does not eat
+budget — and if the amount paid differs from the amount quoted, pass
+`actual_amount_usd=` and *that* is what counts against your limits. Skipping `settle()`
+entirely means the layer knows what it authorized and never learns what happened: counterparty
+trust never accumulates, and nothing is consumed.
+
+Two more things in that snippet are load-bearing:
 
 - **`amount_usd` is a string.** Money is integer atomic units internally, converted once at
-  the boundary. A `float` raises rather than rounding quietly.
-- **`gov.settle(...)`** closes the loop. Without it the layer knows what it authorized and
-  not what actually happened, and counterparty trust never accumulates.
+  the boundary. A `float` raises rather than rounding quietly — `0.1 + 0.2` is not `0.3`, and
+  there is no rounding this layer could pick that you would know about. An `int` is accepted
+  and means **atomic units**, so `2500000` is `"2.50"`.
 - **`decision.attributed_control`** is the field worth logging. Not *what* was decided —
-  *which control decided it*.
+  *which control decided it*. That is the question you will actually have at 2am, and the one a
+  verdict alone cannot answer.
 
 ## 6 · See what happened
 

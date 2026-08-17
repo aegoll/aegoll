@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS transactions (
     vendor_id     TEXT NOT NULL,
     resource      TEXT NOT NULL,
     amount_atomic INTEGER NOT NULL,
+    -- What actually settled, when it differed from what was authorised. NULL means "not
+    -- reported", which is not the same as "the same as authorised" and not the same as zero:
+    -- every window sum falls back to `amount_atomic` for NULL, and a row that genuinely
+    -- settled for nothing carries 0.
+    settled_amount_atomic INTEGER,
     verdict       TEXT NOT NULL,
     settled       INTEGER NOT NULL DEFAULT 0,
     success       INTEGER NOT NULL DEFAULT 0,
@@ -164,6 +169,12 @@ class Store:
             self._conn.execute(
                 "ALTER TABLE transactions ADD COLUMN channel TEXT NOT NULL DEFAULT 'external'"
             )
+        if "settled_amount_atomic" not in cols:
+            # Nullable, and the fallback is `amount_atomic`. Rows written before settlement
+            # amounts were tracked did not settle for zero; nothing was reported about them.
+            self._conn.execute(
+                "ALTER TABLE transactions ADD COLUMN settled_amount_atomic INTEGER"
+            )
         if "intent_id" not in cols:
             # Nullable on purpose: rows written before intent existed were not
             # ungoverned-by-intent-and-checked, they were taken when the concept
@@ -252,17 +263,43 @@ class Store:
         make an intent exhaust itself on failures.
         """
         row = self._rows(
-            "SELECT COALESCE(SUM(amount_atomic),0) AS s FROM transactions "
+            "SELECT COALESCE(SUM(COALESCE(settled_amount_atomic, amount_atomic)),0) AS s FROM transactions "
             "WHERE intent_id=? AND settled=1 AND success=1",
             (intent_id,),
         )[0]
         return int(row["s"])
 
-    def mark_settled(self, tx_id: str, tx_hash: str | None, success: bool = True) -> None:
-        self._conn.execute(
-            "UPDATE transactions SET settled=1, success=?, tx_hash=? WHERE id=?",
-            (int(success), tx_hash, tx_id),
-        )
+    def mark_settled(
+        self,
+        tx_id: str,
+        tx_hash: str | None,
+        success: bool = True,
+        amount_atomic: int | None = None,
+    ) -> None:
+        """Close a transaction, recording what actually settled if it differed.
+
+        `amount_atomic` is what moved. It is stored separately from the authorised amount and
+        is what every window sum then counts -- see `_SCHEMA`. Passing it was previously
+        impossible, so a settlement for more than was authorised consumed the authorised figure
+        and a cumulative envelope could be walked through by overspending at settlement.
+        """
+        if amount_atomic is not None:
+            if amount_atomic < 0:
+                raise ValueError(
+                    f"a settlement cannot be for a negative amount ({amount_atomic}). "
+                    "A refund is its own event, not a payment with a minus sign -- see "
+                    "AEGS-0.1-ARITH-4."
+                )
+            self._conn.execute(
+                "UPDATE transactions SET settled=1, success=?, tx_hash=?, "
+                "settled_amount_atomic=? WHERE id=?",
+                (int(success), tx_hash, amount_atomic, tx_id),
+            )
+        else:
+            self._conn.execute(
+                "UPDATE transactions SET settled=1, success=?, tx_hash=? WHERE id=?",
+                (int(success), tx_hash, tx_id),
+            )
         self._conn.commit()
 
     def mark_disputed(self, tx_id: str) -> None:
@@ -360,7 +397,7 @@ class Store:
 
         def spent(where: str, params: tuple[Any, ...]) -> int:
             sql = (
-                "SELECT COALESCE(SUM(amount_atomic),0) AS s FROM transactions "
+                "SELECT COALESCE(SUM(COALESCE(settled_amount_atomic, amount_atomic)),0) AS s FROM transactions "
                 f"WHERE settled=1 AND success=1 AND channel=? AND {where}"
             )
             return int(self._rows(sql, (channel, *params))[0]["s"])

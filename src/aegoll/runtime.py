@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .engines.evidence.audit import AuditLog
-from .authorize import Governor
+from .authorize import RuleEngine
 from .clock import Clock, SystemClock
 from .config import PolicyBundle, load_bundle
 from .engines.evidence.escalation import ReviewItem, ReviewQueue
@@ -39,7 +39,17 @@ from .domain import (
 #:
 #: Overridable per instance via `Paths.under(...)`, and by `evidence.journal` in config
 #: once the loader lands (PLAN.md A3.2).
-DATA_DIR = Path.cwd() / ".aegoll"
+#: The default evidence directory, resolved **when asked** rather than at import.
+#:
+#: This was `Path.cwd() / ".aegoll"` evaluated at import time and captured in `under()`'s
+#: default argument, which froze the location at whatever directory the process started in. Two
+#: consequences, both bad for a layer that counts money: a process that changed directory kept
+#: writing to the original journal, and two `Governor.load()` calls from different directories in
+#: one process shared one journal -- so one agent's spending consumed another's envelopes.
+#:
+#: A function, not a constant, because the value depends on when you ask.
+def default_data_dir() -> Path:
+    return Path.cwd() / ".aegoll"
 
 
 @dataclass
@@ -49,8 +59,8 @@ class Paths:
     review: Path
 
     @classmethod
-    def under(cls, root: Path | str = DATA_DIR) -> "Paths":
-        r = Path(root)
+    def under(cls, root: Path | str | None = None) -> "Paths":
+        r = Path(root) if root is not None else default_data_dir()
         return cls(r / "history.db", r / "audit.jsonl", r / "review.json")
 
     @classmethod
@@ -106,7 +116,7 @@ class Aegoll:
             from .advisors import estimate_call_cost_usd  # noqa: PLC0415
 
             cost_atomic = usd_to_atomic(estimate_call_cost_usd(advisor.model))
-        self.governor = Governor(self.bundle, self.clock, cost_atomic)
+        self.governor = RuleEngine(self.bundle, self.clock, cost_atomic)
 
     # --- request construction ---------------------------------------------
     def build_request(
@@ -402,8 +412,17 @@ class Aegoll:
         tx_hash: str | None = None,
         amount_atomic: int | None = None,
     ) -> None:
-        """Close the loop after x402 settles (or fails to)."""
-        self.store.mark_settled(request_id, tx_hash, success=success)
+        """Close the loop after x402 settles (or fails to).
+
+        `amount_atomic` is what actually moved, and it reaches the store as well as the journal.
+        It used to reach only the journal: the evidence recorded the real figure while every
+        envelope kept counting the authorised one, so a $0.05 authorisation settled as $5.00
+        consumed $0.05 of a daily ceiling. Under-counting is the direction that matters -- it
+        makes a cumulative envelope bypassable by overspending at settlement.
+        """
+        self.store.mark_settled(
+            request_id, tx_hash, success=success, amount_atomic=amount_atomic
+        )
         self.audit.attach_settlement(
             request_id,
             {
