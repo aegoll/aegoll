@@ -300,10 +300,10 @@ against a spec rather than against itself.
 - [x] A8.2 [`tests/test_vectors.py`](tests/test_vectors.py) — one test per vector, and a failure names the **clause in dispute** so the argument is *either the spec is wrong or this implementation is*, not a mystery
 - [x] A8.3 **Arithmetic family passes: 33 vectors, 0 divergences.** Refusal categories are *mapped* rather than string-compared — a vector checks the right *kind* of reason, and matching wording would make the suite a test of our vocabulary
 - [x] A8.4 **Envelope family passes: 27 vectors.** The runner builds `Envelope` directly rather than driving a whole decision, so a failure names the envelope rule rather than implicating policy, trust and risk as well
-- [ ] A8.5 Verdict family passes — narrowing, attribution, evaluation order
+- [x] A8.5 **Verdict family passes: 32 vectors**, plus a test that drives five real decisions end to end and recomputes attribution independently — without it the vectors could pass while the product disagreed with the spec, and the suite would be testing the runner
 - [ ] A8.6 Evidence family passes — record projection, canonical serialisation, chain hashes
 - [x] A8.7 Both covered, and asserted **by name** — "we have arithmetic vectors" is not the same claim as "the minus-sign bug is covered"
-- [x] A8.8 Two classified so far, both **code bugs in this repository**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). A third was a **vector bug** — an amount that genuinely breached the envelope it claimed to fit — corrected in the standard
+- [x] A8.8 Three classified so far. Two **code bugs here**, both found by writing the clause: the per-call ceiling rendered as "used of limit" ([ENV-4](../aegs/spec/03-envelopes.md)), and `binding` conflated with `tightest` ([ENV-6](../aegs/spec/03-envelopes.md)). one a **vector bug** (an amount that genuinely breached the envelope it claimed to fit), and one a **specification bug**: [VERD-4](../aegs/spec/04-verdicts.md) required attribution to the last control that narrowed, which misattributes a sanctioned counterparty to whatever spending limit bit first. The spec was amended; this code was already right
 
 **Exit:** 100% of vectors green, and a written list of what the spec failed to say.
 
