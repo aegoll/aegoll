@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from dataclasses import dataclass, field
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -19,36 +19,50 @@ import yaml
 
 from .domain import usd_to_atomic
 
-DEFAULT_BUNDLE = Path(__file__).resolve().parents[1] / "policies" / "default.yaml"
-REPO_ROOT = Path(__file__).resolve().parents[2]
 
+def _packaged_policies() -> Path:
+    """The starter policies, as package data.
 
-def _load_repo_env() -> None:
-    """Read the repo-root `.env` for BYOK advisor keys.
-
-    Deliberately minimal and dependency-free: `python-dotenv` is an agent
-    dependency, and the governance layer should not inherit it just to read two
-    keys. Existing environment variables always win, so an explicitly exported
-    key is never overwritten by the file.
+    Resolved through `importlib.resources` rather than `Path(__file__).parents[n]`.
+    The prototype used the latter, which worked only because the package sat inside
+    a monorepo with `policies/` as a sibling: in an installed wheel `parents[1]` is
+    `site-packages`, and the starters were unreachable. See PLAN.md F-A1.
     """
-    path = REPO_ROOT / ".env"
-    if not path.exists():
-        return
+    return Path(str(resources.files(__package__) / "policies"))
+
+
+DEFAULT_BUNDLE = _packaged_policies() / "default.yaml"
+
+
+def load_env_file(path: str | Path) -> dict[str, str]:
+    """Parse a `.env`-style file and return its pairs. Does **not** mutate `os.environ`.
+
+    The prototype had `_load_repo_env()`, which resolved `.env` from
+    `Path(__file__).parents[2]` and was called at *module import time* — so importing
+    the package walked up the filesystem, found a file the caller had never offered it,
+    and wrote its contents into the process environment as a side effect. In a library
+    that also handles BYOK keys that is a security problem, not a convenience.
+
+    Now: the caller names the file, and does what it likes with the result. Nothing is
+    read unless asked for, and nothing is exported behind the caller's back.
+    """
+    out: dict[str, str] = {}
+    p = Path(path)
+    if not p.exists():
+        return out
     try:
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line in p.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, value = line.partition("=")
             key = key.strip()
             value = value.strip().strip("'\"")
-            if key and value and key not in os.environ:
-                os.environ[key] = value
+            if key and value:
+                out[key] = value
     except OSError:
         pass
-
-
-_load_repo_env()
+    return out
 
 
 @dataclass(frozen=True)

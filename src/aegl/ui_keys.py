@@ -42,9 +42,10 @@ import streamlit as st
 from .advisors import keys as keymod
 from .advisors import providers as advisor_providers
 from .advisors import test_key
-from .config import REPO_ROOT
-
-DEFAULT_ENV_PATH = REPO_ROOT / ".env"
+# Relative to where the user ran the app, not to where the package happens to be
+# installed. The prototype used a repo-root path derived from the package location,
+# which pointed into site-packages once installed. See PLAN.md F-A1.
+DEFAULT_ENV_PATH = Path.cwd() / ".env"
 
 SIGNUP_URLS = {
     "groq": "https://console.groq.com/keys",

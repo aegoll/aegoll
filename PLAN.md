@@ -70,7 +70,22 @@ that cost is accepted deliberately, with a provenance index as the mitigation.
 - [ ] A1.8 Delete the eleven 13-line re-export shims (`aegl/aegl/{audit,eiap,escalation,identity,intent,policy,risk,roi,treasury,trust}.py`) — they existed for an in-repo move and a fresh package does not need two import routes
 - [ ] A1.9 Re-run the purity test after deletion: `tests/test_no_llm.py` walks the tree, and the shims are exactly the shape that once made it pass while checking nothing
 
-**Exit:** 249 tests green, `PROVENANCE.md` covers every ported path, no module named `aegl`.
+### Discovered during the port — see [F-A1](#f-a1--the-prototype-was-never-a-package--2026-08-17)
+
+The package reaches outside itself in eleven places. Each gets its own commit so the diff
+reads as a fix rather than as churn.
+
+- [ ] A1.10 **Starter policies become package data** — `src/aegoll/policies/*.yaml`, resolved with `importlib.resources`, never with `Path(__file__).parents[n]`
+- [ ] A1.11 **AEGS schemas become vendored package data** — `src/aegoll/_schemas/`, with a provenance header naming the `aegs` commit they came from and a CI check that they have not drifted. Three engines currently read them from a sibling directory of the monorepo
+- [ ] A1.12 **The schema read moves out of import time.** `record.py`, `intent.py` and `identity.py` load a schema at module import, which is filesystem I/O inside the core — invariant 7, quietly untrue. Load lazily on first validation, and make validation optional so the core needs no `jsonschema` at all
+- [ ] A1.13 **Delete the `.env` walk.** `config.py` resolves `.env` from `parents[2]`. A library that walks up the filesystem looking for dotenv files reads files the caller never offered it, and this one also handles BYOK keys. Keys come from the environment or from explicit config — never from a file the library went looking for
+- [ ] A1.14 **`.data/` becomes caller-controlled.** `runtime.py` writes the journal and sqlite history beside the package, i.e. into `site-packages`. Default to `./.aegoll/` relative to the working directory, overridable by `evidence.journal` in config
+- [ ] A1.15 **Remove the `x402_core` path-hack** from the rail adapter. It imports its dependency or fails with a clear message; it does not reach into a sibling repository
+- [ ] A1.16 **Update the four tests** asserting on `parents[1]/"aegl"` to the new layout — and make them assert on the *package* location rather than a hardcoded relative path, so the next layout change fails loudly instead of silently
+- [ ] A1.17 Add a test that **fails if any module resolves a path outside the package**. This is the check whose absence let all eleven survive
+- [ ] A1.18 Add a test that installs the built wheel into a clean environment and imports it. Source-tree tests cannot catch this class of bug at all
+
+**Exit:** 249 tests green **from an installed wheel**, `PROVENANCE.md` covers every ported path, no module named `aegl`, and no path resolved outside the package.
 
 ---
 
@@ -310,4 +325,31 @@ Full list and reasoning in [`../CONTEXT.md`](../CONTEXT.md).
 
 Recorded as work lands. A plan with the wrong turns removed is not a plan.
 
-_(none yet)_
+### F-A1 · The prototype was never a package — 2026-08-17
+
+Moving to the `src/` layout in the first commit of the port ([A1.4](#a1--port-and-rename-))
+turned 249 passing tests into **35 failed, 80 passed, 134 errors**. Not a porting mistake:
+the flat layout inside the monorepo had been hiding that the package **reaches outside
+itself in eleven places**, and every one of them breaks in an installed wheel.
+
+| Where | Reaches for | Breaks because |
+|---|---|---|
+| `config.py:22` | `policies/` via `parents[1]` | in a wheel, `parents[1]` is `site-packages` |
+| `config.py:23,34` | `.env` via `parents[2]` | a library walking up the tree for dotenv files reads files the caller never offered it |
+| `runtime.py:31` | `.data/` beside the package | writes into `site-packages` |
+| `record.py:46` | `../aegs/schemas/decision-record-0.1.json` | no sibling `aegs/` exists outside the monorepo |
+| `engines/economic/intent.py:58` | `../../aegs/schemas/economic-intent-0.1.json` | same |
+| `engines/evidence/identity.py:48` | `../../aegs/schemas/agent-identity-0.1.json` | same |
+| `adapters/x402_python.py:32` | path-hack into `../agents/x402_core` | same |
+| `app.py:23`, `ui_demo.py:25` | `sys.path` manipulation | leaving the package anyway ([A2.1](#a2--purity-get-the-package-out-of-the-ui-business-)) |
+| `tests/test_{engines,plugin,ui,ui_keys}.py` | `parents[1]/"aegl"` | asserts on the old layout |
+
+**Two of these are more than packaging.** The `.env` walk is a security smell in a library
+that also handles BYOK keys. And three engines **read AEGS schema files from disk at import
+time**, which is filesystem access inside the supposedly pure core — invariant 7, quietly
+untrue since whenever those lines were written, and invisible because the purity test checked
+imports rather than I/O.
+
+This is the failure the `src/` layout exists to surface, found in the first commit here
+rather than in the first bug report after publishing. Fixed as [A1.10–A1.16](#a1--port-and-rename-),
+one concern per commit.

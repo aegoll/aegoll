@@ -33,13 +33,12 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-# Importing config for its side effect: it loads the repo-root .env, which is
-# where BYOK keys live. Without this, `providers()` reports every key missing.
-from ..config import _load_repo_env  # noqa: F401
-
-_load_repo_env()
-
-from .keys import (  # noqa: E402
+# No import-time .env loading. The prototype imported config purely for the side
+# effect of having it walk up the filesystem and export whatever .env it found, so
+# that `providers()` would report keys as present. A library must not do that: the
+# caller decides which files it is willing to have read. Keys come from the
+# environment, or from an explicit `load_env_file()` the caller chooses to call.
+from .keys import (
     ENV_KEYS,
     KeyStatus,
     clear_runtime_key,
