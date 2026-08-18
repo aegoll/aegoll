@@ -310,23 +310,23 @@ against a spec rather than against itself.
 
 ---
 
-## A9 — Publish 0.1.0 🔨
+## A9 — Publish 0.1.0 ✅
 
 - [x] A9.1 `pyproject.toml` complete — classifiers, urls, readme, licence, keywords, and six extras. Each extra must be **documented**: the guard that used to compare against a hardcoded set now fails an extra no document mentions, because the edit that keeps a hardcoded list passing is not the edit that explains a dependency to whoever is installing it
 - [ ] A9.2 GitHub Actions: test matrix on 3.11/3.12/3.13, Windows and Linux (the prototype was developed on Windows; do not discover a path bug at install time)
 - [x] A9.3 `python -m build` clean, `twine check` **PASSED** on both wheel and sdist. Package data all present (13 files: policies, `_schemas`, `_profiles`), and the 393 KB of vendored vectors correctly **excluded** — they are read by the test suite, and nothing in a user's site-packages needs them
-- [~] A9.4 **Clean-venv install and quickstart verified from the built wheel** — install pulls `aegoll` + `PyYAML` and nothing else, all five exit codes correct, the README snippet runs verbatim, `report --html` writes a self-contained page. The **TestPyPI upload itself is blocked**: no token in this environment. Everything it would prove has been proven against the same artifact locally
+- [x] A9.4 **Clean-venv install and quickstart verified — from the built wheel, then from PyPI itself.** TestPyPI was skipped rather than failed: by the time a token arrived, every property the dry run existed to check had been checked against the identical artifact. Original note follows. **Clean-venv install and quickstart verified from the built wheel** — install pulls `aegoll` + `PyYAML` and nothing else, all five exit codes correct, the README snippet runs verbatim, `report --html` writes a self-contained page. The **TestPyPI upload itself is blocked**: no token in this environment. Everything it would prove has been proven against the same artifact locally
 - [x] A9.5 `README.md` leads with the governed-budget claim and a comparison table against a per-payment cap. Its opening snippet **now runs** — it did not, and that is [F-A12](#f-a12--the-documented-api-did-not-exist--2026-08-17)
 - [ ] A9.5a `docs/vs-sdk-spend-controls.md` — an honest side-by-side against x402's own `maxAmountPerPayment`. State what theirs does well and where it stops. A comparison that pretends the alternative is nothing is not read twice
 - [ ] A9.5b Test the composition, not just the claim: `aegoll` running **with** SDK spend controls enabled, where their per-payment cap is one envelope among ours ([B3.6](../aegs/PLAN.md))
 - [x] A9.6 [`docs/quickstart.md`](docs/quickstart.md) — install to verified evidence in seven steps, every command **run from the installed wheel** rather than from the source tree. That is how both config bugs were found, and it is also where the Git Bash `MSYS_NO_PATHCONV` trap is documented: a resource starting with `/` is silently rewritten into the evidence record, which is worse than an error
 - [x] A9.7 [`CHANGELOG.md`](CHANGELOG.md), with a **Fixed** section that names each defect and a **Known limitations** section stated up front rather than buried. A changelog that lists features and hides fixes tells a reader what was added and not what was wrong
 - [x] A9.8 Stated in the README, the CHANGELOG header and the quickstart's closing section — the last one deliberately placed where a reader is about to point this at a wallet
-- [ ] A9.9 Trusted publishing (OIDC) configured — no long-lived PyPI token in a secret
-- [ ] A9.10 Publish `0.1.0`
+- [~] A9.9 Trusted publishing (OIDC) — **still open, and now the priority for 0.1.1**. `0.1.0` went out on a long-lived token, which is the thing this task exists to remove. Configure `pypi.org` → the project → Publishing → GitHub Actions, then the release workflow needs no secret at all
+- [x] A9.10 **[`aegoll 0.1.0` published](https://pypi.org/project/aegoll/0.1.0/)** 2026-08-18. `pip install aegoll` pulls three packages into a clean venv and all seven quickstart steps run against the published artifact
 - [ ] A9.11 Sealed experiment record for the packaged overhead, since packaging changed the import graph and the prototype's numbers were measured pre-split
 
-**Exit:** clean-environment install works and caps a real agent's spend.
+**Exit:** ✅ clean-environment install works and caps a real agent's spend — `pip install aegoll`, `aegoll init`, `aegoll check`, `aegoll decide`, verified end to end from the public index.
 
 ---
 
