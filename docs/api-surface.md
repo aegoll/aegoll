@@ -407,3 +407,36 @@ Recorded rather than guessed. None blocks implementation.
 - [ ] Should `authorize()` accept a caller-supplied idempotency key? The prototype had a replayable request id that overwrote the evidence of a first payment — a key would help, and it needs a spec clause first
 - [x] Is `Report` the same shape as the localhost read API, or a projection of it? **The same shape.** `as_dict()` is the wire format for `--json`, the HTML page and the 0.2 read API alike; `render()` takes a `Report` so there is nothing transport-specific to duplicate
 - [ ] Does a custom engine get a stable id it can be referenced by in a policy pack, and who owns that namespace?
+- [ ] **Should a host be able to enumerate what is installed, and ask a cost before committing?**
+  Raised by the cockpit, which needs nine symbols this document does not make public
+  ([C4.3](https://github.com/aegoll/aegoll-integrations/blob/main/cockpit/README.md) — *if the
+  cockpit needs a private symbol, that is a gap in the public API*). Seven are advisor-internal
+  and arguably belong behind the `advisors` extra's own surface rather than the core's. **Two are
+  real gaps:**
+
+  * `available_bundles()` and `available_models()` — **enumeration**. Any host that lets a user
+    *choose* a policy pack or a model has to list them, and every such host will write the same
+    private import until this is public.
+  * `estimate_call_cost_usd()` — **cost before commitment**. The entire economic-gate argument
+    depends on knowing what a call costs before making it, so a surface that cannot ask is
+    missing the input the design turns on.
+
+  Not fixed by exporting them as they stand: `available_bundles()` returns `Path` objects, which
+  leaks where packs live on disk into the API. An enumeration surface should return names and
+  metadata, not filesystem paths.
+
+## 10 · Where this document has been wrong
+
+Kept because a design document with no error history reads as one nobody checked against reality.
+
+**The whole Tier 1 surface did not exist.** It was written first on purpose — the reasoning at the
+top of this page still holds — and then the code grew a different shape underneath, so
+`from aegoll import Governor` returned the internal rules evaluator and the ten-line snippet in
+§1 raised `AttributeError` on its third line. Nothing compared the document to the package. That
+is now `tests/test_governor.py`, which runs §1's snippet verbatim.
+
+**`AEGS_VERSION` was claimed and absent.** [W0.7](../PLAN.md) promised two version lines on the
+package; one of them lived in `aegoll.record` and was never exported, so the documented name
+raised in the published `0.1.0`. Fixed in `0.1.1`, with a test.
+
+Both are the same failure: **a designed API is only a contract if something asserts it exists.**
