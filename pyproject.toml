@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aegoll"
-version = "0.1.0"
+version = "0.1.1"
 description = "Autonomous Economic Governance Layer — decide, cap and prove what an autonomous agent spends"
 readme = "README.md"
 requires-python = ">=3.11"

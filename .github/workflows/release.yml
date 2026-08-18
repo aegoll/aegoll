@@ -1,0 +1,154 @@
+name: release
+
+# Publish to PyPI on a version tag, using **trusted publishing** — no token anywhere.
+#
+# 0.1.0 went out on a long-lived API token pasted into a terminal, which is precisely what
+# PLAN.md A9.9 exists to remove. A token that can publish is a token that can publish
+# *anything*, it outlives the person who created it, and the only way to know it leaked is to
+# see something you did not upload. Trusted publishing replaces it with a short-lived OIDC
+# credential minted per run and scoped to this repository and this workflow.
+#
+# ONE-TIME SETUP, done in the browser and not by this file:
+#
+#   pypi.org -> your project -> Manage -> Publishing -> Add a new publisher -> GitHub
+#     Owner:            aegoll
+#     Repository:       aegoll
+#     Workflow name:    release.yml
+#     Environment:      pypi
+#
+# Then create the `pypi` environment under this repository's Settings -> Environments and add
+# whatever approval rule you want. The environment is the thing that makes a publish require a
+# deliberate human click rather than happening because a tag got pushed by accident.
+#
+# Until that publisher exists, the publish step fails with a permissions error. That is the
+# correct failure: it cannot silently fall back to a token, because there is no token to fall
+# back to.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and check, but do not publish"
+        type: boolean
+        default: true
+
+jobs:
+  # The gate. Publishing an artifact whose tests were never run is how a broken release
+  # happens, and `0.1.0` shipped two documented-but-absent things because nothing compared the
+  # docs to the package. So the whole suite runs first, on every supported version, and the
+  # publish job depends on it.
+  verify:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Tests
+        run: pytest tests -q
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build
+        run: python -m build
+
+      - name: twine check
+        run: python -m twine check dist/*
+
+      - name: The tag and the package version agree
+        # A tag saying v0.1.1 over a package saying 0.1.0 publishes the wrong thing under the
+        # right name, and the filename can never be reused to correct it.
+        id: version
+        run: |
+          version=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "package version: $version"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME#v}"
+            echo "tag version    : $tag"
+            if [ "$tag" != "$version" ]; then
+              echo "::error::tag v$tag does not match pyproject version $version"
+              exit 1
+            fi
+          fi
+
+      - name: This version is not already on PyPI
+        # PyPI rejects a duplicate anyway, but it does so after the OIDC exchange and with a
+        # message about file conflicts. Failing here says the actual problem: the version was
+        # not bumped.
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "https://pypi.org/pypi/aegoll/${{ steps.version.outputs.version }}/json")
+          if [ "$code" = "200" ]; then
+            echo "::error::aegoll ${{ steps.version.outputs.version }} is already published. Bump the version."
+            exit 1
+          fi
+          echo "version ${{ steps.version.outputs.version }} is unpublished (HTTP $code)"
+
+      - name: A clean install works, and pulls nothing unexpected
+        # The check that found six defects before 0.1.0, none of which were visible from the
+        # source tree. Never publish an artifact nobody installed.
+        run: |
+          python -m venv /tmp/fresh
+          /tmp/fresh/bin/pip install --quiet dist/*.whl
+          /tmp/fresh/bin/python -c "
+          import aegoll
+          print('version     :', aegoll.__version__)
+          print('AEGS version:', aegoll.AEGS_VERSION)
+          gov = aegoll.Governor.load()
+          d = gov.authorize(amount_usd='5000', vendor='v', resource='/r')
+          assert not d.approved, 'a \$5000 payment was approved on a default install'
+          assert d.attributed_control, 'a refusal with no attributed control'
+          print('refused by  :', d.attributed_control)
+          gov.close()
+          "
+          installed=$(/tmp/fresh/bin/pip list --format=freeze | grep -vc '^pip=' || true)
+          echo "packages installed: $installed"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    # Skipped on a manual dry run, so the whole path can be exercised without publishing.
+    if: github.event_name == 'push' || inputs.dry_run == false
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # The only permission that matters here. `id-token: write` lets the runner mint the
+      # short-lived OIDC token PyPI exchanges for an upload credential. No secret is read,
+      # because none exists.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No `password:` and no `with: user:`. If either appears here, trusted publishing has
+        # been quietly replaced by a token again and A9.9 is undone.

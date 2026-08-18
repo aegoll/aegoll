@@ -8,7 +8,48 @@ which stability tier.
 Entries name the defect a change fixes, not only the change. A changelog that lists features
 and hides fixes tells a reader what was added and not what was wrong.
 
-## [Unreleased]
+## [0.1.1] — 2026-08-18
+
+Small, and two of the three entries are things `0.1.0` claimed and did not have.
+
+### Added
+
+- **`aegoll.AEGS_VERSION`** is exported from the package. It existed in `aegoll.record` and
+  PLAN.md W0.7 claimed it at the top level; nothing compared the claim to the package, so
+  `aegoll.AEGS_VERSION` raised `AttributeError` in `0.1.0`. Two version lines answer different
+  questions — what the implementation is, and which specification it implements — and a record
+  carrying only the first cannot be audited later. Now with a test, because a version line
+  nobody imports is one that quietly stops existing.
+- **`aegoll[langgraph]`** — LangGraph adapter. `recursion_limit` bounds a graph's *shape*, so
+  this supplies the spend ceiling. LangGraph has no polite stop, so the ceiling raises
+  `GovernedBudgetExceeded` carrying the attributed control.
+- **`aegoll[crewai]`** — CrewAI adapter. **The one adapter whose framework surface is
+  unverified**: no prototype precedent and the SDK was not installed, so the hook names come
+  from documentation rather than a run. Its governance behaviour is tested exactly as
+  thoroughly as the others; the hook names are not. See
+  [`docs/adapters.md`](docs/adapters.md), which states the asymmetry as a table.
+
+### Changed
+
+- **Releases now use trusted publishing (OIDC).** `0.1.0` went out on a long-lived API token,
+  which is what [`A9.9`](PLAN.md) exists to remove: a token that can publish can publish
+  anything, outlives whoever made it, and the only way to learn it leaked is to see something
+  you did not upload. `.github/workflows/release.yml` mints a short-lived credential scoped to
+  this repository and this workflow, and there is no `password:` anywhere in it to fall back to.
+  The workflow also refuses to publish a version already on PyPI, refuses a tag that disagrees
+  with `pyproject.toml`, and installs the built wheel into a fresh venv and makes it refuse a
+  payment before uploading anything.
+
+## [0.1.0] — 2026-08-18
+
+First release, [live on PyPI](https://pypi.org/project/aegoll/0.1.0/). Ported from the
+[proof-of-concept](https://github.com/Jayzilva/x402) — see [`PROVENANCE.md`](PROVENANCE.md) for
+what came from where, and from which commit.
+
+Six of the fixes below were found by installing the wheel into a clean environment and
+following the quickstart as written — none were visible from the source tree, or to 632 passing
+tests. Two were on the money path: eleven commands ignored the configured policy pack, and
+overspending at settlement bypassed every cumulative envelope.
 
 ### Added
 
@@ -117,8 +158,3 @@ this:
   integration without breaking these tests. The hook shapes come from the proof-of-concept, where
   all three frameworks ran end to end, and end-to-end runs belong in `aegoll-integrations`, which
   installs them. See [`docs/adapters.md`](docs/adapters.md).
-
-## [0.1.0] — unreleased
-
-First release. Ported from the [proof-of-concept](https://github.com/Jayzilva/x402) — see
-[`PROVENANCE.md`](PROVENANCE.md) for what came from where, and from which commit.
