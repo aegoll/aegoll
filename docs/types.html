@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Four kinds of AEGL — what each can express</title>
+<meta name="description" content="Per-payment cap, cumulative envelope, governed budget, behavioural. Ordered by what each can express, and where the useful boundary falls.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<input type="checkbox" id="menu">
+<div class="topbar">
+  <label class="menu-btn" for="menu">&#9776; menu</label>
+  <a class="brand" href="index.html">tesoro <span class="v">0.1.0</span></a>
+  <div class="links">
+    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+    <a href="https://github.com/aegoll/aegs">AEGS</a>
+  </div>
+</div>
+
+<div class="shell">
+<aside class="nav">
+  <div class="group">Concepts</div>
+  <a class="page" href="index.html">Autonomous economic governance</a>
+  <a class="page" href="types.html" aria-current="page">Four kinds of AEGL</a>
+  <ul class="sub">
+    <li><a href="#the-four-types">The four types</a></li>
+    <li><a href="#type-1-a-per-payment">Type 1 · A per-payment cap</a></li>
+    <li><a href="#type-2-a-cumulative">Type 2 · A cumulative envelope</a></li>
+    <li><a href="#type-3-a-governed">Type 3 · A governed budget</a></li>
+    <li><a href="#type-4-behavioural">Type 4 · Behavioural</a></li>
+    <li><a href="#which-type-do-you">Which type do you need?</a></li>
+  </ul>
+  <a class="page" href="vocabulary.html">The shared vocabulary</a>
+  <div class="group">Tesoro</div>
+  <a class="page" href="tesoro.html">What Tesoro is</a>
+  <a class="page" href="architecture.html">Architecture</a>
+  <a class="page" href="policies.html">Policies &amp; rules</a>
+  <a class="page" href="frameworks.html">Frameworks &amp; rails</a>
+  <div class="group">The standard</div>
+  <a class="page" href="aegs.html">AEGS</a>
+  <div class="group">Practice</div>
+  <a class="page" href="start.html">Get started</a>
+</aside>
+
+<main>
+<h1>Four kinds of AEGL</h1>
+<p class="lede">
+  Not every layer that says no is the same thing. These are ordered by what each can
+  <em>express</em>, and each type can do everything the ones above it can.
+</p>
+
+<h2 id="the-four-types">The four types</h2>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Type</th><th>Decides on</th><th>Catches</th><th>Cannot catch</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1 · Per-payment cap</strong></td>
+      <td>one amount, in isolation</td>
+      <td>a single payment that is too large</td>
+      <td>ten payments that are each fine</td>
+    </tr>
+    <tr>
+      <td><strong>2 · Cumulative envelope</strong></td>
+      <td>amount + history</td>
+      <td>a budget exhausted over a day, a month, a window</td>
+      <td>an affordable purchase of the wrong thing</td>
+    </tr>
+    <tr>
+      <td><strong>3 · Governed budget</strong></td>
+      <td>amount, history, counterparty, purpose, identity</td>
+      <td>drift from the task; an untrusted counterparty; a delegate exceeding its parent</td>
+      <td>the <em>shape</em> of a sequence</td>
+    </tr>
+    <tr>
+      <td><strong>4 · Behavioural</strong></td>
+      <td>all of the above + sequence shape</td>
+      <td>structuring — many payments below every limit</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<figure>
+<svg viewBox="0 0 700 262" role="img" aria-label="Diagram: four types of AEGL as nested capability, each containing the previous">
+  <rect class="box" x="8" y="14" width="684" height="236" rx="9"/>
+  <text class="label-sm fill-dim" x="676" y="36" text-anchor="end">4 · behavioural — reads the shape of a sequence</text>
+
+  <rect class="box" x="26" y="46" width="612" height="186" rx="8"/>
+  <text class="label-sm fill-dim" x="622" y="68" text-anchor="end">3 · governed budget — purpose, counterparty, identity</text>
+
+  <rect class="box" x="44" y="78" width="540" height="136" rx="7"/>
+  <text class="label-sm fill-dim" x="568" y="100" text-anchor="end">2 · cumulative envelope — remembers history</text>
+
+  <rect class="box-accent" x="62" y="110" width="468" height="86" rx="6"/>
+  <text class="label" x="296" y="140" text-anchor="middle" style="font-weight:700">1 · per-payment cap</text>
+  <text class="label-sm" x="296" y="160" text-anchor="middle">is this one amount too large?</text>
+  <text class="label-sm" x="296" y="178" text-anchor="middle">now table stakes — several SDKs ship one</text>
+</svg>
+<figcaption>
+  Nested rather than sequential: a type-3 layer still enforces a per-payment ceiling, it just is not
+  <em>only</em> that. The interesting boundary is between 2 and 3, because that is where the question
+  changes from <em>“can we afford it”</em> to <em>“should we be buying it”</em>.
+</figcaption>
+</figure>
+
+<h2 id="type-1-a-per-payment">Type 1 · A per-payment cap</h2>
+
+<p>
+  One number, checked against one amount. Refuse anything above it.
+</p>
+
+<p>
+  This is genuinely useful and it is also the easiest thing in the category to build, which is why
+  it is now <strong>table stakes</strong> — the x402 SDKs ship <code>maxAmountPerPayment</code>, the
+  Claude Agent SDK ships <code>max_budget_usd</code>, and several standalone tools do the same. If a
+  per-payment cap is all you need, you probably already have one.
+</p>
+
+<div class="note">
+  <p>
+    <strong>What it cannot express, concretely.</strong> Forty payments of one cent pass every
+    per-payment cap ever written. So do five identical purchases when only the sixth exhausts a
+    daily total. The limit has no memory, so every decision is the first decision.
+  </p>
+</div>
+
+<h2 id="type-2-a-cumulative">Type 2 · A cumulative envelope</h2>
+
+<p>
+  Now the layer remembers. An <strong>envelope</strong> is a limit plus the consumption against it —
+  a daily total, a monthly total, a per-counterparty ceiling over thirty days.
+</p>
+
+<pre><code>purchase 1: $0.01  <span class="s">APPROVE</span>
+purchase 2: $0.01  <span class="s">APPROVE</span>   <span class="c">daily: $0.02 of $0.05 used</span>
+purchase 3: $0.01  <span class="s">APPROVE</span>
+purchase 4: $0.01  <span class="s">APPROVE</span>
+purchase 5: $0.01  <span class="s">APPROVE</span>   <span class="c">daily: $0.05 of $0.05 — exhausted</span>
+purchase 6: $0.01  <span class="k">REVIEW</span>    <span class="c">← binding: daily</span></code></pre>
+
+<p>
+  The refused payment is byte-for-byte identical to the five approved before it. That outcome is
+  unreachable for type 1 <strong>at any threshold</strong> — and it is worth being precise about why
+  tightening does not substitute: lowering the per-payment ceiling to one cent would still admit all
+  six, and would refuse every legitimate purchase above a cent.
+</p>
+
+<p>
+  Type 2 also introduces a question type 1 never has to answer: <em>which</em> limit bound? With four
+  envelopes in play, <em>“refused”</em> is not actionable and <em>“refused by the daily envelope,
+  which has $0.00 headroom”</em> is.
+</p>
+
+<h2 id="type-3-a-governed">Type 3 · A governed budget</h2>
+
+<p>
+  Everything above, plus the facts that are not amounts: <strong>who</strong> the counterparty is,
+  <strong>what</strong> the agent was sent to do, and <strong>whose authority</strong> it acts under.
+</p>
+
+<p>
+  This is where a whole class of failure becomes catchable, and the cleanest example is one where
+  every economic control is satisfied:
+</p>
+
+<pre><code><span class="c"># an agent sent to buy market data buys a follower count instead.</span>
+<span class="c"># same amount. same counterparty. same resource shape.</span>
+
+treasury : ok=True  binding=nothing      <span class="c">← affordable</span>
+trust    : 0.4800  no flags              <span class="c">← counterparty is fine</span>
+risk     : 0.2100  no flags              <span class="c">← nothing unusual</span>
+policy   : matched rule 'auto-approve-micro'
+intent   : /social/followers is outside the intent's declared resources
+
+<span class="k">REVIEW</span> — attributed to: intent</code></pre>
+
+<p>
+  Four controls say yes. One says no, and it is the only one that could — because nothing about the
+  purchase is a money problem. <strong>No amount of tightening a budget catches this</strong>, which
+  is the argument for declaring intent up front: without it, <em>“within budget”</em> and
+  <em>“doing the job”</em> collapse into the same question, and they are not the same question.
+</p>
+
+<p>Type 3 typically adds:</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Intent</h3>
+    <p>What the agent was sent to do, declared before it acts, with a budget and a scope. Drift
+    becomes detectable.</p>
+  </div>
+  <div class="card">
+    <h3>Counterparty trust</h3>
+    <p>Earned over settlements rather than asserted. A new counterparty is not a bad one, but it is
+    not an established one either.</p>
+  </div>
+  <div class="card">
+    <h3>Identity &amp; delegation</h3>
+    <p>Who is acting, under whose authority — and a sub-agent that can never exceed its parent.</p>
+  </div>
+  <div class="card">
+    <h3>Attribution</h3>
+    <p>Which control decided. With several controls able to refuse, this becomes the only actionable
+    field in the record.</p>
+  </div>
+</div>
+
+<h2 id="type-4-behavioural">Type 4 · Behavioural</h2>
+
+<p>
+  Everything above, plus the <strong>shape of a sequence</strong> rather than the size of any action.
+</p>
+
+<p>
+  Two attacks make the case, and neither is exotic:
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Structuring.</strong> Forty payments of a tenth of a cent, paced five minutes apart. No
+    value envelope is breached, no rate limit is breached, and the total is trivial. Money moves with
+    <em>nothing refused</em>.
+  </li>
+  <li>
+    <strong>Velocity evasion.</strong> Pacing exactly <em>at</em> a rate limit is unbounded in total.
+    Ten per minute permits fourteen thousand a day, and every one of them is compliant.
+  </li>
+</ul>
+
+<div class="warn-box">
+  <p>
+    <strong>No type-3 layer catches either, and Tesoro does not.</strong> It ships the structuring
+    case as a <a href="https://github.com/aegoll/tesoro-integrations/tree/main/usecases/aml-structuring">runnable
+    demonstration</a> of its own gap rather than a paragraph about it — 40 payments, 0.08% of a daily
+    envelope, nothing refused.
+  </p>
+  <p>
+    What would catch it is a control examining <em>count, variance and distribution</em> instead of
+    magnitude: forty identical payments is not forty independent decisions. Every envelope in a type-3
+    layer answers <em>how much</em>, and the thing wrong with structuring is its shape.
+  </p>
+</div>
+
+<h2 id="which-type-do-you">Which type do you need?</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>If your situation is</th><th>Then</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>one agent, one counterparty you chose, small amounts, a human watching</td>
+      <td><strong>Type 1</strong> is honestly enough. Use what your SDK already ships</td>
+    </tr>
+    <tr>
+      <td>an agent running unattended, or repeatedly, against a budget that matters</td>
+      <td><strong>Type 2</strong> minimum — a cap with no memory will not bound your total spend</td>
+    </tr>
+    <tr>
+      <td>an agent choosing its own counterparties, or sub-agents, or you need to explain a refusal later</td>
+      <td><strong>Type 3</strong>. This is where attribution and evidence start mattering</td>
+    </tr>
+    <tr>
+      <td>you have an adversary, or a regulator, or the sequence itself is the risk</td>
+      <td><strong>Type 4</strong> — and nobody has built one. Be sceptical of claims otherwise</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p class="small">
+  A note on reading vendor claims in this space, including this one: <em>“spend limits”</em> is used
+  for all four types. The question that separates them is <strong>“can it refuse a payment that is
+  individually within every limit?”</strong> — type 1 cannot, by construction.
+</p>
+<div class="next">
+  <a href="index.html"><span class="lbl">Previous</span>&larr; Autonomous economic governance</a>
+  <a href="vocabulary.html"><span class="lbl">Next</span>The shared vocabulary &rarr;</a>
+</div>
+<footer class="page">
+  Apache-2.0 · specification text CC-BY-4.0 · no trackers and no external requests, by design
+</footer>
+</main>
+</div>
+
+</body>
+</html>

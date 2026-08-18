@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>What Tesoro is — a governed budget for autonomous agents</title>
+<meta name="description" content="One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<input type="checkbox" id="menu">
+<div class="topbar">
+  <label class="menu-btn" for="menu">&#9776; menu</label>
+  <a class="brand" href="index.html">tesoro <span class="v">0.1.0</span></a>
+  <div class="links">
+    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+    <a href="https://github.com/aegoll/aegs">AEGS</a>
+  </div>
+</div>
+
+<div class="shell">
+<aside class="nav">
+  <div class="group">Concepts</div>
+  <a class="page" href="index.html">Autonomous economic governance</a>
+  <a class="page" href="types.html">Four kinds of AEGL</a>
+  <a class="page" href="vocabulary.html">The shared vocabulary</a>
+  <div class="group">Tesoro</div>
+  <a class="page" href="tesoro.html" aria-current="page">What Tesoro is</a>
+  <ul class="sub">
+    <li><a href="#the-claim">The claim, in one line</a></li>
+    <li><a href="#what-it-produces">What it produces</a></li>
+    <li><a href="#what-makes-it-a">What makes it type 3 rather than a cap</a></li>
+    <li><a href="#design-commitments">Design commitments</a></li>
+    <li><a href="#the-cost">The cost</a></li>
+    <li><a href="#what-tesoro-does-not">What Tesoro does not do</a></li>
+    <li><a href="#where-next">Where next</a></li>
+  </ul>
+  <a class="page" href="architecture.html">Architecture</a>
+  <a class="page" href="policies.html">Policies &amp; rules</a>
+  <a class="page" href="frameworks.html">Frameworks &amp; rails</a>
+  <div class="group">The standard</div>
+  <a class="page" href="aegs.html">AEGS</a>
+  <div class="group">Practice</div>
+  <a class="page" href="start.html">Get started</a>
+</aside>
+
+<main>
+<h1>What Tesoro is</h1>
+<p class="lede">
+  A <a href="types.html#type-3-a-governed">type-3 AEGL</a> you can <code>pip install</code>: ten
+  deterministic engines that decide whether an agent may spend, before it spends, and record which
+  control decided.
+</p>
+
+<pre><code>pip install tesoro
+tesoro init
+tesoro decide --amount 2.50 --vendor acme --resource /market/snapshot</code></pre>
+
+<h2 id="the-claim">The claim, in one line</h2>
+
+<div class="key">
+  <p>
+    <strong>Autonomous payment should not mean unrestricted payment.</strong>
+  </p>
+</div>
+
+<p>
+  Concretely, Tesoro is a <strong>policy-engine host</strong>. You supply a policy pack — the rules
+  and the numbers — and it enforces that pack against a profile, producing a decision, an
+  attribution, and an evidence record for every action an agent wants to take.
+</p>
+
+<p>
+  <a href="aegs.html">AEGS</a> is one profile it can enforce, <em>not</em> its identity. Run it with
+  <code>profile: none</code> and it governs exactly as well; it simply makes no conformance claim.
+  Which is the adoption mechanism: nobody installs a standard. They install a spend cap, keep the
+  default profile, and emit conformant evidence without reading a specification.
+</p>
+
+<h2 id="what-it-produces">What it produces</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>A decision</h3>
+    <p>One of four verdicts, before money moves. Deterministic integer arithmetic — same inputs, same
+    answer, replayable from the journal.</p>
+  </div>
+  <div class="card">
+    <h3>An attribution</h3>
+    <p><strong>Which control decided.</strong> The field you need when an agent stops at 2am and you
+    have to know what to change.</p>
+  </div>
+  <div class="card">
+    <h3>Evidence</h3>
+    <p>An append-only hash-chained record. Editing, middle-deletion and reordering are all
+    detected.</p>
+  </div>
+</div>
+
+<pre><code>$ tesoro report
+
+policy   : default  a5a64aeb69dbc5f9  12 rules
+profile  : aegs-1
+decisions: 3  settled 1  spent $0.060000
+
+by attributed control  <span class="c">-- what actually governed this agent</span>
+  policy                 2
+  treasury               1
+
+envelopes: external
+  per_transaction  per call        ceiling $10.000000
+  daily            today           $0.060000 of $50.000000   headroom $49.940000  (tightest)
+
+chain    : 6 entries, VALID  [sha256, 128 bits]
+  note   : a hash chain detects edits and middle-deletions, not truncation…</code></pre>
+
+<p>
+  <strong><code>by attributed control</code> is the line worth reading.</strong> Counts by verdict say
+  what happened; counts by attributed control say what is <em>actually</em> governing this agent —
+  frequently not what whoever wrote the policy expected.
+</p>
+
+<h2 id="what-makes-it-a">What makes it type 3 rather than a cap</h2>
+
+<p>
+  Four things a per-payment limit cannot express, each of which exists because of a specific failure:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Capability</th><th>Catches</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Cumulative envelopes</strong><br><span class="small">daily, monthly, per-counterparty, per-resource</span></td>
+      <td>five identical purchases where only the sixth exhausts the day. The refused payment is byte-for-byte identical to the approved ones</td>
+    </tr>
+    <tr>
+      <td><strong>Declared intent</strong><br><span class="small">purpose, budget, scope, expiry</span></td>
+      <td>an affordable purchase from a trusted counterparty of something the agent was never asked to buy. Treasury, trust, risk and policy all approve; only intent objects</td>
+    </tr>
+    <tr>
+      <td><strong>Earned trust</strong><br><span class="small">cold start, accrued over settlements, revoked by dispute</span></td>
+      <td>a brand-new counterparty treated as if it had a track record</td>
+    </tr>
+    <tr>
+      <td><strong>Delegation clamp</strong><br><span class="small">a sub-agent's authority is the narrower of its own and its parent's</span></td>
+      <td>a sub-agent claiming more than the agent that spawned it — <em>including one that declares no limit at all</em></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  That last parenthesis was a live escalation in this codebase. The layer <em>compared</em> a
+  delegate's limits against its delegator's and refused anything larger — which detects nothing when
+  the delegate declares no limit, because there is nothing comparable and the delegate has no ceiling
+  of its own to trip. <strong>Declaring nothing was strictly more permissive than declaring a large
+  number.</strong> A $1.00 payment was approved under a parent capped at $0.002. The specification now
+  says <em>clamp to the narrower</em> rather than <em>refuse the wider</em>, because a clamp has to
+  produce a number and so has no case it can quietly fail to cover.
+</p>
+
+<h2 id="design-commitments">Design commitments</h2>
+
+<p>These are not preferences. Each is enforced by a test that fails when it is violated.</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>No model in the decision path.</strong> Every engine is integer arithmetic over structured
+    values. An optional advisor may be consulted behind an economic gate and is <em>clamped</em> — it
+    can tighten a verdict, never widen one.
+  </li>
+  <li>
+    <strong>Policy is data, never code.</strong> Declarative rules, a closed comparator vocabulary, no
+    <code>eval</code>. A security boundary: an executable policy pack fetched from a registry is
+    remote code execution wearing a governance hat.
+  </li>
+  <li>
+    <strong>Money never touches a float.</strong> Integer atomic units, converted once at the boundary
+    with a pinned rounding mode. Passing a <code>float</code> raises.
+  </li>
+  <li>
+    <strong>Two channels never share an envelope.</strong> Different currencies, counterparties and
+    failure modes — and a different correct response to the same breach.
+  </li>
+  <li>
+    <strong>Absent ≠ not-run ≠ unknown ≠ zero.</strong> Four distinct states, one classifier, enforced
+    across every schema.
+  </li>
+  <li>
+    <strong>Every control may only narrow.</strong> Widening is unreachable rather than refused.
+  </li>
+  <li>
+    <strong>Agents do not import the governor.</strong> The governor wraps the agent, duck-typed. A
+    test fails if that arrow reverses — otherwise “plugin” and “dependency” are indistinguishable.
+  </li>
+  <li>
+    <strong>Keys are never stored, logged or journalled.</strong> A masked display path is the only way
+    a key is ever shown.
+  </li>
+  <li>
+    <strong>Evidence is append-only and hash-chained</strong>, with its one known gap documented rather
+    than papered over.
+  </li>
+</ul>
+
+<h2 id="the-cost">The cost</h2>
+
+<p>
+  A governed decision costs <strong>microseconds and zero tokens</strong>. Ten runs of 3,000
+  decisions against the published package:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>p50</th><th>p99</th></tr></thead>
+  <tbody>
+    <tr><td>median of ten runs</td><td><strong>~170 µs</strong></td><td>398 µs</td></tr>
+    <tr><td>range across runs</td><td>139 – 330 µs</td><td>272 – 1218 µs</td></tr>
+    <tr><td>spread</td><td><strong>2.4×</strong></td><td>4.5×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p>
+    <strong>Treat any single figure as a sample.</strong> The spread is machine load, and it is 2.4× on
+    one laptop. An earlier single run reported 128 µs and that number got repeated in a README, a CLI
+    doc and a test as though it were a property of the system — it sits <em>below</em> the observed
+    minimum of ten later runs.
+  </p>
+  <p>
+    The honest short form is <strong>~200 µs, varying by 2× with load</strong>, and it is recorded as
+    a <a href="https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-007">sealed
+    measurement</a> with its own limitations section.
+  </p>
+</div>
+
+<h2 id="what-tesoro-does-not">What Tesoro does not do</h2>
+
+<p>
+  Stated here rather than in a footnote, because everything above is only worth reading if this
+  section is honest. Every item also appears in the
+  <a href="https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md">CHANGELOG</a> and the
+  <a href="https://github.com/aegoll/aegs/blob/main/spec/12-security-considerations.md">specification's
+  security section</a>.
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Structuring is undefended.</strong> Forty payments of a tenth of a cent breach no value
+    envelope and no rate limit — 0.08% of a daily budget, nothing refused. It ships as a
+    <a href="https://github.com/aegoll/tesoro-integrations/tree/main/usecases/aml-structuring">runnable
+    demonstration</a> rather than a paragraph. Catching it needs a control that reads the shape of a
+    sequence, and no envelope does.
+  </li>
+  <li>
+    <strong>Velocity evasion is undefended.</strong> Pacing exactly at a rate limit is unbounded in
+    total: ten per minute permits fourteen thousand a day.
+  </li>
+  <li>
+    <strong>Journal truncation is undetectable</strong> without an external anchor.
+  </li>
+  <li>
+    <strong>AML screening is a schema with no engine behind it.</strong> No list, no matching, no
+    jurisdiction model. <strong>No regulatory compliance is claimed or sought.</strong>
+  </li>
+  <li>
+    <strong>No independent implementation has been scored.</strong> Every conformance case and threat
+    was written by the author of the system under test — the
+    <a href="aegs.html#open">largest open question</a> in the project.
+  </li>
+  <li>
+    <strong>The CrewAI adapter's hooks are unverified</strong> against a real run — documentation only.
+    Its governance behaviour is tested as thoroughly as the others; the hook names are not.
+  </li>
+  <li>
+    <strong>Advisor prompt injection is untested.</strong> The narrowing clamp defends it structurally,
+    and the clamp is well tested — but the attack itself is not in any threat catalogue.
+  </li>
+</ul>
+
+<div class="warn-box">
+  <p>
+    <strong>0.x.</strong> The API may change before 1.0. Stated here, on the README, in the CHANGELOG
+    header and at the end of the quickstart, because you are about to point this at a wallet.
+  </p>
+</div>
+
+<p class="small">
+  The red-team suite's own summary, kept because it is the fairest available: <em>it resists prose; it
+  did not resist a minus sign, and it does not yet resist patience.</em> The minus sign — a
+  <code>-$1000</code> payment that was <strong>approved</strong>, because every
+  <code>amount ≤ headroom</code> comparison is satisfied by a negative — is fixed and permanently
+  covered by a test vector. Patience is still open.
+</p>
+
+<h2 id="where-next">Where next</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Architecture</h3>
+    <p>The ten engines, the decision path, and why no model sits on it.</p>
+    <a href="architecture.html">architecture →</a>
+  </div>
+  <div class="card">
+    <h3>Policies &amp; rules</h3>
+    <p>What you write, the fixed vocabulary, envelopes and profiles.</p>
+    <a href="policies.html">policies →</a>
+  </div>
+  <div class="card">
+    <h3>Frameworks</h3>
+    <p>Four adapters, and the three-call contract that needs none of them.</p>
+    <a href="frameworks.html">frameworks →</a>
+  </div>
+  <div class="card">
+    <h3>Get started</h3>
+    <p>Install to a first refusal, no wallet and no model key.</p>
+    <a href="start.html">start →</a>
+  </div>
+</div>
+<div class="next">
+  <a href="vocabulary.html"><span class="lbl">Previous</span>&larr; The shared vocabulary</a>
+  <a href="architecture.html"><span class="lbl">Next</span>Architecture &rarr;</a>
+</div>
+<footer class="page">
+  Apache-2.0 · specification text CC-BY-4.0 · no trackers and no external requests, by design
+</footer>
+</main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>The shared vocabulary — channels, verdicts, controls, envelopes, states</title>
+<meta name="description" content="The words this documentation uses precisely: two channels, four verdicts, thirteen controls, envelopes, and the four states.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<input type="checkbox" id="menu">
+<div class="topbar">
+  <label class="menu-btn" for="menu">&#9776; menu</label>
+  <a class="brand" href="index.html">tesoro <span class="v">0.1.0</span></a>
+  <div class="links">
+    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+    <a href="https://github.com/aegoll/aegs">AEGS</a>
+  </div>
+</div>
+
+<div class="shell">
+<aside class="nav">
+  <div class="group">Concepts</div>
+  <a class="page" href="index.html">Autonomous economic governance</a>
+  <a class="page" href="types.html">Four kinds of AEGL</a>
+  <a class="page" href="vocabulary.html" aria-current="page">The shared vocabulary</a>
+  <ul class="sub">
+    <li><a href="#three-names-aegl-aegs">Three names: AEGL, AEGS, Tesoro</a></li>
+    <li><a href="#two-channels">Two channels</a></li>
+    <li><a href="#four-verdicts">Four verdicts</a></li>
+    <li><a href="#attribution">Attribution — the field that matters most</a></li>
+    <li><a href="#controls">Thirteen controls</a></li>
+    <li><a href="#envelopes">Envelopes</a></li>
+    <li><a href="#four-states">Four states</a></li>
+    <li><a href="#profiles-vs-policy-packs">Profiles vs policy packs</a></li>
+    <li><a href="#evidence">Evidence</a></li>
+    <li><a href="#money">Money</a></li>
+  </ul>
+  <div class="group">Tesoro</div>
+  <a class="page" href="tesoro.html">What Tesoro is</a>
+  <a class="page" href="architecture.html">Architecture</a>
+  <a class="page" href="policies.html">Policies &amp; rules</a>
+  <a class="page" href="frameworks.html">Frameworks &amp; rails</a>
+  <div class="group">The standard</div>
+  <a class="page" href="aegs.html">AEGS</a>
+  <div class="group">Practice</div>
+  <a class="page" href="start.html">Get started</a>
+</aside>
+
+<main>
+<h1>The shared vocabulary</h1>
+<p class="lede">
+  Six terms the rest of this documentation uses precisely. They are worth ten minutes because
+  getting any of them slightly wrong makes every later sentence wrong — and because most of them
+  come from a real bug that a loose definition allowed.
+</p>
+
+<h2 id="three-names-aegl-aegs">Three names: AEGL, AEGS, Tesoro</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Name</th><th>Is</th><th>Is not</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>AEGL</strong></td>
+      <td>Autonomous Economic Governance <em>Layer</em> — the <strong>category</strong></td>
+      <td>a package</td>
+    </tr>
+    <tr>
+      <td><strong>AEGS</strong></td>
+      <td>Autonomous Economic Governance <em>Standard</em> — the open <strong>specification</strong></td>
+      <td>an implementation</td>
+    </tr>
+    <tr>
+      <td><strong>Tesoro</strong></td>
+      <td>a Python package; a policy-engine <strong>host</strong></td>
+      <td>the standard</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  In prose, a layer <em>is an</em> AEGL. Tesoro <em>implements</em> AEGS, and AEGS is one profile
+  Tesoro can enforce rather than Tesoro's identity — you can run it with
+  <code>profile: none</code> and it governs exactly as well, it just makes no conformance claim.
+</p>
+
+<h2 id="two-channels">Two channels</h2>
+
+<p>
+  An agent spends in two directions, and they are <strong>never</strong> one budget.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th><code>internal</code></th><th><code>external</code></th></tr></thead>
+  <tbody>
+    <tr><td>What</td><td>tokens the agent burns thinking</td><td>what it pays out</td></tr>
+    <tr><td>Currency</td><td>real money, on your provider key</td><td>often stablecoin, on a chain</td></tr>
+    <tr><td>Counterparty</td><td>one provider you chose</td><td>anyone the agent picks</td></tr>
+    <tr><td>When exhausted</td><td><span class="v-tag reject">REJECT</span></td><td><span class="v-tag review">REVIEW</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="key">
+  <p>
+    That last row is the whole reason they are separate. <strong>The same breach has a different
+    correct answer depending on which money it was.</strong>
+  </p>
+  <p>
+    A payout can wait for a person — <span class="v-tag review">REVIEW</span> means pausable, and a
+    human can look at it. A token budget cannot: there is no human in the loop of a running agent, so
+    “pause and ask” becomes “hang”, and the tokens already spent are spent. Worse, starting a step
+    that cannot finish wastes the budget that is already short.
+  </p>
+</div>
+
+<p class="small">
+  An implementation may share a <em>limit</em> between channels but never an <em>envelope</em>,
+  because an envelope carries consumption. Sharing consumption would mean an agent's thinking
+  exhausted its ability to pay, which is not a relationship anybody intended.
+</p>
+
+<h2 id="four-verdicts">Four verdicts</h2>
+
+<p>
+  <span class="v-tag approve">APPROVE</span> &lt;
+  <span class="v-tag review">REVIEW</span> &lt;
+  <span class="v-tag escalate">ESCALATE</span> &lt;
+  <span class="v-tag reject">REJECT</span>
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Verdict</th><th>Means</th><th>The agent should</th></tr></thead>
+  <tbody>
+    <tr><td><span class="v-tag approve">APPROVE</span></td><td>proceed</td><td>pay, then settle</td></tr>
+    <tr><td><span class="v-tag review">REVIEW</span></td><td>a human should look — <strong>pausable</strong></td><td>queue it and continue with something else</td></tr>
+    <tr><td><span class="v-tag escalate">ESCALATE</span></td><td>a human <em>must</em> look — <strong>blocking</strong></td><td>stop this line of work</td></tr>
+    <tr><td><span class="v-tag reject">REJECT</span></td><td>no, and no amount of waiting changes it</td><td>abandon the action</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The <strong>ordering is normative</strong> — it is not a display preference — and the middle pair is
+  the one that invites disagreement. Swapping <code>REVIEW</code> and <code>ESCALATE</code> fails six
+  of the standard's test vectors, which exist precisely because two implementations could otherwise
+  each be internally consistent and mutually incompatible.
+</p>
+
+<h3 id="narrowing">Narrowing, and why widening is unreachable</h3>
+
+<p>
+  Every control returns an assessment, and the final verdict is the <strong>most severe</strong> one
+  any control produced. So:
+</p>
+
+<ul class="gap-list">
+  <li>any control may <strong>tighten</strong> a verdict another control set;</li>
+  <li>no control may <strong>widen</strong> one — it cannot rescue an action another control refused.</li>
+</ul>
+
+<p>
+  That second property is stronger than it looks, because widening is not <em>forbidden</em>, it is
+  <strong>unreachable</strong>. Taking a maximum has no branch that could return something lower. A
+  hostile or buggy control can refuse things it should not; it cannot approve anything. Which is what
+  makes a third-party extension safe to load, and why an optional advisory model is allowed to exist
+  at all — it can only make the answer stricter.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 176" role="img" aria-label="Diagram: four controls each return a verdict, and the most severe wins">
+  <text class="label-mono" x="14" y="34">treasury</text>
+  <rect x="112" y="22" width="86" height="18" rx="4" class="fill-ok" opacity="0.5"/>
+  <text class="label-sm" x="206" y="36">APPROVE</text>
+
+  <text class="label-mono" x="14" y="64">trust</text>
+  <rect x="112" y="52" width="86" height="18" rx="4" class="fill-ok" opacity="0.5"/>
+  <text class="label-sm" x="206" y="66">APPROVE</text>
+
+  <text class="label-mono" x="14" y="94">intent</text>
+  <rect x="112" y="82" width="150" height="18" rx="4" class="fill-warn" opacity="0.6"/>
+  <text class="label-sm" x="270" y="96">REVIEW</text>
+
+  <text class="label-mono" x="14" y="124">policy</text>
+  <rect x="112" y="112" width="86" height="18" rx="4" class="fill-ok" opacity="0.5"/>
+  <text class="label-sm" x="206" y="126">APPROVE</text>
+
+  <line x1="380" y1="14" x2="380" y2="140" class="flow" stroke-dasharray="3 4"/>
+  <text class="label" x="404" y="72" style="font-weight:700">REVIEW</text>
+  <text class="label-sm" x="404" y="90">the most severe wins</text>
+  <text class="label-sm" x="404" y="106">attributed to: intent</text>
+
+  <text class="label-sm fill-dim" x="14" y="164">order does not change the verdict — but it does change which control gets the attribution</text>
+</svg>
+<figcaption>
+  Because the verdict is a maximum, running the controls in any order gives the same answer. The
+  <em>attribution</em> is not order-independent, which is why the standard makes evaluation order
+  normative and why conformance scores attribution rather than just the verdict.
+</figcaption>
+</figure>
+
+<h2 id="attribution">Attribution — the field that matters most</h2>
+
+<div class="key">
+  <p>
+    <strong>Which control decided</strong>, not what was decided. A refusal with no attributable
+    cause is not auditable evidence.
+  </p>
+</div>
+
+<p>
+  It sounds trivial and is not. Consider a sanctioned counterparty asking for more than the
+  per-transaction ceiling. <em>Both</em> controls refuse. If attribution means <em>“the last control
+  that narrowed”</em>, the answer depends on which limit happened to trip first — so a sanctions
+  refusal can be reported as a budget problem, and the operator raises a limit that had nothing to do
+  with it.
+</p>
+
+<p>
+  The standard fixes this with <strong>dispositive controls</strong>: a finding that decides
+  attribution whether or not it narrowed anything, and which must be <em>declared</em> rather than
+  inferred. Tesoro declares exactly one — <code>sanctions</code>.
+</p>
+
+<h2 id="controls">Thirteen controls</h2>
+
+<p>
+  A <strong>control</strong> is a named thing that can examine an action. The name set is
+  <strong>closed</strong> and matching is <strong>exact</strong>:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Control</th><th>Asks</th></tr></thead>
+  <tbody>
+    <tr><td><code>AgentIdentity</code></td><td>who is acting, under whose authority</td></tr>
+    <tr><td><code>EconomicIntent</code></td><td>what was this agent sent to do</td></tr>
+    <tr><td><code>Policy</code></td><td>what do the operator's rules say</td></tr>
+    <tr><td><code>BudgetEnvelope</code></td><td>is there headroom</td></tr>
+    <tr><td><code>RiskAssessment</code></td><td>does this action's shape score as risky</td></tr>
+    <tr><td><code>TrustAssessment</code></td><td>has this counterparty earned anything</td></tr>
+    <tr><td><code>GovernanceDecision</code></td><td>the verdict itself, as a recorded artifact</td></tr>
+    <tr><td><code>EvidenceRecord</code></td><td>the chained journal entry</td></tr>
+    <tr><td><code>Authorization</code></td><td>the attribution and reasons</td></tr>
+    <tr><td><code>ConformanceDeclaration</code></td><td>what levels are claimed</td></tr>
+    <tr><td><code>AMLAssessment</code></td><td>screening — <em>a schema with no engine behind it</em></td></tr>
+    <tr><td><code>ComplianceAssessment</code></td><td>jurisdictional checks — also unimplemented</td></tr>
+    <tr><td><code>IncidentRecord</code></td><td>what went wrong, recorded</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="small">
+  Exact matching looks pedantic until two deployments disagree about whether
+  <code>budgetenvelope</code> is the budget envelope — at which point a profile requiring
+  <code>BudgetEnvelope</code> silently scores an implementation that never had it. A case variant is
+  an <em>extension</em>, not the defined control.
+</p>
+
+<h2 id="envelopes">Envelopes</h2>
+
+<p>
+  An <strong>envelope</strong> is a limit plus the consumption against it. Two properties are worth
+  separating, because conflating them was a real defect:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Field</th><th>Answers</th><th>Exists</th></tr></thead>
+  <tbody>
+    <tr><td><code>binding</code></td><td><em>why was this refused?</em></td><td>only on a refusal</td></tr>
+    <tr><td><code>tightest</code></td><td><em>what bites next?</em></td><td>always</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  An earlier version of the report had only <code>binding</code>, under a heading meaning
+  <code>tightest</code> — so an approved decision showed no envelope at all, blank precisely when
+  somebody was checking headroom.
+</p>
+
+<p>
+  A <strong>per-call ceiling</strong> is not an envelope in this sense: it never accumulates, so it has
+  no <code>used</code> value. Rendering it as <code>$0.00 of $10.00</code> beside the cumulative rows
+  reads as <em>“nothing was spent”</em>, which is false — and was also a real defect.
+</p>
+
+<h2 id="four-states">Four states</h2>
+
+<p>
+  <code>absent</code> ≠ <code>not-run</code> ≠ <code>unknown</code> ≠ <code>zero</code>. Four
+  different answers, and collapsing any two loses something a reader needs.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>State</th><th>Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>absent</code></td><td>the field is not there. Nothing was claimed, so nothing may be inferred</td></tr>
+    <tr><td><code>not-run</code></td><td>the control exists, was asked, and declined to answer</td></tr>
+    <tr><td><code>unknown</code></td><td>it ran and cannot report a value</td></tr>
+    <tr><td><code>zero</code></td><td>it ran, and the answer really is zero or false</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="warn-box">
+  <p>
+    <strong>This comes from a real bug.</strong> An unmeasured vendor history rendered as
+    <code>0</code>, so every advisor treated <em>established</em> counterparties as strangers — the
+    system was reading “we have never measured this” as “this counterparty has no history”.
+  </p>
+  <p>
+    The same rule applies to a validator: <em>“I could not check”</em> is not <em>“this is
+    invalid”</em>. And to an unreachable external assessor: the answer is <code>not-run</code>, never
+    <code>pass</code>, because <strong>fail-open is a governance layer that stops governing exactly
+    when it is attacked.</strong>
+  </p>
+</div>
+
+<h2 id="profiles-vs-policy-packs">Profiles vs policy packs</h2>
+
+<p>
+  The distinction most worth keeping straight, because they are both YAML and both about rules:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>Profile</th><th>Policy pack</th></tr></thead>
+  <tbody>
+    <tr><td>Says</td><td>which controls must <em>exist</em>, what must be <em>recorded</em></td><td>what the rules <em>are</em> — the numbers</td></tr>
+    <tr><td>Written by</td><td>the standard</td><td>you</td></tr>
+    <tr><td>Changes</td><td>what is <em>scored</em></td><td>what is <em>decided</em></td></tr>
+    <tr><td>Example</td><td><code>aegs-1</code>, <code>aegs-2</code>, <code>none</code></td><td><code>policies/default.yaml</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>A profile never touches a verdict</strong> — asserted four different ways in the test suite.
+  Switching from <code>aegs-1</code> to <code>none</code> changes no decision; it only stops making a
+  conformance claim.
+</p>
+
+<h2 id="evidence">Evidence</h2>
+
+<p>
+  A <strong>Decision Record</strong> is the artifact one decision produces: the action, the verdict,
+  the attributed control, the reasons, the policy hash, and both version lines. Records are appended
+  to a <strong>hash-chained journal</strong>, where each entry commits to its predecessor.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Detected</th><th>Not detected</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>editing an entry · deleting one from the middle · reordering · replay</td>
+      <td>deleting entries off the <strong>end</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Any prefix of a valid chain is itself valid, so truncation is undetectable without an external
+  anchor. That is disclosed rather than papered over — and the fix that <em>looks</em> like one is
+  worth naming: writing the chain head to a second file beside the journal is not an anchor, because
+  whoever can truncate the journal can rewrite that file too.
+</p>
+
+<h2 id="money">Money</h2>
+
+<p>
+  <strong>Integer atomic units</strong> internally. USDC has 6 decimals, so <code>2500000</code> is
+  <code>$2.50</code>. Conversion happens once at the boundary, with an explicitly specified rounding
+  mode (half-up).
+</p>
+
+<pre><code>amount_usd=<span class="s">"2.50"</span>      <span class="c"># a decimal string</span>
+amount_usd=2500000    <span class="c"># atomic units — the same amount</span>
+amount_usd=2.50       <span class="c"># TypeError</span></code></pre>
+
+<p>
+  The rounding mode is pinned because every language's default differs and none is wrong in isolation
+  — an implementation inheriting its own has made a decision it did not know it was making. And a
+  <code>float</code> raises rather than rounding, because <code>0.1 + 0.2</code> is not
+  <code>0.3</code> and there is no rounding the layer could pick that the caller would know about.
+</p>
+<div class="next">
+  <a href="types.html"><span class="lbl">Previous</span>&larr; Four kinds of AEGL</a>
+  <a href="tesoro.html"><span class="lbl">Next</span>What Tesoro is &rarr;</a>
+</div>
+<footer class="page">
+  Apache-2.0 · specification text CC-BY-4.0 · no trackers and no external requests, by design
+</footer>
+</main>
+</div>
+
+</body>
+</html>
