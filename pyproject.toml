@@ -68,6 +68,7 @@ tesoro = "tesoro.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/aegoll/tesoro"
+Documentation = "https://aegoll.github.io/tesoro/"
 Standard = "https://github.com/aegoll/aegs"
 Examples = "https://github.com/aegoll/tesoro-integrations"
 Changelog = "https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md"

@@ -9,6 +9,9 @@ decides, before the payment, whether it should happen. Ten deterministic engines
 in the decision path, an append-only hash-chained record of every decision and the control
 that made it.
 
+**📖 [Documentation](https://aegoll.github.io/tesoro/)** — what an AEGL is, the architecture,
+policies and rules, framework adapters, and the AEGS standard.
+
 ```bash
 pip install tesoro
 tesoro init
