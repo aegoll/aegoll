@@ -20,7 +20,7 @@ Put a model in that path and both numbers go, along with the properties that dep
 
 - **Cost.** A per-decision inference charge means governance now has a budget of its own, competing with the spend it governs.
 - **Latency.** Hundreds of microseconds becomes hundreds of milliseconds. At that point the layer is something to bypass under load.
-- **Determinism.** `aegoll replay` re-derives past decisions from the journal and checks they come out identical. A model in the path makes that impossible, and an unreplayable decision is not an auditable one.
+- **Determinism.** `tesoro replay` re-derives past decisions from the journal and checks they come out identical. A model in the path makes that impossible, and an unreplayable decision is not an auditable one.
 - **Injection resistance.** Vendor-supplied text reaches the layer on every request. A deterministic path does not read prose, so there is nothing to talk into anything. The red-team suite's summary of the design is worth quoting exactly: *the layer resists prose. It did not resist a minus sign, and it does not yet resist patience.*
 
 That last line is the honest version. The deterministic path is not magic — it had a
@@ -57,7 +57,7 @@ and it is computed per decision from the amount at risk.
 
 ## Configuration
 
-Off by default. Enable in `aegoll.yaml`:
+Off by default. Enable in `tesoro.yaml`:
 
 ```yaml
 advisor:
@@ -69,18 +69,18 @@ advisor:
 Install the extra:
 
 ```bash
-pip install "aegoll[advisors]"
+pip install "tesoro[advisors]"
 ```
 
-The core installs no model client. A clean `pip install aegoll` pulls `aegoll` and `PyYAML`
+The core installs no model client. A clean `pip install tesoro` pulls `tesoro` and `PyYAML`
 and nothing else.
 
 ## Keys
 
-**Keys never go in the config file.** `aegoll check` refuses one outright:
+**Keys never go in the config file.** `tesoro check` refuses one outright:
 
 ```
-[error] aegoll.yaml:advisor: 'api_key' must not be in a config file. Keys come from the
+[error] tesoro.yaml:advisor: 'api_key' must not be in a config file. Keys come from the
 environment; this file gets committed and a key in it is a leak.
 ```
 

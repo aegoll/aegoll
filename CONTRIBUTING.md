@@ -1,4 +1,4 @@
-# Contributing to `aegoll`
+# Contributing to `tesoro`
 
 Apache-2.0. By contributing you agree your work is licensed under it.
 

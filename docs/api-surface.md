@@ -1,16 +1,16 @@
-# Public API surface — `aegoll`
+# Public API surface — `tesoro`
 
 **Status: implemented.** Written before the code on purpose — a bad early API is the only
 permanent mistake available in this project, and everything else can be revised.
 
 Writing it first worked, and then nearly failed for a reason worth recording: the code grew a
-different shape underneath, and `from aegoll import Governor` returned the internal rules
+different shape underneath, and `from tesoro import Governor` returned the internal rules
 evaluator instead of the surface below. The README's own opening snippet raised `AttributeError`
 on its third line. A designed API is only a contract if something checks that it exists —
 `tests/test_governor.py` now does, including a test that runs this page's ten-line snippet
 verbatim.
 
-**Version:** draft 1 · 2026-08-17 · Task [A0.6](../PLAN.md) · Applies to `aegoll 0.1.x`
+**Version:** draft 1 · 2026-08-17 · Task [A0.6](../PLAN.md) · Applies to `tesoro 0.1.x`
 
 Rule for this document: **if a symbol is not listed here, it is not public**, regardless of
 whether Python lets you import it. The prototype exported 21 names from `__init__.py` and
@@ -22,9 +22,9 @@ reachable. This surface is deliberately about a third of that size.
 ## 1 · The whole thing in ten lines
 
 ```python
-from aegoll import Governor
+from tesoro import Governor
 
-gov = Governor.load()                     # reads ./aegoll.yaml
+gov = Governor.load()                     # reads ./tesoro.yaml
 agent = gov.wrap(my_agent)                # any framework, duck-typed
 
 decision = gov.authorize(amount_usd="2.50", vendor="acme", resource="/market/snapshot")
@@ -147,7 +147,7 @@ class Decision:
     resource: str
     assessments: Mapping[str, "Assessment"]
     policy_hash: str
-    aegoll_version: str
+    tesoro_version: str
     aegs_version: str
 
     @property
@@ -188,7 +188,7 @@ one as the other was a real bug in the prototype.
 
 ### `Report`
 
-**provisional.** The shape of `aegoll report` and of `aegoll serve`'s read API. Provisional
+**provisional.** The shape of `tesoro report` and of `tesoro serve`'s read API. Provisional
 because [A10](../PLAN.md) will want fields this draft has not anticipated.
 
 ```python
@@ -208,7 +208,7 @@ class Report:
     decisions: tuple[DecisionView, ...]
     pending_reviews: int
     chain: ChainView | None
-    aegoll_version: str
+    tesoro_version: str
     aegs_version: str
     def as_dict(self) -> dict: ...
 ```
@@ -217,7 +217,7 @@ class Report:
 governed this agent*, as opposed to what the policy file hoped would.
 
 **One shape, N renderers.** `Report.as_dict()` is the wire format for `--json`, for
-`aegoll.html.render()` and for the `aegoll serve` read API in 0.2. Key names and number
+`tesoro.html.render()` and for the `tesoro serve` read API in 0.2. Key names and number
 formatting are part of the contract for that reason: two renderers disagreeing about a field
 name is a bug that only ever shows up in the less-used one.
 
@@ -230,7 +230,7 @@ AEGS-0.1-EVID-5 requires the strength to be *declared* — "hash-chained" withou
 and a length describes a shape rather than a guarantee. The third because any renderer that
 prints `valid` must print what `valid` does not cover.
 
-### `aegoll.html.render`
+### `tesoro.html.render`
 
 **provisional.** `render(report: Report) -> str` — one self-contained HTML document.
 
@@ -271,9 +271,9 @@ class PolicyPack:
     def explain(self) -> str: ...     # what this policy would do, in plain terms
 ```
 
-- **`aegoll.yaml` and `aegoll.json` are the same schema in two syntaxes** ([A0.5](../PLAN.md)).
+- **`tesoro.yaml` and `tesoro.json` are the same schema in two syntaxes** ([A0.5](../PLAN.md)).
   One loader; the extension picks the parser.
-- **`validate()` returns problems, never raises.** `aegoll check` needs every problem at
+- **`validate()` returns problems, never raises.** `tesoro check` needs every problem at
   once for a CI log, not the first one.
 - **`content_hash` covers config and rules together.** A decision must be traceable to the
   exact numbers that produced it, and a config change with an unchanged rule file is still
@@ -353,15 +353,15 @@ implementations that round differently disagree on a hash.
 
 ## 6 · Errors
 
-**stable.** One base class, so `except AegollError` catches everything this library raises.
+**stable.** One base class, so `except TesoroError` catches everything this library raises.
 
 ```python
-class AegollError(Exception): ...
-class ConfigError(AegollError): ...        # bad or missing aegoll.yaml
-class PolicyError(AegollError): ...        # invalid pack; names the offending rule id
-class RefusedError(AegollError): ...       # carries .decision
-class EvidenceError(AegollError): ...      # chain broken or unwritable
-class RegistrationError(AegollError): ...  # a custom engine violated the contract
+class TesoroError(Exception): ...
+class ConfigError(TesoroError): ...        # bad or missing tesoro.yaml
+class PolicyError(TesoroError): ...        # invalid pack; names the offending rule id
+class RefusedError(TesoroError): ...       # carries .decision
+class EvidenceError(TesoroError): ...      # chain broken or unwritable
+class RegistrationError(TesoroError): ...  # a custom engine violated the contract
 ```
 
 **A refusal is not an exception by default.** `authorize()` returns a `Decision` with
@@ -383,7 +383,7 @@ now **internal** — importable, unsupported, and free to move in a patch releas
 | `ReviewQueue`, `ReviewItem` | CLI and localhost-page surface only, until a user asks otherwise with a reason |
 | `PolicyBundle`, `load_bundle`, `Aegl`, `Paths` | Prototype names, replaced by `Config` / `PolicyPack` / `Governor` |
 | `Tier`, `Purpose`, `Vendor`, `PaymentRequest` | Collapsed into `authorize()`'s keyword arguments. Four types for four strings |
-| Advisor classes and the four backends | Configured in `aegoll.yaml`, never constructed by a caller. Keeps invariant 1 hard to break |
+| Advisor classes and the four backends | Configured in `tesoro.yaml`, never constructed by a caller. Keeps invariant 1 hard to break |
 | `SpendCheck`, `GovernanceEvent`, `precheck_run`, `record_override` | Superseded by `Decision`, `authorize()` and `settle()` |
 | Everything under `adapters/` | Loaded by name from config. Importing an adapter directly couples you to a boundary that is expected to move |
 | Streamlit UI, `scenarios`, `evaluation`, `crossview` | Leaving the package entirely ([A2](../PLAN.md)) |
@@ -409,7 +409,7 @@ Recorded rather than guessed. None blocks implementation.
 - [ ] Does a custom engine get a stable id it can be referenced by in a policy pack, and who owns that namespace?
 - [ ] **Should a host be able to enumerate what is installed, and ask a cost before committing?**
   Raised by the cockpit, which needs nine symbols this document does not make public
-  ([C4.3](https://github.com/aegoll/aegoll-integrations/blob/main/cockpit/README.md) — *if the
+  ([C4.3](https://github.com/aegoll/tesoro-integrations/blob/main/cockpit/README.md) — *if the
   cockpit needs a private symbol, that is a gap in the public API*). Seven are advisor-internal
   and arguably belong behind the `advisors` extra's own surface rather than the core's. **Two are
   real gaps:**
@@ -431,12 +431,12 @@ Kept because a design document with no error history reads as one nobody checked
 
 **The whole Tier 1 surface did not exist.** It was written first on purpose — the reasoning at the
 top of this page still holds — and then the code grew a different shape underneath, so
-`from aegoll import Governor` returned the internal rules evaluator and the ten-line snippet in
+`from tesoro import Governor` returned the internal rules evaluator and the ten-line snippet in
 §1 raised `AttributeError` on its third line. Nothing compared the document to the package. That
 is now `tests/test_governor.py`, which runs §1's snippet verbatim.
 
 **`AEGS_VERSION` was claimed and absent.** [W0.7](../PLAN.md) promised two version lines on the
-package; one of them lived in `aegoll.record` and was never exported, so the documented name
+package; one of them lived in `tesoro.record` and was never exported, so the documented name
 raised in the published `0.1.0`. Fixed in `0.1.1`, with a test.
 
 Both are the same failure: **a designed API is only a contract if something asserts it exists.**

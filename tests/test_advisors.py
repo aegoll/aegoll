@@ -13,9 +13,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from aegoll import Aegoll, FixedClock, Paths, Vendor, Verdict, load_bundle
-from aegoll.advise import consult
-from aegoll.advisors import Advice, AdviceRequest, estimate_call_cost_usd
+from tesoro import Tesoro, FixedClock, Paths, Vendor, Verdict, load_bundle
+from tesoro.advise import consult
+from tesoro.advisors import Advice, AdviceRequest, estimate_call_cost_usd
 
 BASE = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
 SELLER = Vendor(id="x402-poc-desk", name="POC Desk")
@@ -62,24 +62,24 @@ class StubAdvisor:
 
 
 @pytest.fixture
-def aegoll(tmp_path):
-    a = Aegoll(bundle=load_bundle(), paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
+def tesoro(tmp_path):
+    a = Tesoro(bundle=load_bundle(), paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
     yield a
     a.close()
 
 
-def _decide(aegoll, amount="0.01", vendor=SELLER, resource="/market/signal"):
-    request = aegoll.build_request(resource=resource, amount_usd=amount, vendor=vendor)
-    return request, aegoll.decide(request)
+def _decide(tesoro, amount="0.01", vendor=SELLER, resource="/market/signal"):
+    request = tesoro.build_request(resource=resource, amount_usd=amount, vendor=vendor)
+    return request, tesoro.decide(request)
 
 
 # --- the clamp ------------------------------------------------------------
 
 
-def test_advisor_cannot_widen_a_verdict(aegoll):
+def test_advisor_cannot_widen_a_verdict(tesoro):
     """The load-bearing invariant. A compromised advisor must achieve nothing."""
     # $500 from an unknown vendor: the engines refuse.
-    request, decision = _decide(aegoll, amount="500", vendor=UNKNOWN, resource="/x")
+    request, decision = _decide(tesoro, amount="500", vendor=UNKNOWN, resource="/x")
     assert decision.verdict is not Verdict.APPROVE
 
     advisor = StubAdvisor("APPROVE")  # maximally compromised
@@ -97,17 +97,17 @@ def test_advisor_cannot_widen_a_verdict(aegoll):
     [("APPROVE", Verdict.APPROVE), ("REVIEW", Verdict.REVIEW),
      ("ESCALATE", Verdict.ESCALATE), ("REJECT", Verdict.REJECT)],
 )
-def test_advisor_can_always_tighten(aegoll, recommendation, expected):
+def test_advisor_can_always_tighten(tesoro, recommendation, expected):
     """From APPROVE, every recommendation is honoured -- all of them narrow."""
-    request, decision = _decide(aegoll, amount="0.001")
+    request, decision = _decide(tesoro, amount="0.001")
     assert decision.verdict is Verdict.APPROVE
 
     result = consult(request, decision, StubAdvisor(recommendation), force=True)
     assert result.final_verdict is expected
 
 
-def test_injection_flag_forces_rejection(aegoll):
-    request, decision = _decide(aegoll, amount="0.001")
+def test_injection_flag_forces_rejection(tesoro):
+    request, decision = _decide(tesoro, amount="0.001")
     assert decision.verdict is Verdict.APPROVE
 
     result = consult(
@@ -119,9 +119,9 @@ def test_injection_flag_forces_rejection(aegoll):
     assert any(r.code == "injection_suspected" for r in result.reasons)
 
 
-def test_advisor_failure_leaves_the_verdict_untouched(aegoll):
+def test_advisor_failure_leaves_the_verdict_untouched(tesoro):
     """A dead advisor must not change outcomes in either direction."""
-    request, decision = _decide(aegoll, amount="0.001")
+    request, decision = _decide(tesoro, amount="0.001")
     result = consult(
         request, decision, StubAdvisor("REJECT", fail="connection refused"), force=True
     )
@@ -133,9 +133,9 @@ def test_advisor_failure_leaves_the_verdict_untouched(aegoll):
 # --- the economic gate ----------------------------------------------------
 
 
-def test_advisor_is_not_consulted_below_break_even(aegoll):
+def test_advisor_is_not_consulted_below_break_even(tesoro):
     """The point of the EIAP: cheap purchases must not buy expensive opinions."""
-    request, decision = _decide(aegoll, amount="0.001")
+    request, decision = _decide(tesoro, amount="0.001")
     advisor = StubAdvisor("REJECT")
     result = consult(request, decision, advisor)
 
@@ -145,15 +145,15 @@ def test_advisor_is_not_consulted_below_break_even(aegoll):
     assert "break-even" in result.skip_reason
 
 
-def test_force_overrides_the_gate(aegoll):
-    request, decision = _decide(aegoll, amount="0.001")
+def test_force_overrides_the_gate(tesoro):
+    request, decision = _decide(tesoro, amount="0.001")
     advisor = StubAdvisor("REJECT")
     assert consult(request, decision, advisor, force=True).consulted is True
     assert advisor.calls == 1
 
 
-def test_no_advisor_means_phase_1_behaviour(aegoll):
-    request, decision = _decide(aegoll, amount="0.001")
+def test_no_advisor_means_phase_1_behaviour(tesoro):
+    request, decision = _decide(tesoro, amount="0.001")
     result = consult(request, decision, None)
     assert result.consulted is False
     assert result.advisor_cost_usd == 0.0
@@ -173,7 +173,7 @@ def test_cheaper_advisor_lowers_the_break_even(tmp_path):
     thresholds = {}
     for model, cost in [("claude-haiku-4-5", None), ("llama-3.1-8b-instant", None)]:
         advisor = StubAdvisor("REVIEW", model=model)
-        a = Aegoll(
+        a = Tesoro(
             paths=Paths.ephemeral(tmp_path / model.replace("/", "_")),
             clock=FixedClock(BASE),
             advisor=advisor,
@@ -197,7 +197,7 @@ def test_cheaper_advisor_lowers_the_break_even(tmp_path):
 
 
 def test_pricing_table_covers_every_offered_model():
-    from aegoll.advisors import PRICING, providers
+    from tesoro.advisors import PRICING, providers
 
     for provider in providers():
         for model in provider.models:
@@ -213,7 +213,7 @@ def test_pricing_table_covers_every_offered_model():
 
 def test_every_provider_is_constructible():
     """A provider in the registry must be buildable, key present or not."""
-    from aegoll.advisors import build_advisor, providers
+    from tesoro.advisors import build_advisor, providers
 
     for provider in providers():
         assert provider.models, f"{provider.name} offers no models"
@@ -226,7 +226,7 @@ def test_every_provider_is_constructible():
 
 
 def test_unknown_provider_names_the_known_ones():
-    from aegoll.advisors import build_advisor
+    from tesoro.advisors import build_advisor
 
     with pytest.raises(ValueError, match="unknown advisor provider"):
         build_advisor("not-a-provider", "x")
@@ -238,7 +238,7 @@ def test_missing_key_degrades_instead_of_raising():
     The verdict then stands unchanged via the failure path, so a missing key costs
     the agent its second opinion and nothing else.
     """
-    from aegoll.advisors import AdviceRequest, build_advisor
+    from tesoro.advisors import AdviceRequest, build_advisor
 
     advisor = build_advisor("openai", "gpt-4o-mini", api_key="")
     advice = advisor.advise(
@@ -261,7 +261,7 @@ def test_unpriced_model_fails_expensive_not_cheap():
     Defaulting an unpriced model to a cheap figure would silently open the gate on
     models we cannot cost -- the opposite of the safe direction.
     """
-    from aegoll.advisors import FALLBACK_PRICE, estimate_call_cost_usd
+    from tesoro.advisors import FALLBACK_PRICE, estimate_call_cost_usd
 
     unknown = estimate_call_cost_usd("model-that-does-not-exist")
     assert unknown == estimate_call_cost_usd("claude-opus-5") or unknown > 0.01
@@ -270,7 +270,7 @@ def test_unpriced_model_fails_expensive_not_cheap():
 
 def test_pricing_override_moves_the_gate():
     """Correcting a price must change what the EIAP will pay to analyse."""
-    from aegoll.advisors import apply_pricing_overrides, estimate_call_cost_usd
+    from tesoro.advisors import apply_pricing_overrides, estimate_call_cost_usd
 
     model = "test-override-model"
     apply_pricing_overrides({model: {"input_per_mtok": 10.0, "output_per_mtok": 50.0}})
@@ -292,9 +292,9 @@ def test_phase_1_engines_still_import_no_model_client():
     import ast
     from pathlib import Path
 
-    import aegoll
+    import tesoro
 
-    root = Path(aegoll.__file__).resolve().parent
+    root = Path(tesoro.__file__).resolve().parent
     # Walked, not listed. The S6 move into `engines/` left the old hardcoded list
     # naming files that are now three-line re-export shims -- so the test kept
     # passing while checking nothing. A list of filenames is a claim about the tree
@@ -346,32 +346,32 @@ class CapturingAdvisor(StubAdvisor):
         return super().advise(request)
 
 
-def _settle_history(aegoll, count: int, vendor=SELLER, amount_atomic: int = 10_000) -> None:
+def _settle_history(tesoro, count: int, vendor=SELLER, amount_atomic: int = 10_000) -> None:
     for i in range(count):
-        aegoll.store.record(
-            tx_id=f"hist-{i}", at=BASE, agent_id=aegoll.agent_id, vendor_id=vendor.id,
+        tesoro.store.record(
+            tx_id=f"hist-{i}", at=BASE, agent_id=tesoro.agent_id, vendor_id=vendor.id,
             resource="/market/signal", amount_atomic=amount_atomic,
             verdict=Verdict.APPROVE, settled=True, success=True,
         )
 
 
-def test_advisor_is_told_the_real_settled_count(aegoll):
+def test_advisor_is_told_the_real_settled_count(tesoro):
     advisor = CapturingAdvisor()
-    _settle_history(aegoll, 9)
-    request, decision = _decide(aegoll)
+    _settle_history(tesoro, 9)
+    request, decision = _decide(tesoro)
 
     consult(request, decision, advisor, force=True,
-            snapshot=aegoll.snapshot_for(request, decision.decided_at))
+            snapshot=tesoro.snapshot_for(request, decision.decided_at))
 
     assert advisor.seen.vendor_settled_count == 9, "advisor was shown a fabricated history"
     assert advisor.seen.vendor_is_new is False
     assert "vendor_settled_transactions: 9" in advisor.seen.facts_block()
 
 
-def test_an_unmeasured_count_reads_as_unknown_not_zero(aegoll):
+def test_an_unmeasured_count_reads_as_unknown_not_zero(tesoro):
     """No snapshot means no claim -- not a claim of zero."""
     advisor = CapturingAdvisor()
-    request, decision = _decide(aegoll)
+    request, decision = _decide(tesoro)
 
     consult(request, decision, advisor, force=True)  # no snapshot passed
 
@@ -380,7 +380,7 @@ def test_an_unmeasured_count_reads_as_unknown_not_zero(aegoll):
     assert "vendor_settled_transactions: 0" not in advisor.seen.facts_block()
 
 
-def test_the_advisor_sees_the_vendors_historical_price(aegoll):
+def test_the_advisor_sees_the_vendors_historical_price(tesoro):
     """Silent repricing is the case the deterministic engines let through.
 
     A vendor that has always charged $0.01 asking $0.25 stays inside every
@@ -388,11 +388,11 @@ def test_the_advisor_sees_the_vendors_historical_price(aegoll):
     is shown what the vendor used to charge.
     """
     advisor = CapturingAdvisor()
-    _settle_history(aegoll, 8, amount_atomic=10_000)  # $0.01 each
-    request, decision = _decide(aegoll, amount="0.25")
+    _settle_history(tesoro, 8, amount_atomic=10_000)  # $0.01 each
+    request, decision = _decide(tesoro, amount="0.25")
 
     consult(request, decision, advisor, force=True,
-            snapshot=aegoll.snapshot_for(request, decision.decided_at))
+            snapshot=tesoro.snapshot_for(request, decision.decided_at))
 
     # `fmt_amount` spells small figures out -- six decimal places read as
     # thousands separators to a model, which it once demonstrably did.
@@ -403,12 +403,12 @@ def test_the_advisor_sees_the_vendors_historical_price(aegoll):
     )
 
 
-def test_runtime_advise_passes_the_snapshot_through(aegoll):
+def test_runtime_advise_passes_the_snapshot_through(tesoro):
     """The plumbing, end to end -- the bug lived in exactly this gap."""
-    aegoll.advisor = CapturingAdvisor()
-    _settle_history(aegoll, 5)
-    request = aegoll.build_request(resource="/market/signal", amount_usd="0.01", vendor=SELLER)
+    tesoro.advisor = CapturingAdvisor()
+    _settle_history(tesoro, 5)
+    request = tesoro.build_request(resource="/market/signal", amount_usd="0.01", vendor=SELLER)
 
-    aegoll.advise(request, force=True)
+    tesoro.advise(request, force=True)
 
-    assert aegoll.advisor.seen.vendor_settled_count == 5
+    assert tesoro.advisor.seen.vendor_settled_count == 5

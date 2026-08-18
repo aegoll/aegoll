@@ -48,7 +48,7 @@ jobs:
       - name: Purity suite
         run: pytest tests/test_no_llm.py tests/test_deps.py tests/test_engines.py -q
       - name: Core imports nothing unexpected
-        run: python -c "import aegoll, sys; print(sorted(m for m in sys.modules if not m.startswith('_')))"
+        run: python -c "import tesoro, sys; print(sorted(m for m in sys.modules if not m.startswith('_')))"
 
   schema-drift:
     # The vendored AEGS schemas must match the standard at the commit they are

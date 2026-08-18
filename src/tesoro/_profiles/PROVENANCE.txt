@@ -1,0 +1,45 @@
+Vendored AEGS profile manifests — package data, not a source of truth.
+
+The canonical profiles live in the standard's own repository:
+
+    https://github.com/aegoll/aegs   ->   profiles/
+
+They are copied here so `tesoro` can report conformance without a network call. A
+profile is a conformance contract written by the standard; this package enforces one,
+it does not define one.
+
+Source
+------
+  repo:    aegoll/aegs
+  commit:  04137ea4d03b48244e3b7fb38d09634628c3821b
+  path:    profiles/
+  copied:  2026-08-17
+
+Files
+-----
+  aegs-1.json   baseline: budget, policy, decision, attribution, evidence
+  aegs-2.json   extends aegs-1; adds trust and risk, tightens identity
+  none.json     no enforcement; a real, working escape hatch
+
+Rules
+-----
+  1. Never edit a file in this directory. A profile change is a change to the standard,
+     made in the `aegs` repository and copied down afterwards. Editing here would let
+     this package claim conformance against a contract nobody else holds.
+
+  2. CI fails when a vendored copy differs from the standard at the pinned commit, and
+     the pin is raised deliberately. Same tool as the schemas:
+     `python tools/check_schema_drift.py`.
+
+Why the pin matters more here than for a schema
+-----------------------------------------------
+A stale schema makes validation wrong. A stale profile makes a *conformance claim*
+wrong — and a conformance claim is the thing an auditor is meant to be able to rely on.
+Adding a control at MUST_EXERCISE upstream is a major change: implementations that were
+conformant stop being conformant, and a package still holding the old copy would keep
+reporting a level it no longer reaches.
+
+Licence
+-------
+The AEGS specification, its schemas and its profiles are CC-BY-4.0. Attribution:
+Jayzilva, https://github.com/aegoll/aegs

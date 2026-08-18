@@ -4,9 +4,9 @@ Two boundaries, deliberately separate.
 
 | | Governs | Direction | Contract |
 |---|---|---|---|
-| **Framework** adapter | the **internal** channel — tokens the agent burns thinking | the *framework* calls the adapter | [`RunGuard`](../src/aegoll/adapters/base.py) |
-| | `aegoll[claude]` · `aegoll[adk]` · `aegoll[langgraph]` · `aegoll[crewai]` | | |
-| **Rail** adapter | the **external** channel — what the agent pays out | the *agent* calls the adapter | [`PaymentClient`](../src/aegoll/adapters/base.py) |
+| **Framework** adapter | the **internal** channel — tokens the agent burns thinking | the *framework* calls the adapter | [`RunGuard`](../src/tesoro/adapters/base.py) |
+| | `tesoro[claude]` · `tesoro[adk]` · `tesoro[langgraph]` · `tesoro[crewai]` | | |
+| **Rail** adapter | the **external** channel — what the agent pays out | the *agent* calls the adapter | [`PaymentClient`](../src/tesoro/adapters/base.py) |
 
 Merging them would be tempting and wrong. They differ in currency, in counterparty, in failure
 mode, and in direction of control. When AP2 or a card rail arrives it will need the second
@@ -14,7 +14,7 @@ contract and none of the first, and a merged interface would make that a rewrite
 addition.
 
 **The core imports no framework**, ever — that is invariant 8, checked by
-[`test_deps.py`](../tests/test_deps.py) — and `import aegoll` pulls in no adapter at all, checked
+[`test_deps.py`](../tests/test_deps.py) — and `import tesoro` pulls in no adapter at all, checked
 by a subprocess in [`test_adapters.py`](../tests/test_adapters.py) because an in-process check
 would pass regardless once the test file's own imports had run.
 
@@ -23,8 +23,8 @@ would pass regardless once the test file's own imports had run.
 ## The framework contract: three calls
 
 ```python
-from aegoll import Governor
-from aegoll.adapters.base import RunGuard
+from tesoro import Governor
+from tesoro.adapters.base import RunGuard
 
 guard = RunGuard(Governor.load(), budget_usd="0.40")
 
@@ -66,10 +66,10 @@ the refusal is evidence — so both later calls check that it *approved*. Withou
 run reported itself as stopped, and a refusal and a stop are different facts with different
 remedies. (That was a real bug in the first version of this, caught by a test.)
 
-## `aegoll[claude]` — Claude Agent SDK
+## `tesoro[claude]` — Claude Agent SDK
 
 ```python
-from aegoll.adapters.claude import ClaudeAgentAdapter
+from tesoro.adapters.claude import ClaudeAgentAdapter
 
 adapter = ClaudeAgentAdapter(Governor.load(), budget_usd="0.40")
 
@@ -100,10 +100,10 @@ that widened a limit somebody set would be doing the one thing no control in thi
 adjustable in two different places; reporting one as the other sends whoever is debugging to the
 wrong ceiling.
 
-## `aegoll[adk]` — Google ADK
+## `tesoro[adk]` — Google ADK
 
 ```python
-from aegoll.adapters.adk import GoogleADKAdapter
+from tesoro.adapters.adk import GoogleADKAdapter
 
 adapter = GoogleADKAdapter(Governor.load(), budget_usd="0.40")
 config = adapter.run_config_for({})                  # keeps max_llm_calls
@@ -124,10 +124,10 @@ the other would silently drop half the coverage.
 construction is the spend before the run began — always zero — so the ceiling would never trip
 while the callback appeared to work.
 
-## `aegoll[langgraph]` — LangGraph
+## `tesoro[langgraph]` — LangGraph
 
 ```python
-from aegoll.adapters.langgraph import LangGraphAdapter
+from tesoro.adapters.langgraph import LangGraphAdapter
 
 adapter = LangGraphAdapter(Governor.load(), budget_usd="0.40")
 config = adapter.config_for({"recursion_limit": 25})
@@ -149,10 +149,10 @@ a new one in LangChain's still-moving callback surface cannot break a governed r
 Verified against the installed `RunnableConfig`, whose keys are `callbacks`, `configurable`,
 `max_concurrency`, `metadata`, `recursion_limit`, `run_id`, `run_name` and `tags`.
 
-## `aegoll[crewai]` — CrewAI
+## `tesoro[crewai]` — CrewAI
 
 ```python
-from aegoll.adapters.crewai import CrewAIAdapter
+from tesoro.adapters.crewai import CrewAIAdapter
 
 adapter = CrewAIAdapter(Governor.load(), budget_usd="0.40")
 crew = Crew(agents=[...], tasks=[...], **adapter.crew_kwargs(spent_getter))
@@ -194,7 +194,7 @@ every refusal and stop, and that neither module imports its framework.
 LangGraph's config keys were additionally checked against the installed `RunnableConfig`. For
 **`crewai` they come from documentation only** — see the table above. An SDK that moves a hook
 will break the integration without breaking these tests. That is what the version pins in `[project.optional-dependencies]` are for,
-and it is why [`aegoll-integrations`](https://github.com/aegoll/aegoll-integrations) — which does
+and it is why [`tesoro-integrations`](https://github.com/aegoll/tesoro-integrations) — which does
 install the real SDKs — is where end-to-end runs belong.
 
 A contract exercised only with a real SDK present is a contract nobody checks, so the tests are

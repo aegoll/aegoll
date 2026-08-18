@@ -4,7 +4,7 @@ Governing an agent's spending, from nothing, in about five minutes. No prior kno
 AEGS, profiles or Decision Records assumed — you will have produced all three by the end
 without needing to have read about any of them.
 
-Requires Python 3.11 or newer. Nothing else: the core installs `aegoll` and `PyYAML` and
+Requires Python 3.11 or newer. Nothing else: the core installs `tesoro` and `PyYAML` and
 stops.
 
 ---
@@ -12,26 +12,26 @@ stops.
 ## 1 · Install
 
 ```bash
-pip install aegoll
+pip install tesoro
 ```
 
 Two packages, on purpose. No web framework, no model client, no network library — a layer
 that decides whether a payment may happen has no business pulling in a HTTP stack. If you
 want schema validation, a payment rail or an advisory model, each is a separate extra
-(`aegoll[schema]`, `aegoll[x402]`, `aegoll[advisors]`).
+(`tesoro[schema]`, `tesoro[x402]`, `tesoro[advisors]`).
 
 ## 2 · Create a project
 
 ```bash
 mkdir my-agent && cd my-agent
-aegoll init
+tesoro init
 ```
 
 You now have two files:
 
 | File | What it is |
 |---|---|
-| `aegoll.yaml` | which profile to enforce, which policy pack to use, where state lives |
+| `tesoro.yaml` | which profile to enforce, which policy pack to use, where state lives |
 | `policies/default.yaml` | **your rules** — the numbers and the decisions |
 
 The split matters and is the one concept worth understanding up front:
@@ -43,11 +43,11 @@ The split matters and is the one concept worth understanding up front:
 ## 3 · Check it before an agent holds a wallet
 
 ```bash
-aegoll check
+tesoro check
 ```
 
 ```
-config : /my-agent/aegoll.yaml
+config : /my-agent/tesoro.yaml
 profile: aegs-1  7 required control(s)
 policy : default  a5a64aeb69dbc5f9206b31022064da26  12 rules
 
@@ -58,7 +58,7 @@ Exit `0` means the config *and* the pack it points at are both valid. Every faul
 reported at once rather than one per run, so this is usable in CI:
 
 ```yaml
-- run: aegoll check      # fails the build on an invalid policy
+- run: tesoro check      # fails the build on an invalid policy
 ```
 
 That hash is the pack's content hash, and it goes into every decision this pack produces. A
@@ -67,7 +67,7 @@ label can be reused across edited rules; a hash cannot.
 ## 4 · Ask it a question
 
 ```bash
-aegoll decide --amount 0.01 --vendor acme --resource /market/snapshot
+tesoro decide --amount 0.01 --vendor acme --resource /market/snapshot
 ```
 
 ```
@@ -81,7 +81,7 @@ APPROVE  /market/snapshot  $0.010000
 Now one it should refuse:
 
 ```bash
-aegoll decide --amount 500 --vendor acme --resource /market/snapshot
+tesoro decide --amount 500 --vendor acme --resource /market/snapshot
 ```
 
 ```
@@ -100,7 +100,7 @@ REJECT  /market/snapshot  $500.000000
 | `4` | usage error |
 
 ```bash
-if aegoll decide --amount 500 --vendor acme --resource /r; then
+if tesoro decide --amount 500 --vendor acme --resource /r; then
   echo "cleared"
 else
   echo "refused: $?"     # 2
@@ -113,7 +113,7 @@ it governs cannot be told apart from one that is broken.
 > **Windows, Git Bash only.** If you use Git Bash (MSYS), a resource that starts with `/`
 > gets rewritten before Python ever sees it — `/market/snapshot` arrives as
 > `C:/Program Files/Git/market/snapshot`, and it is recorded in your evidence that way with
-> no error. Use PowerShell, `cmd`, or `MSYS_NO_PATHCONV=1`. Not an `aegoll` behaviour, but it
+> no error. Use PowerShell, `cmd`, or `MSYS_NO_PATHCONV=1`. Not an `tesoro` behaviour, but it
 > silently corrupts the resource identifier, which is worse than an error.
 
 ## 5 · Govern the actual agent
@@ -121,9 +121,9 @@ it governs cannot be told apart from one that is broken.
 Two lines. The governor wraps the agent, not the other way round:
 
 ```python
-from aegoll import Governor
+from tesoro import Governor
 
-gov = Governor.load()                  # reads ./aegoll.yaml
+gov = Governor.load()                  # reads ./tesoro.yaml
 agent = gov.wrap(my_agent)             # duck-typed; any framework, or none
 ```
 
@@ -163,13 +163,13 @@ Two more things in that snippet are load-bearing:
 ## 6 · See what happened
 
 ```bash
-aegoll report
+tesoro report
 ```
 
 Or as one self-contained page you can open, keep, or attach to a ticket:
 
 ```bash
-aegoll report --html -o spend.html
+tesoro report --html -o spend.html
 ```
 
 Four panels, one question each: **Policy** (what will this do?), **Envelopes** (how much is
@@ -194,7 +194,7 @@ expected.
 ## 7 · Verify the record
 
 ```bash
-aegoll audit
+tesoro audit
 ```
 
 Every decision is journalled in an append-only, hash-chained record. `audit` re-verifies the
@@ -208,7 +208,7 @@ lying to you:
   valid chain, so an agent that was refused could delete the refusal and verification would
   still report success.
 
-Closing that needs an external anchor. `aegoll` prints the caveat next to every `VALID`
+Closing that needs an external anchor. `tesoro` prints the caveat next to every `VALID`
 rather than shipping a `head.json` beside the journal, which would *look* like a fix while
 defending against nothing — whoever can truncate the journal can rewrite the file next to it.
 

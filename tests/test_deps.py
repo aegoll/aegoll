@@ -75,7 +75,7 @@ def _project() -> dict:
 
 
 def _first_party(name: str) -> bool:
-    return name == "aegoll" or name.startswith("aegoll.")
+    return name == "tesoro" or name.startswith("tesoro.")
 
 
 def _stdlib(name: str) -> bool:
@@ -109,7 +109,7 @@ def test_the_core_declares_only_a_yaml_parser():
 def test_streamlit_is_not_declared_anywhere():
     """It was an unconditional dependency in the prototype. It is now not even an extra.
 
-    The cockpit lives in aegoll-integrations, where a heavy dependency is fine because
+    The cockpit lives in tesoro-integrations, where a heavy dependency is fine because
     nothing installs it as a side effect of wanting a spend cap.
     """
     project = _project()["project"]
@@ -131,20 +131,20 @@ def test_both_version_lines_are_on_the_package():
     way to know which version of the rules it was scored against.
 
     This test exists because `AEGS_VERSION` was **not** exported when 0.1.0 shipped. It lived in
-    `aegoll.record`, the plan claimed it on the package, and nothing compared the two -- the same
+    `tesoro.record`, the plan claimed it on the package, and nothing compared the two -- the same
     shape as F-A12. A version line nobody imports is a version line that quietly stops existing.
     """
-    import aegoll
+    import tesoro
 
-    assert aegoll.__version__, "no implementation version"
-    assert aegoll.AEGS_VERSION, "no specification version"
-    assert {"AEGS_VERSION", "__version__"} <= set(aegoll.__all__) | {"__version__"}, (
-        f"AEGS_VERSION is reachable but not public: {sorted(aegoll.__all__)}"
+    assert tesoro.__version__, "no implementation version"
+    assert tesoro.AEGS_VERSION, "no specification version"
+    assert {"AEGS_VERSION", "__version__"} <= set(tesoro.__all__) | {"__version__"}, (
+        f"AEGS_VERSION is reachable but not public: {sorted(tesoro.__all__)}"
     )
 
-    from aegoll.record import AEGS_VERSION as internal
+    from tesoro.record import AEGS_VERSION as internal
 
-    assert aegoll.AEGS_VERSION == internal, "two spec versions that disagree is worse than one"
+    assert tesoro.AEGS_VERSION == internal, "two spec versions that disagree is worse than one"
 
 
 def test_the_dev_extra_can_validate_schemas():
@@ -176,7 +176,7 @@ def test_not_being_able_to_validate_is_not_the_same_as_invalid():
     for assessors and the reasoning is identical. What changed is that the two are now
     distinguishable.
     """
-    from aegoll.record import NOT_VALIDATED, can_validate, validate
+    from tesoro.record import NOT_VALIDATED, can_validate, validate
 
     assert can_validate(), "this test needs the dev extra it is asserting the contents of"
 
@@ -209,9 +209,9 @@ def test_every_extra_has_a_stated_purpose():
         assert deps, f"extra {name!r} declares nothing"
         if name in _TOOLING_EXTRAS:
             continue
-        assert f"aegoll[{name}]" in prose, (
+        assert f"tesoro[{name}]" in prose, (
             f"extra {name!r} is installable and undocumented: no document mentions "
-            f"`aegoll[{name}]`. Whoever is deciding whether to install it has nothing to read."
+            f"`tesoro[{name}]`. Whoever is deciding whether to install it has nothing to read."
         )
 
 

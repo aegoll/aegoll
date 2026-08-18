@@ -4,7 +4,7 @@ The claim these defend: `Governor` governs *any* agent, and nothing about it is
 specific to a framework. So they use a fake payment client and no framework at
 all -- if these pass without LangGraph, ADK or the Claude SDK installed, the
 surface really is portable. `agents/tests/test_decoupling.py` covers the other
-direction, that `aegoll` never imports an agent.
+direction, that `tesoro` never imports an agent.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from decimal import Decimal
 
 import pytest
 
-from aegoll.plugin import (
+from tesoro.plugin import (
     NOT_RECOMMENDED,
     RECOMMENDED_ADVISOR,
     Governor,
@@ -198,7 +198,7 @@ def test_a_ceiling_stop_is_journalled(gov):
     # The log is append-only: a settlement arrives as its own entry keyed
     # `settlement_update`, never as an edit to the decision it refers to.
     stops = [
-        e for e in gov.aegoll.audit.entries()
+        e for e in gov.tesoro.audit.entries()
         if (e.payload.get("settlement_update") or {}).get("type") == "spend_ceiling_stop"
     ]
     assert len(stops) == 1
@@ -232,7 +232,7 @@ def test_the_two_channels_are_reported_separately(gov):
 
 
 def test_report_is_plain_data(gov):
-    """`aegoll.ui.render()` takes this; a UI must not need AEGL's types."""
+    """`tesoro.ui.render()` takes this; a UI must not need AEGL's types."""
     import json
 
     gov.authorize_run(model="m", budget_usd=0.02)
@@ -256,7 +256,7 @@ def test_the_model_measured_unusable_is_not_a_default():
 def test_advisor_none_is_deterministic_only(tmp_path):
     g = Governor(advisor=None, data_dir=tmp_path)
     try:
-        assert g.aegoll.advisor is None
+        assert g.tesoro.advisor is None
         assert g.advisor_spec is None
     finally:
         g.close()
@@ -274,13 +274,13 @@ class Unavailable:
 def _no_advisor_available(monkeypatch):
     """Make advisor construction fail at the point `Governor` uses it.
 
-    Patching `aegoll.advisors.keys.resolve_key` looks equivalent and is not: each
+    Patching `tesoro.advisors.keys.resolve_key` looks equivalent and is not: each
     provider module does `from .keys import resolve_key`, binding the name at
     import time. Whether the patch lands then depends on whether some earlier
     test already imported that module -- which made this suite pass alone and
     fail in full. Patch what the code under test actually calls.
     """
-    monkeypatch.setattr("aegoll.plugin.build_advisor", lambda *a, **k: Unavailable())
+    monkeypatch.setattr("tesoro.plugin.build_advisor", lambda *a, **k: Unavailable())
 
 
 def test_a_missing_key_costs_the_advisor_not_the_run(tmp_path, monkeypatch):
@@ -289,7 +289,7 @@ def test_a_missing_key_costs_the_advisor_not_the_run(tmp_path, monkeypatch):
 
     g = Governor(advisor="auto", data_dir=tmp_path)
     try:
-        assert g.aegoll.advisor is None
+        assert g.tesoro.advisor is None
         # "auto" with no key is the ordinary path, not an error to report.
         assert g.advisor_error is None
         assert g.authorize_run(model="m", budget_usd=0.02).allowed
@@ -303,7 +303,7 @@ def test_an_explicit_advisor_reports_why_it_could_not_be_used(tmp_path, monkeypa
 
     g = Governor(advisor=("groq", "llama-3.3-70b-versatile"), data_dir=tmp_path)
     try:
-        assert g.aegoll.advisor is None
+        assert g.tesoro.advisor is None
         assert g.advisor_error == "no API key configured", (
             "an explicit advisor failed without saying why"
         )
@@ -348,7 +348,7 @@ def test_the_plugin_imports_no_framework_and_no_llm_sdk():
 
     The whole universality claim rests on this file being importable in a process
     that has never heard of LangGraph, ADK or the Claude SDK. Model clients are
-    reached only through `aegoll.advisors`, lazily.
+    reached only through `tesoro.advisors`, lazily.
     """
     import ast
     from pathlib import Path
@@ -393,7 +393,7 @@ def test_precheck_previews_a_refusal_without_journalling_it(gov):
     someone who reads the warning and walks away would leave a phantom refusal
     behind. Only the real attempt is recorded.
     """
-    before = len(gov.aegoll.audit.entries())
+    before = len(gov.tesoro.audit.entries())
 
     pre = gov.precheck_run(model="m", budget_usd=0.10)  # over the $0.04 envelope
 
@@ -401,7 +401,7 @@ def test_precheck_previews_a_refusal_without_journalling_it(gov):
     assert pre["verdict"] == "REJECT"
     assert pre["engine"] == "treasury"
     assert pre["matched_rule"] == "internal-reject-over-budget"
-    assert len(gov.aegoll.audit.entries()) == before, "the preview was journalled"
+    assert len(gov.tesoro.audit.entries()) == before, "the preview was journalled"
 
 
 def test_precheck_agrees_with_the_real_authorization(gov):
@@ -418,7 +418,7 @@ def test_an_override_is_journalled_with_its_reason(gov):
     gov.record_override(pre, seconds_left=7.5)
 
     overrides = [
-        e.payload["settlement_update"] for e in gov.aegoll.audit.entries()
+        e.payload["settlement_update"] for e in gov.tesoro.audit.entries()
         if (e.payload.get("settlement_update") or {}).get("type") == "human_override"
     ]
     assert len(overrides) == 1

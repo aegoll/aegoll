@@ -1,4 +1,4 @@
-# Extending aegoll
+# Extending tesoro
 
 Two extension points, and picking the right one matters more than it looks.
 
@@ -62,7 +62,7 @@ it, never one below. That is why a cycle cannot be *written* rather than being w
 then detected: there is no ordering in which both halves are in scope.
 
 Everything else about a pack still applies — the comparator vocabulary is the same fixed
-set inside a derived clause as anywhere else, and `aegoll check` rejects the whole pack at
+set inside a derived clause as anywhere else, and `tesoro check` rejects the whole pack at
 load if any of it is wrong. It will tell you what *is* in scope at the point you referenced
 something that isn't:
 
@@ -74,11 +74,11 @@ point: derived.first
 
 ### What facts are available
 
-Everything the engines produce. `aegoll check --controls` shows the profile side; for the
+Everything the engines produce. `tesoro check --controls` shows the profile side; for the
 fact vocabulary:
 
 ```python
-from aegoll.validate import known_facts
+from tesoro.validate import known_facts
 print(sorted(known_facts()))
 ```
 
@@ -92,7 +92,7 @@ from the facts that actually exist.
 When you need a measurement nothing makes yet.
 
 ```python
-from aegoll import extend
+from tesoro import extend
 
 
 class CountryScreen:
@@ -189,7 +189,7 @@ would narrow to the same thing, and conformance scores attribution.
 ### Testing your engine
 
 ```python
-from aegoll import extend
+from tesoro import extend
 
 def test_it_is_registerable():
     extend.clear_engines()

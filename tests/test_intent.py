@@ -22,21 +22,21 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from aegoll.engines.economic import intent as intent_engine
-from aegoll.clock import FixedClock
-from aegoll.domain import Channel, Purpose, Vendor, Verdict
-from aegoll.engines.economic.intent import Intent, IntentStore
-from aegoll.plugin import Governor
-from aegoll.runtime import Aegoll, Paths
-from aegoll.record import can_validate
+from tesoro.engines.economic import intent as intent_engine
+from tesoro.clock import FixedClock
+from tesoro.domain import Channel, Purpose, Vendor, Verdict
+from tesoro.engines.economic.intent import Intent, IntentStore
+from tesoro.plugin import Governor
+from tesoro.runtime import Tesoro, Paths
+from tesoro.record import can_validate
 
 BASE = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 SELLER = Vendor(id="x402-poc-desk", name="POC Desk")
 
 
 @pytest.fixture
-def aegoll(tmp_path):
-    a = Aegoll(paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
+def tesoro(tmp_path):
+    a = Tesoro(paths=Paths.ephemeral(tmp_path), clock=FixedClock(BASE))
     yield a
     a.close()
 
@@ -48,8 +48,8 @@ def gov(tmp_path):
     g.close()
 
 
-def request_for(aegoll, resource="/market/snapshot", amount="0.001", **kw):
-    return aegoll.build_request(resource=resource, amount_usd=amount, vendor=SELLER, **kw)
+def request_for(tesoro, resource="/market/snapshot", amount="0.001", **kw):
+    return tesoro.build_request(resource=resource, amount_usd=amount, vendor=SELLER, **kw)
 
 
 def codes(decision) -> set[str]:
@@ -59,25 +59,25 @@ def codes(decision) -> set[str]:
 # --- absence is recorded, never assumed -----------------------------------
 
 
-def test_an_agent_with_no_intent_is_not_refused(aegoll):
+def test_an_agent_with_no_intent_is_not_refused(tesoro):
     """Adding intent must not punish the ordinary case."""
-    decision = aegoll.decide(request_for(aegoll))
+    decision = tesoro.decide(request_for(tesoro))
     assert decision.verdict is Verdict.APPROVE
 
 
-def test_an_agent_with_no_intent_says_so_explicitly(aegoll):
+def test_an_agent_with_no_intent_says_so_explicitly(tesoro):
     """`no check ran` and `check passed` must never look alike."""
-    decision = aegoll.decide(request_for(aegoll))
+    decision = tesoro.decide(request_for(tesoro))
     assert "no_intent_declared" in codes(decision)
 
-    verdict = aegoll.intent_for(request_for(aegoll))
+    verdict = tesoro.intent_for(request_for(tesoro))
     assert verdict.governed is False
     assert verdict.as_dict()["intentId"] is None
 
 
-def test_a_governed_action_is_marked_as_governed(aegoll):
-    aegoll.intents.declare(agent_id="agent-1", purpose="buy data", maximum_usd="1.00", now=BASE)
-    verdict = aegoll.intent_for(request_for(aegoll))
+def test_a_governed_action_is_marked_as_governed(tesoro):
+    tesoro.intents.declare(agent_id="agent-1", purpose="buy data", maximum_usd="1.00", now=BASE)
+    verdict = tesoro.intent_for(request_for(tesoro))
     assert verdict.governed is True
     assert "within_intent" in {r.code for r in verdict.reasons}
 
@@ -85,109 +85,109 @@ def test_a_governed_action_is_marked_as_governed(aegoll):
 # --- the intent must still be live ----------------------------------------
 
 
-def test_an_expired_intent_authorises_nothing(aegoll):
-    aegoll.intents.declare(
+def test_an_expired_intent_authorises_nothing(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00",
         expires_at=BASE - timedelta(hours=1), now=BASE - timedelta(days=1),
     )
     # `active_for` will not return an expired intent, so ask the engine directly
     # with the intent in hand -- an expired authorisation is not a weaker one.
-    expired = aegoll.intents.all()[0]
-    verdict = intent_engine.evaluate(request_for(aegoll), expired, now=BASE)
+    expired = tesoro.intents.all()[0]
+    verdict = intent_engine.evaluate(request_for(tesoro), expired, now=BASE)
 
     assert verdict.verdict is Verdict.REJECT
     assert "intent_expired" in {r.code for r in verdict.reasons}
 
 
-def test_a_revoked_intent_authorises_nothing(aegoll):
-    declared = aegoll.intents.declare(
+def test_a_revoked_intent_authorises_nothing(tesoro):
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00", now=BASE
     )
-    assert aegoll.intents.revoke(declared.intent_id) is True
+    assert tesoro.intents.revoke(declared.intent_id) is True
 
     verdict = intent_engine.evaluate(
-        request_for(aegoll), aegoll.intents.get(declared.intent_id), now=BASE
+        request_for(tesoro), tesoro.intents.get(declared.intent_id), now=BASE
     )
     assert verdict.verdict is Verdict.REJECT
     assert "intent_revoked" in {r.code for r in verdict.reasons}
 
 
-def test_revoking_keeps_the_record_of_it_having_been_granted(aegoll):
+def test_revoking_keeps_the_record_of_it_having_been_granted(tesoro):
     """Withdrawing authority is not the same as it never having existed."""
-    declared = aegoll.intents.declare(
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00", now=BASE
     )
-    aegoll.intents.revoke(declared.intent_id)
+    tesoro.intents.revoke(declared.intent_id)
 
-    stored = aegoll.intents.get(declared.intent_id)
+    stored = tesoro.intents.get(declared.intent_id)
     assert stored is not None
     assert stored.status == "revoked"
     assert stored.purpose == "buy data"
 
 
-def test_an_expired_intent_is_not_returned_as_active(aegoll):
-    aegoll.intents.declare(
+def test_an_expired_intent_is_not_returned_as_active(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="stale", maximum_usd="1.00",
         expires_at=BASE - timedelta(minutes=1), now=BASE - timedelta(days=1),
     )
-    assert aegoll.intents.active_for("agent-1", BASE) is None
+    assert tesoro.intents.active_for("agent-1", BASE) is None
 
 
 # --- the action must be the kind of thing the intent is about -------------
 
 
-def test_a_resource_outside_the_intent_is_reviewed_not_approved(aegoll):
-    aegoll.intents.declare(
+def test_a_resource_outside_the_intent_is_reviewed_not_approved(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy market data", maximum_usd="1.00",
         allowed_resources=["/market/*"], now=BASE,
     )
-    decision = aegoll.decide(request_for(aegoll, resource="/compute/batch"))
+    decision = tesoro.decide(request_for(tesoro, resource="/compute/batch"))
 
     assert decision.verdict is Verdict.REVIEW
     assert "intent_resource_mismatch" in codes(decision)
 
 
-def test_a_resource_inside_the_intent_passes(aegoll):
-    aegoll.intents.declare(
+def test_a_resource_inside_the_intent_passes(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy market data", maximum_usd="1.00",
         allowed_resources=["/market/*"], now=BASE,
     )
-    assert aegoll.decide(request_for(aegoll, resource="/market/signal")).verdict is Verdict.APPROVE
+    assert tesoro.decide(request_for(tesoro, resource="/market/signal")).verdict is Verdict.APPROVE
 
 
-def test_an_empty_resource_list_means_unrestricted(aegoll):
+def test_an_empty_resource_list_means_unrestricted(tesoro):
     """A real choice, and visible as one rather than an accident."""
-    aegoll.intents.declare(agent_id="agent-1", purpose="anything", maximum_usd="1.00", now=BASE)
-    assert aegoll.decide(request_for(aegoll, resource="/anything/at/all")).verdict is Verdict.APPROVE
+    tesoro.intents.declare(agent_id="agent-1", purpose="anything", maximum_usd="1.00", now=BASE)
+    assert tesoro.decide(request_for(tesoro, resource="/anything/at/all")).verdict is Verdict.APPROVE
 
 
-def test_a_category_outside_the_intent_is_reviewed(aegoll):
-    aegoll.intents.declare(
+def test_a_category_outside_the_intent_is_reviewed(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="market data only", maximum_usd="1.00",
         allowed_categories=["market-data"], now=BASE,
     )
-    request = aegoll.build_request(
+    request = tesoro.build_request(
         resource="/x", amount_usd="0.001", vendor=SELLER,
     )
     verdict = intent_engine.evaluate(
-        request, aegoll.intents.active_for("agent-1", BASE), now=BASE, category="gambling"
+        request, tesoro.intents.active_for("agent-1", BASE), now=BASE, category="gambling"
     )
     assert verdict.verdict is Verdict.REVIEW
     assert "intent_category_mismatch" in {r.code for r in verdict.reasons}
 
 
-def test_an_intent_can_be_scoped_to_one_channel(aegoll):
+def test_an_intent_can_be_scoped_to_one_channel(tesoro):
     """An intent to buy market data does not obviously authorise inference spend."""
-    aegoll.intents.declare(
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00",
         allowed_channels=["external"], now=BASE,
     )
-    request = aegoll.build_request(
+    request = tesoro.build_request(
         resource="llm:some-model", amount_usd="0.01", vendor=SELLER,
         purpose=Purpose.INFERENCE, channel=Channel.INTERNAL,
     )
     verdict = intent_engine.evaluate(
-        request, aegoll.intents.active_for("agent-1", BASE), now=BASE
+        request, tesoro.intents.active_for("agent-1", BASE), now=BASE
     )
     assert "intent_channel_mismatch" in {r.code for r in verdict.reasons}
 
@@ -195,59 +195,59 @@ def test_an_intent_can_be_scoped_to_one_channel(aegoll):
 # --- and it must be affordable within the intent --------------------------
 
 
-def test_the_total_is_the_budget_not_the_per_action_figure(aegoll):
+def test_the_total_is_the_budget_not_the_per_action_figure(tesoro):
     """A ceiling that permits unlimited repetitions is not a budget."""
-    declared = aegoll.intents.declare(
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="0.010", now=BASE
     )
     # Spend most of it, settled -- only settled spend consumes an envelope.
-    aegoll.store.record(
+    tesoro.store.record(
         tx_id="t1", at=BASE, agent_id="agent-1", vendor_id=SELLER.id,
         resource="/market/snapshot", amount_atomic=9_000, verdict=Verdict.APPROVE,
         settled=True, success=True, intent_id=declared.intent_id,
     )
-    assert aegoll.store.spent_under_intent(declared.intent_id) == 9_000
+    assert tesoro.store.spent_under_intent(declared.intent_id) == 9_000
 
-    decision = aegoll.decide(request_for(aegoll, amount="0.005"))
+    decision = tesoro.decide(request_for(tesoro, amount="0.005"))
     assert decision.verdict is Verdict.REJECT
     assert "intent_budget_exceeded" in codes(decision)
 
 
-def test_unsettled_spend_does_not_consume_the_intent(aegoll):
+def test_unsettled_spend_does_not_consume_the_intent(tesoro):
     """An authorised payment that never settled did not consume budget."""
-    declared = aegoll.intents.declare(
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="0.010", now=BASE
     )
-    aegoll.store.record(
+    tesoro.store.record(
         tx_id="t1", at=BASE, agent_id="agent-1", vendor_id=SELLER.id,
         resource="/market/snapshot", amount_atomic=9_000, verdict=Verdict.APPROVE,
         settled=False, success=False, intent_id=declared.intent_id,
     )
-    assert aegoll.store.spent_under_intent(declared.intent_id) == 0
+    assert tesoro.store.spent_under_intent(declared.intent_id) == 0
 
 
-def test_a_per_action_ceiling_is_enforced_when_declared(aegoll):
-    aegoll.intents.declare(
+def test_a_per_action_ceiling_is_enforced_when_declared(tesoro):
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00",
         maximum_per_action_usd="0.005", now=BASE,
     )
-    decision = aegoll.decide(request_for(aegoll, amount="0.010"))
+    decision = tesoro.decide(request_for(tesoro, amount="0.010"))
     assert decision.verdict is Verdict.REJECT
     assert "intent_per_action_exceeded" in codes(decision)
 
 
-def test_a_different_asset_is_refused_not_converted(aegoll):
+def test_a_different_asset_is_refused_not_converted(tesoro):
     """Converting silently would need a rate, a source and a timestamp."""
-    aegoll.intents.declare(
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="1.00",
         asset="USDC", now=BASE,
     )
-    internal = aegoll.build_request(
+    internal = tesoro.build_request(
         resource="llm:m", amount_usd="0.01", vendor=SELLER,
         purpose=Purpose.INFERENCE, channel=Channel.INTERNAL,
     )
     verdict = intent_engine.evaluate(
-        internal, aegoll.intents.active_for("agent-1", BASE), now=BASE
+        internal, tesoro.intents.active_for("agent-1", BASE), now=BASE
     )
     assert verdict.verdict is Verdict.REJECT
     assert "intent_asset_mismatch" in {r.code for r in verdict.reasons}
@@ -256,23 +256,23 @@ def test_a_different_asset_is_refused_not_converted(aegoll):
 # --- the clamp invariant --------------------------------------------------
 
 
-def test_intent_can_only_narrow_never_widen(aegoll):
+def test_intent_can_only_narrow_never_widen(tesoro):
     """The invariant every engine obeys. An intent cannot authorise what treasury refused."""
-    aegoll.intents.declare(
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="spend freely", maximum_usd="10000.00", now=BASE
     )
     # $5000 breaches the treasury envelopes regardless of what the intent permits.
-    decision = aegoll.decide(request_for(aegoll, amount="5000.00"))
+    decision = tesoro.decide(request_for(tesoro, amount="5000.00"))
     assert decision.verdict is not Verdict.APPROVE
 
 
-def test_a_clamp_by_intent_is_attributed(aegoll):
+def test_a_clamp_by_intent_is_attributed(tesoro):
     """A refusal with no attributable cause is not auditable evidence."""
-    aegoll.intents.declare(
+    tesoro.intents.declare(
         agent_id="agent-1", purpose="market only", maximum_usd="1.00",
         allowed_resources=["/market/*"], now=BASE,
     )
-    decision = aegoll.decide(request_for(aegoll, resource="/compute/batch"))
+    decision = tesoro.decide(request_for(tesoro, resource="/compute/batch"))
     assert any(
         r.source == "authorize" and r.code == "clamped_by_intent" for r in decision.reasons
     )
@@ -306,12 +306,12 @@ def test_a_run_without_an_intent_reports_none(gov):
     ),
 )
 def test_the_decision_record_carries_the_intent_id(gov):
-    from aegoll import record as record_mod
+    from tesoro import record as record_mod
 
     declared = gov.declare_intent(purpose="think", maximum_usd="1.00", asset="USD")
     gov.authorize_run(model="m", budget_usd=0.03)
 
-    record = record_mod.records_from_journal(gov.aegoll.audit.entries())[0]
+    record = record_mod.records_from_journal(gov.tesoro.audit.entries())[0]
     assert record["intentId"] == declared.intent_id
     assert record_mod.validate(record)[0] is True
 
@@ -326,10 +326,10 @@ def test_the_decision_record_carries_the_intent_id(gov):
     ),
 )
 def test_a_record_without_an_intent_has_a_null_id_and_stays_valid(gov):
-    from aegoll import record as record_mod
+    from tesoro import record as record_mod
 
     gov.authorize_run(model="m", budget_usd=0.03)
-    record = record_mod.records_from_journal(gov.aegoll.audit.entries())[0]
+    record = record_mod.records_from_journal(gov.tesoro.audit.entries())[0]
 
     assert record["intentId"] is None
     assert record_mod.validate(record)[0] is True
@@ -347,8 +347,8 @@ def test_a_record_without_an_intent_has_a_null_id_and_stays_valid(gov):
         "test_ci_can_validate_schemas keeps this from becoming permanent."
     ),
 )
-def test_a_declared_intent_validates_against_the_schema(aegoll):
-    declared = aegoll.intents.declare(
+def test_a_declared_intent_validates_against_the_schema(tesoro):
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="0.05",
         allowed_resources=["/market/*"], expires_at=BASE + timedelta(days=1), now=BASE,
     )
@@ -356,8 +356,8 @@ def test_a_declared_intent_validates_against_the_schema(aegoll):
     assert ok, problems
 
 
-def test_the_schema_rejects_a_float_amount(aegoll):
-    declared = aegoll.intents.declare(
+def test_the_schema_rejects_a_float_amount(tesoro):
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="p", maximum_usd="1.00", now=BASE
     )
     payload = declared.as_dict()
@@ -365,8 +365,8 @@ def test_the_schema_rejects_a_float_amount(aegoll):
     assert intent_engine.validate(payload)[0] is False
 
 
-def test_the_schema_rejects_an_unknown_field(aegoll):
-    declared = aegoll.intents.declare(
+def test_the_schema_rejects_an_unknown_field(tesoro):
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="p", maximum_usd="1.00", now=BASE
     )
     payload = declared.as_dict()
@@ -374,8 +374,8 @@ def test_the_schema_rejects_an_unknown_field(aegoll):
     assert intent_engine.validate(payload)[0] is False
 
 
-def test_an_intent_round_trips_through_its_own_schema(aegoll):
-    declared = aegoll.intents.declare(
+def test_an_intent_round_trips_through_its_own_schema(tesoro):
+    declared = tesoro.intents.declare(
         agent_id="agent-1", purpose="round trip", maximum_usd="0.25",
         maximum_per_action_usd="0.05", allowed_resources=["/a/*", "/b/**"],
         expires_at=BASE + timedelta(hours=6), now=BASE,

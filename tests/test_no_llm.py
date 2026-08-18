@@ -18,9 +18,9 @@ from pathlib import Path
 
 import pytest
 
-import aegoll
+import tesoro
 
-PACKAGE_ROOT = Path(aegoll.__file__).resolve().parent
+PACKAGE_ROOT = Path(tesoro.__file__).resolve().parent
 
 FORBIDDEN_MODULES = {
     "anthropic",
@@ -107,9 +107,9 @@ def test_eiap_computes_but_does_not_invoke():
     """The EIAP may recommend a model; the decision must still report Tier.NONE."""
     from datetime import datetime, timezone
 
-    from aegoll import Aegoll, FixedClock, Paths, Tier, Vendor
+    from tesoro import Tesoro, FixedClock, Paths, Tier, Vendor
 
-    a = Aegoll(
+    a = Tesoro(
         paths=Paths.ephemeral(".data-test-eiap"),
         clock=FixedClock(datetime(2026, 8, 12, tzinfo=timezone.utc)),
     )
@@ -135,7 +135,7 @@ def test_eiap_computes_but_does_not_invoke():
 
 def test_break_even_matches_the_documented_figure():
     """The $0.08-ish break-even claim in PLAN.md, asserted rather than asserted-about."""
-    from aegoll.config import load_bundle
+    from tesoro.config import load_bundle
 
     cfg = load_bundle().eiap
     break_even_at_max_uncertainty = cfg.ai_cost_atomic / cfg.max_p_flip
@@ -154,9 +154,9 @@ def test_live_seller_prices_never_justify_inference(amount):
     """
     from datetime import datetime, timezone
 
-    from aegoll import Aegoll, FixedClock, Paths, Vendor
+    from tesoro import Tesoro, FixedClock, Paths, Vendor
 
-    a = Aegoll(
+    a = Tesoro(
         paths=Paths.ephemeral(".data-test-prices"),
         clock=FixedClock(datetime(2026, 8, 12, tzinfo=timezone.utc)),
     )

@@ -14,7 +14,7 @@ import sys
 
 import pytest
 
-from aegoll.cli import (
+from tesoro.cli import (
     EXIT_CHAIN,
     EXIT_INVALID,
     EXIT_OK,
@@ -39,7 +39,7 @@ def run(*args: str, cwd, expect: int | None = None):
     an in-process call.
     """
     result = subprocess.run(
-        [sys.executable, "-m", "aegoll.cli", *args],
+        [sys.executable, "-m", "tesoro.cli", *args],
         cwd=cwd,
         capture_output=True,
         text=True,
@@ -47,7 +47,7 @@ def run(*args: str, cwd, expect: int | None = None):
     )
     if expect is not None:
         assert result.returncode == expect, (
-            f"aegoll {' '.join(args)} exited {result.returncode}, expected {expect}\n"
+            f"tesoro {' '.join(args)} exited {result.returncode}, expected {expect}\n"
             f"{result.stdout}\n{result.stderr}"
         )
     return result
@@ -57,9 +57,9 @@ def _env():
     import os
     from pathlib import Path
 
-    import aegoll
+    import tesoro
 
-    src = str(Path(aegoll.__file__).resolve().parents[1])
+    src = str(Path(tesoro.__file__).resolve().parents[1])
     env = dict(os.environ)
     env["PYTHONPATH"] = src + os.pathsep + env.get("PYTHONPATH", "")
     env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -68,7 +68,7 @@ def _env():
 
 @pytest.fixture
 def project(tmp_path):
-    """An initialised project: `aegoll.yaml` plus a starter policy."""
+    """An initialised project: `tesoro.yaml` plus a starter policy."""
     run("init", cwd=tmp_path, expect=EXIT_OK)
     return tmp_path
 
@@ -163,7 +163,7 @@ def test_an_approval_exits_zero(project):
 
 
 def test_an_invalid_policy_exits_one(project):
-    """`aegoll check` in CI is the point of this code path."""
+    """`tesoro check` in CI is the point of this code path."""
     policy = project / "policies" / "default.yaml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace("then: REJECT", "then: NONSENSE", 1),
@@ -174,7 +174,7 @@ def test_an_invalid_policy_exits_one(project):
 
 
 def test_an_invalid_config_exits_one(project):
-    (project / "aegoll.yaml").write_text("profile: aegs-99\n", encoding="utf-8")
+    (project / "tesoro.yaml").write_text("profile: aegs-99\n", encoding="utf-8")
     result = run("check", cwd=project, expect=EXIT_INVALID)
     assert "aegs-99" in result.stdout
 
@@ -185,7 +185,7 @@ def test_a_broken_chain_exits_three(project):
         "decide", "--amount", "0.01", "--vendor", "acme", "--resource", "/market/snapshot",
         cwd=project, expect=EXIT_OK,
     )
-    journal = project / ".aegoll" / "audit.jsonl"
+    journal = project / ".tesoro" / "audit.jsonl"
     assert journal.is_file(), "no journal was written"
     lines = journal.read_text(encoding="utf-8").splitlines()
     tampered = lines[0].replace('"APPROVE"', '"REJECT"')
@@ -202,9 +202,9 @@ def test_a_broken_chain_exits_three(project):
 def test_init_then_check_works_from_an_empty_directory(tmp_path):
     """The whole first-run experience, in two commands."""
     result = run("init", cwd=tmp_path, expect=EXIT_OK)
-    assert (tmp_path / "aegoll.yaml").is_file()
+    assert (tmp_path / "tesoro.yaml").is_file()
     assert (tmp_path / "policies" / "default.yaml").is_file()
-    assert "aegoll check" in result.stdout, "init should say what to do next"
+    assert "tesoro check" in result.stdout, "init should say what to do next"
     run("check", cwd=tmp_path, expect=EXIT_OK)
 
 
@@ -217,7 +217,7 @@ def test_init_refuses_to_overwrite(project):
 
 def test_init_copies_the_policy_rather_than_referencing_the_package(project):
     """A config pointing into site-packages teaches people their policy is not theirs."""
-    config = (project / "aegoll.yaml").read_text(encoding="utf-8")
+    config = (project / "tesoro.yaml").read_text(encoding="utf-8")
     assert "policies/default.yaml" in config
     assert "site-packages" not in config
 
@@ -229,7 +229,7 @@ def test_check_names_the_active_profile(project):
 
 def test_check_says_so_loudly_when_the_profile_enforces_nothing(project):
     """A user who selected `none` and forgot is otherwise reading a meaningless green tick."""
-    path = project / "aegoll.yaml"
+    path = project / "tesoro.yaml"
     path.write_text(
         path.read_text(encoding="utf-8").replace("profile: aegs-1", "profile: none"),
         encoding="utf-8",
@@ -323,8 +323,8 @@ def test_decide_uses_the_pack_the_config_names(project):
     """The worst bug this tool can have, and it was live.
 
     `_aegl()` called `load_bundle()` with no path, which resolves to the *packaged* starter
-    pack. So a user could edit `policies/default.yaml`, watch `aegoll check` confirm the edit by
-    name and content hash, and then have `aegoll decide` govern the agent by entirely different
+    pack. So a user could edit `policies/default.yaml`, watch `tesoro check` confirm the edit by
+    name and content hash, and then have `tesoro decide` govern the agent by entirely different
     numbers — with nothing reporting a conflict, because nothing knew there was one.
 
     A governance layer quietly enforcing a policy other than the one on disk is worse than one
@@ -394,14 +394,14 @@ def test_the_configured_journal_path_is_honoured(project):
     """`evidence: journal:` was a setting that did nothing — no reader anywhere.
 
     A user could point it at `logs/spend.jsonl`, get no error, and find their evidence in
-    `./.aegoll` instead. Honouring the *filename* matters as much as the directory: writing
+    `./.tesoro` instead. Honouring the *filename* matters as much as the directory: writing
     `audit.jsonl` into the named folder would satisfy half the setting, and the file they asked
     for would still never appear.
     """
-    config = project / "aegoll.yaml"
+    config = project / "tesoro.yaml"
     config.write_text(
         config.read_text(encoding="utf-8").replace(
-            "journal: .aegoll/audit.jsonl", "journal: logs/spend.jsonl"
+            "journal: .tesoro/audit.jsonl", "journal: logs/spend.jsonl"
         ),
         encoding="utf-8",
     )
@@ -411,7 +411,7 @@ def test_the_configured_journal_path_is_honoured(project):
     assert (project / "logs" / "spend.jsonl").is_file(), (
         "the configured journal path was ignored; evidence went somewhere else"
     )
-    assert not (project / ".aegoll" / "audit.jsonl").exists(), (
+    assert not (project / ".tesoro" / "audit.jsonl").exists(), (
         "evidence was also written to the default path -- two journals means neither is the "
         "record"
     )
@@ -437,7 +437,7 @@ def test_report_html_writes_a_self_contained_file(project):
 
 
 def test_report_html_defaults_to_stdout(project):
-    """So it pipes. `aegoll report --html > spend.html` should work without a flag, because
+    """So it pipes. `tesoro report --html > spend.html` should work without a flag, because
     that is what everything else on a shell does."""
     page = run("report", "--html", cwd=project, expect=EXIT_OK).stdout
     assert page.lstrip().startswith("<!DOCTYPE html>")
@@ -487,7 +487,7 @@ def test_report_carries_both_version_lines(project):
     """A record that does not say which spec and which implementation produced it cannot
     be audited later."""
     data = json.loads(run("report", "--json", cwd=project, expect=EXIT_OK).stdout)
-    assert data["versions"]["aegoll"]
+    assert data["versions"]["tesoro"]
     assert data["versions"]["aegs"]
 
 
@@ -532,7 +532,7 @@ def test_the_read_only_commands_do_not_write(project):
         "decide", "--amount", "0.01", "--vendor", "acme", "--resource", "/market/snapshot",
         cwd=project, expect=EXIT_OK,
     )
-    journal = project / ".aegoll" / "audit.jsonl"
+    journal = project / ".tesoro" / "audit.jsonl"
     before = journal.read_bytes()
     for command in ("report", "audit", "conformance", "policy"):
         run(command, cwd=project)

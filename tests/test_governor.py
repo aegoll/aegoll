@@ -2,12 +2,12 @@
 
 Two things these tests are for.
 
-**That the documented surface exists and works.** It did not: `from aegoll import Governor`
+**That the documented surface exists and works.** It did not: `from tesoro import Governor`
 returned the internal rules evaluator, so the README's own opening snippet raised
 `AttributeError` on its third line. A public API described in a document and absent from the
 package is worse than an undocumented one, because the document is what a new user trusts.
 
-**That it stays a facade.** Every method here delegates to `Aegoll`. The moment one of them
+**That it stays a facade.** Every method here delegates to `Tesoro`. The moment one of them
 starts deciding, converting money or writing evidence, there are two decision paths and only one
 is the tested one — so `test_the_facade_does_not_decide_anything` checks the calls line up rather
 than merely that the answers look plausible.
@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import pytest
 
-from aegoll import Governor
-from aegoll.domain import Verdict
+from tesoro import Governor
+from tesoro.domain import Verdict
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def test_the_documented_snippet_runs(gov):
 
 
 def test_load_works_with_no_config_at_all(tmp_path, monkeypatch):
-    """`pip install aegoll` then `Governor.load()` must not be a stack trace.
+    """`pip install tesoro` then `Governor.load()` must not be a stack trace.
 
     A missing config is not an error — the packaged starter pack and the defaults are a working
     configuration. The first thing a new user tries is the one that most needs to work.
@@ -75,7 +75,7 @@ def test_load_honours_the_config_it_is_given(tmp_path, monkeypatch):
     """And an explicitly named config that cannot be read is a real error, unlike an absent
     one: the caller asked for a specific file."""
     monkeypatch.chdir(tmp_path)
-    from aegoll.errors import ConfigError
+    from tesoro.errors import ConfigError
 
     with pytest.raises(ConfigError):
         Governor.load(tmp_path / "nope.yaml")
@@ -85,7 +85,7 @@ def test_two_projects_in_one_process_do_not_share_a_journal(tmp_path, monkeypatc
     """Evidence location was frozen at import time, and for a layer that counts money that is
     not a cosmetic bug.
 
-    `DATA_DIR = Path.cwd() / ".aegoll"` was evaluated when the module was imported and captured
+    `DATA_DIR = Path.cwd() / ".tesoro"` was evaluated when the module was imported and captured
     in `Paths.under()`'s default argument. So a process that changed directory kept writing to
     the journal it started with, and two governors loaded from different directories shared one
     — meaning **one agent's spending consumed the other's envelopes**.
@@ -110,8 +110,8 @@ def test_two_projects_in_one_process_do_not_share_a_journal(tmp_path, monkeypatc
         )
         assert g2.report().decisions_total == 0
 
-    assert (first / ".aegoll").is_dir()
-    assert (second / ".aegoll").is_dir(), "the second project wrote outside its own directory"
+    assert (first / ".tesoro").is_dir()
+    assert (second / ".tesoro").is_dir(), "the second project wrote outside its own directory"
 
 
 def test_it_is_a_context_manager(tmp_path, monkeypatch):
@@ -328,7 +328,7 @@ def test_wrap_refuses_an_object_that_cannot_pay_and_says_what_is_missing(gov):
 
 
 def test_the_facade_does_not_decide_anything():
-    """Every decision goes through `Aegoll`, so there is one decision path and it is the tested
+    """Every decision goes through `Tesoro`, so there is one decision path and it is the tested
     one.
 
     An AST check rather than a behavioural one: two paths that agree today would diverge on the
@@ -337,9 +337,9 @@ def test_the_facade_does_not_decide_anything():
     import ast
     from pathlib import Path
 
-    import aegoll
+    import tesoro
 
-    source = Path(aegoll.__file__).parent / "governor.py"
+    source = Path(tesoro.__file__).parent / "governor.py"
     tree = ast.parse(source.read_text(encoding="utf-8"))
 
     banned = {"evaluate_rules", "usd_to_atomic_unchecked", "_deciding_engine"}
@@ -356,9 +356,9 @@ def test_the_facade_imports_no_framework():
     import ast
     from pathlib import Path
 
-    import aegoll
+    import tesoro
 
-    source = Path(aegoll.__file__).parent / "governor.py"
+    source = Path(tesoro.__file__).parent / "governor.py"
     banned = {"anthropic", "openai", "langgraph", "crewai", "streamlit", "google"}
     for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
         names = []
@@ -371,21 +371,21 @@ def test_the_facade_imports_no_framework():
 
 
 def test_governor_is_what_the_package_exports():
-    """The whole reason this module exists. `from aegoll import Governor` returned the internal
+    """The whole reason this module exists. `from tesoro import Governor` returned the internal
     rules evaluator, which has no `load`, no `wrap` and no keyword `authorize`."""
-    import aegoll
+    import tesoro
 
-    assert aegoll.Governor is Governor
+    assert tesoro.Governor is Governor
     for method in ("load", "from_config", "authorize", "settle", "wrap", "report", "close"):
-        assert hasattr(aegoll.Governor, method), f"Governor has no {method}()"
+        assert hasattr(tesoro.Governor, method), f"Governor has no {method}()"
 
 
 def test_the_rules_evaluator_is_no_longer_called_governor():
     """It evaluates rules; it does not govern. Sharing the name is what made the documented
     surface unreachable."""
-    from aegoll.authorize import RuleEngine
+    from tesoro.authorize import RuleEngine
 
     assert RuleEngine.__name__ == "RuleEngine"
-    import aegoll
+    import tesoro
 
-    assert aegoll.Governor is not RuleEngine
+    assert tesoro.Governor is not RuleEngine

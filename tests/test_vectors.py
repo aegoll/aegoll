@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pytest
 
-from aegoll.domain import atomic_to_usd, usd_to_atomic
+from tesoro.domain import atomic_to_usd, usd_to_atomic
 
 #: The vendored copy, pinned. Always present, so the suite always runs.
 VENDORED = Path(__file__).resolve().parent / "_vectors"
@@ -80,7 +80,7 @@ def _evaluate_envelopes(data: dict) -> dict:
     other channel's state having no path into this evaluation at all. A runner that read it
     and then carefully declined to use it would be proving something weaker.
     """
-    from aegoll.domain import CountEnvelope, Envelope
+    from tesoro.domain import CountEnvelope, Envelope
 
     amount = data.get("amountAtomic", 0)
     repeat = data.get("repeat", 1)
@@ -149,7 +149,7 @@ def _resolve_verdict(data: dict) -> dict:
     `authorize.decide()` computes it: a proposal is attributed only when applying it
     actually changes the standing verdict. Equality is not narrowing -- see VERD-4.
     """
-    from aegoll.domain import Verdict, narrower
+    from tesoro.domain import Verdict, narrower
 
     standing_name = data.get("standing")
     # `noRuleMatched` means nothing produced a verdict, and VERD-8 says the fall-through
@@ -216,7 +216,7 @@ def _canonical(payload: dict) -> str:
 
 def _build_chain(entries: list[dict]) -> list[dict]:
     """Build a real chain with real hashes, using this implementation's hash function."""
-    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+    from tesoro.engines.evidence.audit import GENESIS, _hash_entry
 
     built, prev = [], GENESIS
     for spec in entries:
@@ -237,7 +237,7 @@ def _tamper(chain: list[dict], spec: dict) -> list[dict]:
     local. `truncate` is the exception — it needs no recomputation at all, which is why it is
     undetectable and why EVID-6 requires disclosure instead of a fix.
     """
-    from aegoll.engines.evidence.audit import _hash_entry
+    from tesoro.engines.evidence.audit import _hash_entry
 
     kind = spec["kind"]
     chain = [dict(e) for e in chain]
@@ -267,7 +267,7 @@ def _tamper(chain: list[dict], spec: dict) -> list[dict]:
 
 def _verify_chain(chain: list[dict]) -> tuple[bool, list[str], list[str]]:
     """Walk a chain the way `AuditLog.verify()` does, reporting every problem. EVID-7."""
-    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+    from tesoro.engines.evidence.audit import GENESIS, _hash_entry
 
     problems: list[str] = []
     kinds: list[str] = []
@@ -294,7 +294,7 @@ def _verify_chain(chain: list[dict]) -> tuple[bool, list[str], list[str]]:
 
 
 def _evidence(operation: str, data: dict) -> dict:
-    from aegoll.engines.evidence.audit import GENESIS, _hash_entry
+    from tesoro.engines.evidence.audit import GENESIS, _hash_entry
 
     if operation == "canonical_serialise":
         return {"canonical": _canonical(data["payload"])}
@@ -334,8 +334,8 @@ def _evidence(operation: str, data: dict) -> dict:
 
 
 def _classify_state(data: dict) -> dict:
-    """AEGS-0.1-STATE-*. Drives `aegoll.states`, which is what the profile scorer reads."""
-    from aegoll.states import classify_state
+    """AEGS-0.1-STATE-*. Drives `tesoro.states`, which is what the profile scorer reads."""
+    from tesoro.states import classify_state
 
     return {"state": classify_state(data["record"], data["field"])}
 
@@ -348,7 +348,7 @@ def _defined_controls() -> frozenset[str]:
     "which controls are defined" -- and a vector that compared against a list written here
     would pass even if the manifest lost one.
     """
-    from aegoll.profiles import Profile
+    from tesoro.profiles import Profile
 
     return frozenset(r.control for r in Profile.load("none").requirements)
 
@@ -370,7 +370,7 @@ def _clamp_delegation(data: dict) -> dict:
     over the chain; naming which step produced it is what makes the clamp explicable to whoever
     has to ask why a payment was refused.
     """
-    from aegoll.engines.evidence.identity import narrower_limit
+    from tesoro.engines.evidence.identity import narrower_limit
 
     effective = None
     limited_by = None
@@ -382,7 +382,7 @@ def _clamp_delegation(data: dict) -> dict:
     return {"effectiveAtomic": effective, "limitedBy": limited_by}
 
 
-def _spec_identity_to_aegoll(spec: dict) -> dict:
+def _spec_identity_to_tesoro(spec: dict) -> dict:
     """Translate a vector's identity into this implementation's field shapes.
 
     Mapped here for the same reason `_categorise` maps refusal wording: the vector states what
@@ -409,15 +409,15 @@ def _spec_identity_to_aegoll(spec: dict) -> dict:
 
 def _disclose(data: dict) -> dict:
     """AEGS-0.1-ID-2/ID-3, through the real `Identity.disclose` filter."""
-    from aegoll.engines.evidence.identity import Identity
+    from tesoro.engines.evidence.identity import Identity
 
-    identity = Identity.from_dict(_spec_identity_to_aegoll(data["identity"]))
+    identity = Identity.from_dict(_spec_identity_to_tesoro(data["identity"]))
     return {"disclosed": identity.disclose(data["audience"])}
 
 
 def _evaluate_profile(data: dict) -> dict:
     """AEGS-0.1-PROF-*, against the manifests the package actually ships."""
-    from aegoll.profiles import RANK, Profile
+    from tesoro.profiles import RANK, Profile
 
     out: dict = {}
 
@@ -865,11 +865,11 @@ def test_the_real_pipeline_attributes_the_way_the_spec_says():
     """
     import tempfile
 
-    from aegoll import record as record_mod
-    from aegoll.config import load_bundle
-    from aegoll.domain import Purpose, Vendor, Verdict, narrower
-    from aegoll.record import CLAMP_ORIGIN, DISPOSITIVE_CONTROLS
-    from aegoll.runtime import Aegoll, Paths
+    from tesoro import record as record_mod
+    from tesoro.config import load_bundle
+    from tesoro.domain import Purpose, Vendor, Verdict, narrower
+    from tesoro.record import CLAMP_ORIGIN, DISPOSITIVE_CONTROLS
+    from tesoro.runtime import Tesoro, Paths
 
     def control_of(reason: dict) -> str:
         if reason["source"] == "authorize":
@@ -886,7 +886,7 @@ def test_the_real_pipeline_attributes_the_way_the_spec_says():
     ]
 
     for label, amount, vendor in cases:
-        layer = Aegoll(
+        layer = Tesoro(
             bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="attr"
         )
         try:
@@ -923,7 +923,7 @@ def test_the_real_pipeline_attributes_the_way_the_spec_says():
 
 def test_the_dispositive_set_is_declared():
     """VERD-4a requires the set and its precedence to be documented, not merely behaved."""
-    from aegoll.record import DISPOSITIVE_CONTROLS
+    from tesoro.record import DISPOSITIVE_CONTROLS
 
     assert DISPOSITIVE_CONTROLS == ("sanctions",), DISPOSITIVE_CONTROLS
 

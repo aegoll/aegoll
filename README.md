@@ -1,23 +1,23 @@
-# aegoll
+# tesoro
 
 **Know what your autonomous agent spends, cap it across time, and be able to prove why
 anything was refused.**
 
-`aegoll` is an *Autonomous Economic Governance Layer* (AEGL): it sits between an agent and
+`tesoro` is an *Autonomous Economic Governance Layer* (AEGL): it sits between an agent and
 every dollar it spends — the tokens it burns thinking and the money it pays out — and
 decides, before the payment, whether it should happen. Ten deterministic engines, no model
 in the decision path, an append-only hash-chained record of every decision and the control
 that made it.
 
 ```bash
-pip install aegoll
-aegoll init
+pip install tesoro
+tesoro init
 ```
 
 ```python
-from aegoll import Governor
+from tesoro import Governor
 
-gov = Governor.load()                     # reads ./aegoll.yaml
+gov = Governor.load()                     # reads ./tesoro.yaml
 decision = gov.authorize(amount_usd="2.50", vendor="acme", resource="/market/snapshot")
 
 if decision.approved:
@@ -30,27 +30,27 @@ else:
 Or from the terminal, which is the same layer and the same evidence:
 
 ```bash
-aegoll check                                    # validate before an agent holds a wallet
-aegoll decide --amount 2.50 --vendor acme --resource /market/snapshot
+tesoro check                                    # validate before an agent holds a wallet
+tesoro decide --amount 2.50 --vendor acme --resource /market/snapshot
 echo $?                                         # 0 approved · 2 refused · 1 invalid · 3 chain · 4 usage
-aegoll report --html -o spend.html              # one self-contained page, no server
+tesoro report --html -o spend.html              # one self-contained page, no server
 ```
 
-Start with [`docs/quickstart.md`](https://github.com/aegoll/aegoll/blob/main/docs/quickstart.md).
+Start with [`docs/quickstart.md`](https://github.com/aegoll/tesoro/blob/main/docs/quickstart.md).
 
 > **Status: pre-release.** Nothing is published yet. Ported from a working prototype and now
 > at **597 tests**, a 7/7 [AEGS](https://github.com/aegoll/aegs) conformance score with both
 > levels claimable, and **151 specification test vectors executing** against 56 normative
-> clauses. See [`PLAN.md`](https://github.com/aegoll/aegoll/blob/main/PLAN.md) and [`CHANGELOG.md`](https://github.com/aegoll/aegoll/blob/main/CHANGELOG.md).
+> clauses. See [`PLAN.md`](https://github.com/aegoll/tesoro/blob/main/PLAN.md) and [`CHANGELOG.md`](https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md).
 
 ---
 
 ## A cap on one payment is not a budget
 
-Per-payment caps are becoming table stakes; the x402 SDKs now ship one. `aegoll` is about
+Per-payment caps are becoming table stakes; the x402 SDKs now ship one. `tesoro` is about
 what a single cap cannot express:
 
-| | A per-payment cap | `aegoll` |
+| | A per-payment cap | `tesoro` |
 |---|---|---|
 | One transaction too large | ✅ | ✅ |
 | Cumulative spend over a day, a month, a window | — | ✅ |
@@ -99,7 +99,7 @@ These are not preferences. Each is enforced by a test.
 
 ## AEGS
 
-`aegoll` is a **policy-engine host**. [AEGS](https://github.com/aegoll/aegs) — the
+`tesoro` is a **policy-engine host**. [AEGS](https://github.com/aegoll/aegs) — the
 Autonomous Economic Governance Standard — is one *profile* it can enforce, and the default.
 Pick it and your agent emits conformant, scoreable Decision Records without your ever having
 read the specification.
@@ -112,18 +112,18 @@ by you.
 
 | | |
 |---|---|
-| [`aegoll`](https://github.com/aegoll/aegoll) | this package |
+| [`tesoro`](https://github.com/aegoll/tesoro) | this package |
 | [`aegs`](https://github.com/aegoll/aegs) | the standard: spec, schemas, vectors, conformance |
-| [`aegoll-integrations`](https://github.com/aegoll/aegoll-integrations) | example agents, frameworks, use cases |
+| [`tesoro-integrations`](https://github.com/aegoll/tesoro-integrations) | example agents, frameworks, use cases |
 | [`Jayzilva/x402`](https://github.com/Jayzilva/x402) | the proof-of-concept this grew from. Read-only |
 
 ## Documentation
 
-- [`docs/quickstart.md`](https://github.com/aegoll/aegoll/blob/main/docs/quickstart.md) — governing an agent from nothing, in about five minutes
-- [`docs/api-surface.md`](https://github.com/aegoll/aegoll/blob/main/docs/api-surface.md) — the public API, and what is deliberately not public
-- [`docs/adapters.md`](https://github.com/aegoll/aegoll/blob/main/docs/adapters.md) — framework and rail adapters, and what is verified about each
-- [`PLAN.md`](https://github.com/aegoll/aegoll/blob/main/PLAN.md) — the build plan, as tracked checkboxes
-- [`PROVENANCE.md`](https://github.com/aegoll/aegoll/blob/main/PROVENANCE.md) — what was ported from the prototype, and from which commit
+- [`docs/quickstart.md`](https://github.com/aegoll/tesoro/blob/main/docs/quickstart.md) — governing an agent from nothing, in about five minutes
+- [`docs/api-surface.md`](https://github.com/aegoll/tesoro/blob/main/docs/api-surface.md) — the public API, and what is deliberately not public
+- [`docs/adapters.md`](https://github.com/aegoll/tesoro/blob/main/docs/adapters.md) — framework and rail adapters, and what is verified about each
+- [`PLAN.md`](https://github.com/aegoll/tesoro/blob/main/PLAN.md) — the build plan, as tracked checkboxes
+- [`PROVENANCE.md`](https://github.com/aegoll/tesoro/blob/main/PROVENANCE.md) — what was ported from the prototype, and from which commit
 
 ## What is not established
 

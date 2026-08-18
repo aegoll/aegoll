@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aegoll"
-version = "0.1.1"
+name = "tesoro"
+version = "0.1.0"
 description = "Autonomous Economic Governance Layer — decide, cap and prove what an autonomous agent spends"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -43,7 +43,7 @@ x402 = ["x402[evm,httpx]>=2.18.0"]
 
 # Framework adapters. Each governs the *internal* channel -- the tokens an agent
 # burns thinking -- and each is optional because nobody pays for a dependency they
-# do not use. The adapters import nothing at module level, so `aegoll.adapters.base`
+# do not use. The adapters import nothing at module level, so `tesoro.adapters.base`
 # works with no extra installed at all; these pin the SDK the adapter is written
 # against so a version that moves the hook is a resolvable conflict rather than an
 # AttributeError at run time.
@@ -64,27 +64,27 @@ advisors = ["anthropic>=0.40", "openai>=1.50", "google-genai>=0.3", "groq>=0.13"
 dev = ["pytest>=8.0", "build>=1.2", "twine>=5.0", "jsonschema>=4.20"]
 
 [project.scripts]
-aegoll = "aegoll.cli:main"
+tesoro = "tesoro.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aegoll/aegoll"
+Homepage = "https://github.com/aegoll/tesoro"
 Standard = "https://github.com/aegoll/aegs"
-Examples = "https://github.com/aegoll/aegoll-integrations"
-Changelog = "https://github.com/aegoll/aegoll/blob/main/CHANGELOG.md"
+Examples = "https://github.com/aegoll/tesoro-integrations"
+Changelog = "https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md"
 
 # src/ layout. The prototype used a flat one, which hid eleven places where the
 # package resolved paths outside itself -- see PLAN.md F-A1. A src/ layout makes
 # "works in the source tree, broken in the wheel" fail immediately instead.
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["aegoll*"]
+include = ["tesoro*"]
 
 # Starter policies and the vendored AEGS schemas ship inside the package and are
 # read through importlib.resources. If this stanza is wrong the wheel installs
 # without them and `Governor.load()` fails on a fresh install -- which is exactly
 # what tests/test_paths.py checks.
 [tool.setuptools.package-data]
-aegoll = [
+tesoro = [
     "policies/*.yaml",
     "policies/*.json",
     "_schemas/*.json",

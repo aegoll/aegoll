@@ -4,14 +4,14 @@ The primary surface. Non-interactive, scriptable, meaningful exit codes — `--j
 command, because a CLI without machine output is a CLI nobody scripts.
 
 ```bash
-aegoll init            # scaffold aegoll.yaml and a starter policy
-aegoll check           # validate before an agent holds a wallet
-aegoll policy explain  # what will this policy actually do?
-aegoll decide ...      # one decision, full engine breakdown
-aegoll report          # what was spent, what was refused, and why
-aegoll report --html   # the same, as one self-contained page
-aegoll conformance     # were the profile's required controls exercised?
-aegoll audit           # verify the evidence chain
+tesoro init            # scaffold tesoro.yaml and a starter policy
+tesoro check           # validate before an agent holds a wallet
+tesoro policy explain  # what will this policy actually do?
+tesoro decide ...      # one decision, full engine breakdown
+tesoro report          # what was spent, what was refused, and why
+tesoro report --html   # the same, as one self-contained page
+tesoro conformance     # were the profile's required controls exercised?
+tesoro audit           # verify the evidence chain
 ```
 
 ---
@@ -34,16 +34,16 @@ as a crash has misread the tool. The distinction from `1` is the one that matter
 a typo would read as a governance decision, and that is the worst confusion this particular
 tool could hand someone.
 
-## `aegoll init`
+## `tesoro init`
 
-Writes `aegoll.yaml` and `policies/default.yaml` into the working directory. Refuses to
+Writes `tesoro.yaml` and `policies/default.yaml` into the working directory. Refuses to
 overwrite without `--force`: a policy file decides whether money moves, and clobbering one
 on a mistyped command is not a risk worth the convenience.
 
 The starter policy is **copied out**, not referenced in place. A config pointing at a file
 inside `site-packages` teaches people their policy is not theirs to change.
 
-## `aegoll check`
+## `tesoro check`
 
 Validates the config **and** the policy pack it points at, reports every problem rather
 than the first, and exits `1` if anything is wrong.
@@ -52,13 +52,13 @@ The quiet win: a policy change that would refuse everything, or allow everything
 build **before** it reaches an agent holding a wallet.
 
 ```bash
-aegoll check                # human-readable
-aegoll check --json         # for CI
-aegoll check --controls     # also list what the active profile requires
+tesoro check                # human-readable
+tesoro check --json         # for CI
+tesoro check --controls     # also list what the active profile requires
 ```
 
 ```
-config : /srv/agent/aegoll.yaml
+config : /srv/agent/tesoro.yaml
 profile: aegs-1  7 required control(s)
 policy : default  a5a64aeb69dbc5f9  12 rules
 
@@ -68,7 +68,7 @@ ok
 A profile of `none` is called out explicitly — a user who selected it and forgot is
 otherwise reading a green check that guarantees nothing.
 
-## `aegoll policy explain`
+## `tesoro policy explain`
 
 What a policy would do, rule by rule, in **evaluation order**. Priority order *is*
 evaluation order and the first match is terminal, so reading top to bottom is reading the
@@ -89,19 +89,19 @@ Resolves the pack **your config names**, not the packaged starter. An earlier ve
 back to the default whenever `--policy` was absent, so it cheerfully explained a policy the
 agent was not using — worse than explaining nothing.
 
-## `aegoll decide`
+## `tesoro decide`
 
 One decision, with the full engine breakdown. Exits `2` on any refusal.
 
 ```bash
-aegoll decide --amount 2.50 --vendor acme --resource /market/snapshot
-aegoll decide --amount 2.50 --vendor acme --resource /x --dry-run   # decide, journal nothing
+tesoro decide --amount 2.50 --vendor acme --resource /market/snapshot
+tesoro decide --amount 2.50 --vendor acme --resource /x --dry-run   # decide, journal nothing
 ```
 
 `--dry-run` uses an ephemeral store, so nothing is recorded and no envelope moves. Useful
 for "what would happen if" without polluting the evidence.
 
-## `aegoll report`
+## `tesoro report`
 
 The four questions an agent developer asks at 2am, in that order.
 
@@ -146,8 +146,8 @@ not exit `0`.
 ### `--html` — the same report as a page
 
 ```
-aegoll report --html -o spend.html     # write a file
-aegoll report --html > spend.html      # or pipe; stdout is the default
+tesoro report --html -o spend.html     # write a file
+tesoro report --html > spend.html      # or pipe; stdout is the default
 ```
 
 One self-contained HTML file: four panels, no server, no port, no listener, and **no
@@ -159,7 +159,7 @@ and every call that can reach the network.
 
 It is an **artifact**, not an app. You can attach it to a ticket or mail it to whoever asks
 why the agent stopped, which is most of the value of a dashboard without any of its attack
-surface. A live view is `aegoll serve` in 0.2, and it will feed *this same renderer* rather
+surface. A live view is `tesoro serve` in 0.2, and it will feed *this same renderer* rather
 than a second template — `render()` takes a `Report`, so there is nothing transport-specific
 in it to duplicate.
 
@@ -187,14 +187,14 @@ a user who passes both has a wrong expectation about one of them. `-o` without `
 likewise an error, because accepting it and ignoring it would discard the file they asked
 for.
 
-## `aegoll conformance`
+## `tesoro conformance`
 
 Were the controls the active profile requires actually exercised, given the decisions in
 the journal?
 
 ```bash
-aegoll conformance                    # profile from config
-aegoll conformance --profile aegs-2   # score against a different one
+tesoro conformance                    # profile from config
+tesoro conformance --profile aegs-2   # score against a different one
 ```
 
 This is **evidence completeness**, not the full standard. The AEGS-CONF suite is a separate
@@ -209,14 +209,14 @@ Exits `1` when any record is non-conformant, and names the finding:
 this control and the record does not show it ran.
 ```
 
-## `aegoll audit` · `aegoll replay`
+## `tesoro audit` · `tesoro replay`
 
 `audit` verifies the hash chain and exits `3` if it is broken. `replay` re-decides every
 journalled decision and checks the verdicts come out identical — the determinism guarantee,
 checked rather than asserted. A model in the decision path would make `replay` impossible,
 which is one of the reasons there isn't one.
 
-## `aegoll bench`
+## `tesoro bench`
 
 Measures decision latency on **your** hardware. No framework, no key, no money.
 
@@ -231,7 +231,7 @@ Kept in the shipped CLI deliberately, against an earlier plan to move it out: it
 substantiates the layer's central performance claim, and a core claim belongs where the
 user already is rather than in another repository.
 
-## `aegoll record` · `aegoll intent` · `aegoll identity` · `aegoll reviews` · `aegoll policies`
+## `tesoro record` · `tesoro intent` · `tesoro identity` · `tesoro reviews` · `tesoro policies`
 
 - **`record`** — emit or validate AEGS Decision Records. `--validate` is the interoperability surface: another implementation can check its own exported records against the schema without sharing any of this code.
 - **`intent`** — declare, list or revoke an economic intent. What the agent was *sent to do*, declared before it acts.
@@ -244,8 +244,8 @@ user already is rather than in another repository.
 On every command, and accepted **both** before and after the subcommand:
 
 ```bash
-aegoll report --json
-aegoll --json report      # identical
+tesoro report --json
+tesoro --json report      # identical
 ```
 
 Both work because both are what people type. The second needed an explicit fix — argparse
@@ -257,4 +257,4 @@ were added. Caught by a test rather than by a user.
 
 - **Mutate anything from a report.** `report`, `audit`, `conformance` and `policy explain` are read-only.
 - **Print a key.** Ever. Masked display is the only path, and `check` refuses a key in the config file outright.
-- **Bind a network port.** That is `aegoll serve`, which is separate, optional, and `127.0.0.1` only.
+- **Bind a network port.** That is `tesoro serve`, which is separate, optional, and `127.0.0.1` only.

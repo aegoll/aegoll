@@ -123,7 +123,7 @@ def test_there_is_no_top_level_module_for_an_engine(engine):
     files that had become shims, so it passed while checking nothing.
     """
     assert not (PACKAGE / f"{engine}.py").exists(), (
-        f"aegoll/{engine}.py is back. An engine lives in its family and nowhere else; "
+        f"tesoro/{engine}.py is back. An engine lives in its family and nowhere else; "
         "a compatibility shim for zero published users is pure carrying cost."
     )
 
@@ -136,11 +136,11 @@ def test_the_engine_is_importable_from_its_family(engine):
     import importlib
 
     family = next(f for f, names in FAMILIES.items() if engine in names)
-    real = importlib.import_module(f"aegoll.engines.{family}.{engine}")
+    real = importlib.import_module(f"tesoro.engines.{family}.{engine}")
     assert [n for n in dir(real) if not n.startswith("_")], f"{engine} exports nothing"
 
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module(f"aegoll.{engine}")
+        importlib.import_module(f"tesoro.{engine}")
 
 
 # --- the purity claim survives the move -----------------------------------

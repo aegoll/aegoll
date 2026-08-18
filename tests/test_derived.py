@@ -17,12 +17,12 @@ import tempfile
 import pytest
 import yaml
 
-from aegoll.config import COMBINATORS, load_bundle
-from aegoll.domain import Purpose, Vendor
-from aegoll.engines.economic.policy import apply_derived
-from aegoll.errors import PolicyError
-from aegoll.runtime import Aegoll, Paths
-from aegoll.validate import validate_pack
+from tesoro.config import COMBINATORS, load_bundle
+from tesoro.domain import Purpose, Vendor
+from tesoro.engines.economic.policy import apply_derived
+from tesoro.errors import PolicyError
+from tesoro.runtime import Tesoro, Paths
+from tesoro.validate import validate_pack
 
 
 def pack(**over):
@@ -59,7 +59,7 @@ def test_a_derived_fact_is_parsed_and_evaluated(tmp_path):
     bundle = load_bundle(write(tmp_path, raw))
     assert [(d.name, d.combinator) for d in bundle.derived] == [("big", "all")]
 
-    layer = Aegoll(bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="d")
+    layer = Tesoro(bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="d")
     try:
         for amount, expected in (("0.10", "APPROVE"), ("2.50", "REJECT")):
             request = layer.build_request(
@@ -86,7 +86,7 @@ def test_a_derived_fact_may_reference_an_earlier_one(tmp_path):
     )
     assert errors(raw) == []
     bundle = load_bundle(write(tmp_path, raw))
-    layer = Aegoll(bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="d")
+    layer = Tesoro(bundle=bundle, paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="d")
     try:
         request = layer.build_request(
             resource="/market/snapshot",
@@ -115,7 +115,7 @@ def test_a_derived_fact_may_reference_an_earlier_one(tmp_path):
     ],
 )
 def test_each_combinator(combinator, clauses, facts, expected):
-    from aegoll.config import Derived, PolicyBundle
+    from tesoro.config import Derived, PolicyBundle
 
     bundle = PolicyBundle(
         version=1, name="t", treasury=None, treasury_internal=None, trust=None,
@@ -131,7 +131,7 @@ def test_apply_derived_does_not_mutate_the_engine_facts():
     Keeping "the facts a rule matched" separable from "the measurements the engines took"
     is what lets a record report the second honestly.
     """
-    from aegoll.config import Derived, PolicyBundle
+    from tesoro.config import Derived, PolicyBundle
 
     bundle = PolicyBundle(
         version=1, name="t", treasury=None, treasury_internal=None, trust=None,
@@ -145,7 +145,7 @@ def test_apply_derived_does_not_mutate_the_engine_facts():
 
 
 def test_a_pack_with_no_derived_facts_is_untouched():
-    from aegoll.config import PolicyBundle
+    from tesoro.config import PolicyBundle
 
     bundle = PolicyBundle(
         version=1, name="t", treasury=None, treasury_internal=None, trust=None,

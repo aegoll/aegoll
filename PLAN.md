@@ -1,4 +1,4 @@
-# `aegoll` — sub-plan
+# `tesoro` — sub-plan
 
 **The Python package.** An Autonomous Economic Governance Layer that installs in one
 line, configures in one file, and runs from a CLI.
@@ -6,7 +6,7 @@ line, configures in one file, and runs from a CLI.
 Master plan: [`../PLAN.md`](../PLAN.md) · Context and rules: [`../CONTEXT.md`](../CONTEXT.md)
 Port source (**read-only**): `../x402/aegl/` (10,533 LOC, 249 tests, all green) — [`../x402-REFERENCE.md`](../x402-REFERENCE.md)
 
-**Positioning:** `aegoll` is a **policy-engine host**. AEGS is one *profile* it can
+**Positioning:** `tesoro` is a **policy-engine host**. AEGS is one *profile* it can
 enforce. The Decision Records and the conformance level are what it produces, mentioned
 second.
 
@@ -16,7 +16,7 @@ second.
 > (`maxAmountPerPayment` over `allowedAssets`, client-side, per-payment) in TypeScript,
 > Python and Go — see [F3](../UPSTREAM-x402.md).
 >
-> **A cap on one payment is not a budget.** What `aegoll` adds on top of that baseline:
+> **A cap on one payment is not a budget.** What `tesoro` adds on top of that baseline:
 > **cumulative envelopes over time windows**, per-vendor and per-resource ceilings,
 > velocity, trust, intent, **attribution of which control decided**, **hash-chained
 > evidence**, policy as a versioned file rather than a constructor argument, and a
@@ -32,9 +32,9 @@ second.
 
 Irreversible once published. Nothing else starts until these are answers, not opinions.
 
-- [x] A0.1 **`aegoll` is free on PyPI** — `pypi.org/pypi/aegoll/json` → 404, checked 2026-08-17
-- [x] A0.2 **`aegoll` free on npm** (404) and **`@aegoll/core` free** (404), checked 2026-08-17
-- [x] A0.3 Import name `import aegoll`, matching the distribution name. No `aegl` alias published
+- [x] A0.1 **`tesoro` is free on PyPI** — `pypi.org/pypi/tesoro/json` → 404, checked 2026-08-17
+- [x] A0.2 **`tesoro` free on npm** (404) and **`@tesoro/core` free** (404), checked 2026-08-17
+- [x] A0.3 Import name `import tesoro`, matching the distribution name. No `aegl` alias published
 - [x] A0.4 Licence: **Apache-2.0** for code — already the `LICENSE` in all three repos. The patent grant matters for anything with standards ambition
 
 > **Found — one name is taken, and it is not the one that matters.** `aegs` **exists on
@@ -43,9 +43,9 @@ Irreversible once published. Nothing else starts until these are answers, not op
 > conformance suite, and **`aegs-conformance` is free** (checked, 404). No rename needed —
 > but never write `pip install aegs` in any document, because it installs a stranger's
 > package.
-- [x] A0.5 **Config format: `aegoll.yaml`, with `aegoll.json` accepted everywhere YAML is.** One loader, one schema, two syntaxes. No TOML — the vision says "YAML or JSON", and a third parser buys nothing but a third set of docs
+- [x] A0.5 **Config format: `tesoro.yaml`, with `tesoro.json` accepted everywhere YAML is.** One loader, one schema, two syntaxes. No TOML — the vision says "YAML or JSON", and a third parser buys nothing but a third set of docs
 - [x] A0.6 **Public API written before it exists** — [`docs/api-surface.md`](docs/api-surface.md)
-- [x] A0.7 Two version lines: `aegoll.__version__` (semver) and `aegoll.AEGS_VERSION` (spec). Both stamped in every Decision Record and every conformance declaration
+- [x] A0.7 Two version lines: `tesoro.__version__` (semver) and `tesoro.AEGS_VERSION` (spec). Both stamped in every Decision Record and every conformance declaration
 - [x] A0.8 Minimum Python **3.11**, matching the prototype
 - [x] A0.9 **Clean break** on the `aegl` module name — no shim, no alias. Nothing is published, so there are no external users to break, and a compatibility shim for zero users is pure carrying cost
 
@@ -64,7 +64,7 @@ that cost is accepted deliberately, with a provenance index as the mitigation.
 - [x] A1.2 `../x402/aegl/aegl/` copied in **verbatim** and committed unchanged — `41dbe48`
 - [x] A1.3 Every fix a separate commit after the faithful copy — `75b9ba5`, `926f50a`, `5a7c37d`, `bf63141`, `0049ce9`, `19a93c0`, `53c124a`
 - [x] A1.4 `src/` layout adopted — and it earned its keep in the first commit, see [F-A1](#f-a1--the-prototype-was-never-a-package--2026-08-17)
-- [x] A1.5 Module renamed `aegl` → `aegoll` across 46 files; class `Aegl` → `Aegoll`; CLI entry point, widget keys and `pyproject.toml` with it — `0049ce9`
+- [x] A1.5 Module renamed `aegl` → `tesoro` across 46 files; class `Aegl` → `Tesoro`; CLI entry point, widget keys and `pyproject.toml` with it — `0049ce9`
 - [x] A1.6 `AEGL` left intact in prose everywhere
 - [x] A1.7 **267 tests green** from the source tree — the 249 baseline plus 18 new guards
 - [x] A1.8 The re-export shims deleted — **ten, not eleven** as this plan said. 13 internal import sites repointed across three import forms — `19a93c0`
@@ -75,14 +75,14 @@ that cost is accepted deliberately, with a provenance index as the mitigation.
 The package reaches outside itself in eleven places. Each gets its own commit so the diff
 reads as a fix rather than as churn.
 
-- [x] A1.10 **Starter policies are package data** — `src/aegoll/policies/*.yaml` via `importlib.resources` — `75b9ba5`
-- [x] A1.11 **AEGS schemas vendored** — `src/aegoll/_schemas/`, three of thirteen (only those an engine validates against; copying all would imply controls this package does not implement), with `_schemas/PROVENANCE.txt` naming the source commit — `926f50a`
+- [x] A1.10 **Starter policies are package data** — `src/tesoro/policies/*.yaml` via `importlib.resources` — `75b9ba5`
+- [x] A1.11 **AEGS schemas vendored** — `src/tesoro/_schemas/`, three of thirteen (only those an engine validates against; copying all would imply controls this package does not implement), with `_schemas/PROVENANCE.txt` naming the source commit — `926f50a`
 - [ ] A1.11a CI check that a vendored schema has not drifted from the standard at its pinned commit. **A validator running against a stale schema is worse than one that fails loudly** — the rule is written in `PROVENANCE.txt`, the enforcement is not built yet
 - [x] A1.12 ~~Move the schema read out of import time~~ — **already correct in the prototype.** Reads are lazy inside `load_schema()`, `import jsonschema` is local to the validating function, and absent `jsonschema` degrades to a clear message rather than an error. Nothing to do; recorded so the claim is not repeated
 - [x] A1.13 **The `.env` walk is gone** — `75b9ba5`. It ran at *import time* in two places, so `import aegl` read a file the caller never offered it and exported the contents into `os.environ`. Replaced by `load_env_file(path)`, which the caller names and which returns a dict rather than mutating the environment
-- [x] A1.14 **Runtime state is caller-controlled** — `./.aegoll/` relative to the working directory, not beside the package. Demonstrated against the installed wheel: `site-packages` stays clean — `bf63141`
+- [x] A1.14 **Runtime state is caller-controlled** — `./.tesoro/` relative to the working directory, not beside the package. Demonstrated against the installed wheel: `site-packages` stays clean — `bf63141`
 - [x] A1.15 **`x402_core` path-hack removed.** The adapter checks importability and names the extra to install — `bf63141`
-- [x] A1.16 **The four layout-dependent tests fixed** via `tests/conftest.py` — `package_dir()` resolves from `aegoll.__file__`, so the tests check the package that is actually importable — `5a7c37d`
+- [x] A1.16 **The four layout-dependent tests fixed** via `tests/conftest.py` — `package_dir()` resolves from `tesoro.__file__`, so the tests check the package that is actually importable — `5a7c37d`
 - [x] A1.17 **`tests/test_paths.py`** — nine guards: no upward walk from `__file__`, no `sys.path` mutation, no dotenv-style import, policies and schemas resolve inside the package, and importing exports nothing into `os.environ` — `bf63141`
 - [x] A1.18 **Wheel verified in a clean venv** — built, installed, suite run against the installed package, CLI exercised from an empty directory. Caught two real test bugs. `53c124a`
 
@@ -105,8 +105,8 @@ reads as a fix rather than as churn.
 Today `aegl` depends on `streamlit>=1.40` unconditionally. A library that drags a web
 framework into every install will be declined by exactly the teams worth having.
 
-- [x] A2.1 `app.py`, `ui.py`, `ui_demo.py`, `ui_keys.py`, `crossview.py` moved to `../aegoll-integrations/cockpit/` — `8b825c6` / `237b7a2`
-- [x] A2.2 `scenarios.py`, `evaluation.py` moved to `../aegoll-integrations/harness/`
+- [x] A2.1 `app.py`, `ui.py`, `ui_demo.py`, `ui_keys.py`, `crossview.py` moved to `../tesoro-integrations/cockpit/` — `8b825c6` / `237b7a2`
+- [x] A2.2 `scenarios.py`, `evaluation.py` moved to `../tesoro-integrations/harness/`
 - [x] A2.3 Runtime dependencies are **`pyyaml` alone**. `jsonschema` is the `schema` extra; a clean install pulls nothing else
 - [x] A2.4 [`tests/test_deps.py`](tests/test_deps.py) — 16 assertions on the declared *and* imported surface. Verified by planting `import streamlit`: the guard fails
 - [x] A2.5 Engines import no third-party code **at module scope**. Not "at all" — two import `jsonschema` inside a validation function, after the verdict, degrading cleanly when the extra is absent
@@ -114,7 +114,7 @@ framework into every install will be declined by exactly the teams worth having.
 - [x] A2.7 `engines/` imports nothing from `adapters/` or `advisors/`
 - [x] A2.8 The three engine families still import no sibling family
 
-**Exit:** ✅ a clean venv pulls `aegoll` + `PyYAML` and nothing else; 16 dependency
+**Exit:** ✅ a clean venv pulls `tesoro` + `PyYAML` and nothing else; 16 dependency
 assertions green; the wheel carries 35 modules and no UI. 225 passed from source,
 224 + 1 skip from the wheel, AEGS-CONF still 7/7.
 
@@ -134,7 +134,7 @@ Two separate things, and conflating them causes trouble later. **Policy pack** =
 the rules are (user-authored). **Profile** = which controls must exist (the standard,
 see A4).
 
-- [x] A3.1 [`settings.py`](src/aegoll/settings.py) — one loader; `aegoll.yaml`, `aegoll.yml` and `aegoll.json` all accepted, same schema. JSON is a YAML 1.2 subset so there is one parser, not two that can disagree
+- [x] A3.1 [`settings.py`](src/tesoro/settings.py) — one loader; `tesoro.yaml`, `tesoro.yml` and `tesoro.json` all accepted, same schema. JSON is a YAML 1.2 subset so there is one parser, not two that can disagree
 - [x] A3.2 Config schema: `profile`, `policy`, `channels.{internal,external}`, `evidence.journal`, `advisor`. Unknown keys at every level are rejected, not ignored
 - [x] A3.3 Pack discovery by path or by stem, **de-duplicated with YAML winning** — both syntaxes ship, and two entries with one name make `--policy strict` ambiguous
 - [x] A3.4 Validation names the offending rule id, and reports **every** problem rather than the first
@@ -144,10 +144,10 @@ see A4).
 - [x] A3.8 Tested: unknown comparator, unknown verdict, unknown fact, duplicate id, missing id, bad priority, malformed `between`/`in`, null comparison, unknown keys — each **rejected at load**, and `!!python/object/apply` fails to parse rather than executing
 - [x] A3.9 Two starter packs shipped — **`default` and `strict`, not renamed**. Declined the `dev-sandbox`/`prod-strict` naming for two reasons: `default` is genuinely the default and is *not* a permissive sandbox (it rejects sanctioned counterparties, rejects over-balance, reviews at $100), so the name would misdescribe it; and `strict` is referenced **by stem** in CONF-005 in the `aegs` repo, so renaming breaks a conformance case — data that is supposed to be stable — for no user benefit
 - [x] A3.10 Both shipped as `.json` too, **generated from the YAML and proven equivalent**: the content hash is over the parsed structure, so an identical hash means the two files really are one policy rather than merely looking similar
-- [x] A3.11 `aegoll init` writes `aegoll.yaml` + `policies/default.yaml` and refuses to overwrite without `--force`. It **copies** the starter out rather than pointing at site-packages, so a user's first act with a policy is reading and editing their own copy
+- [x] A3.11 `tesoro init` writes `tesoro.yaml` + `policies/default.yaml` and refuses to overwrite without `--force`. It **copies** the starter out rather than pointing at site-packages, so a user's first act with a policy is reading and editing their own copy
 
 **Exit:** ✅ a policy change is validated **at load**, hashed, and traceable from any
-decision back to the exact numbers that produced it. `aegoll init` then `aegoll check`
+decision back to the exact numbers that produced it. `tesoro init` then `tesoro check`
 works from an empty directory; a broken pack exits 1 with every fault named.
 
 > **Found — the check existed and did not run.** `COMPARATORS` was already a fixed tuple
@@ -166,12 +166,12 @@ works from an empty directory; a broken pack exits 1 with every fault named.
 The adoption mechanism. Today the engines *are* the standard; the profile has to
 become a configuration input.
 
-- [x] A4.1 Manifests, not code branches — vendored from the standard into `src/aegoll/_profiles/`, pinned and drift-checked. `aegs-1`, `aegs-2`, `none`
+- [x] A4.1 Manifests, not code branches — vendored from the standard into `src/tesoro/_profiles/`, pinned and drift-checked. `aegs-1`, `aegs-2`, `none`
 - [x] A4.2 Each declares which controls must be **exercised**, which must be **recorded**, and what makes a decision non-conformant. Every `MUST_EXERCISE` names a `recordPath`, because a requirement with nowhere to look for its evidence is not checkable
 - [x] A4.3 `Assessment.as_dict()` is that control's content — controls exercised against a **named** profile, which is a checkable statement about one action rather than the capability claim *"we run a trust engine"*
 - [x] A4.3a **Correction: it was not "half-supported" as this plan said — it was not supported at all.** The Decision Record carried no profile or compliance field, and the package had no profile concept. Emitting the assessment *into* the record needs a schema change in `aegs` (the record schema is `additionalProperties: false`), so that is [B1](../aegs/PLAN.md) work, not this task's
-- [x] A4.4 `aegs-1` is the default in `aegoll init` and in `Config.defaults()`
-- [x] A4.5 `none` genuinely disables enforcement, and `aegoll check` **says so out loud** — a user who selected it and forgot is otherwise reading a green check that guarantees nothing
+- [x] A4.4 `aegs-1` is the default in `tesoro init` and in `Config.defaults()`
+- [x] A4.5 `none` genuinely disables enforcement, and `tesoro check` **says so out loud** — a user who selected it and forgot is otherwise reading a green check that guarantees nothing
 - [x] A4.6 Tested four ways: no engine imports `profiles.py`; the composition root does not either; `profiles.py` mutates nothing (checked by AST); and the same request yields the same verdict and matched rule under every profile. There is no parameter to pass a profile into the decision path, which is itself the evidence
 - [x] A4.7 **AEGS-CONF still 7/7**, both levels claimable, after the refactor
 
@@ -199,16 +199,16 @@ CLI output first, visual output optional and later. Non-interactive, CI-friendly
 meaningful exit codes.
 
 - [x] A5.1 Ported in A1; `scenarios` and `eval` dropped since, `report`, `policy explain` and `conformance` added
-- [x] A5.2 `aegoll init` — landed with [A3.11](#a3--config-and-policy-packs-)
-- [x] A5.3 `aegoll check` — landed with A3. Validates config **and** the pack it points at, reports every fault, exits 1. `--json` accepted before *and* after the subcommand, because users type it after
-- [x] A5.4 `aegoll policy explain` — rules in **evaluation order**, derived facts first, conditions in words. Reads the pack the *config* names, not the packaged starter
-- [x] A5.5 `aegoll decide --amount 2.50 --vendor acme --dry-run` — `--dry-run` uses an ephemeral store, so nothing is journalled and no envelope moves
-- [x] A5.6 `aegoll report` — four panels, attributed to the control that decided
-- [x] A5.6a **`Report` is now stable** — [`reporting.py`](src/aegoll/reporting.py). Field names decided once; attribution and money formatting both reuse `record.py` rather than being reimplemented, so a report and a conformance run cannot disagree about which control decided
-- [x] A5.7 `aegoll audit` — verifies the chain, exits `3` when it is broken. A test tampers with a journal to prove the BROKEN path
-- [x] A5.8 `aegoll conformance --profile aegs-1` — scores journalled records for **evidence completeness**, and says plainly that the full AEGS-CONF suite is a separate package
-- [x] A5.9 `aegoll record [--export|--file]` — carried from the prototype
-- [x] A5.10 `aegoll intent` / `aegoll identity` — carried from the prototype
+- [x] A5.2 `tesoro init` — landed with [A3.11](#a3--config-and-policy-packs-)
+- [x] A5.3 `tesoro check` — landed with A3. Validates config **and** the pack it points at, reports every fault, exits 1. `--json` accepted before *and* after the subcommand, because users type it after
+- [x] A5.4 `tesoro policy explain` — rules in **evaluation order**, derived facts first, conditions in words. Reads the pack the *config* names, not the packaged starter
+- [x] A5.5 `tesoro decide --amount 2.50 --vendor acme --dry-run` — `--dry-run` uses an ephemeral store, so nothing is journalled and no envelope moves
+- [x] A5.6 `tesoro report` — four panels, attributed to the control that decided
+- [x] A5.6a **`Report` is now stable** — [`reporting.py`](src/tesoro/reporting.py). Field names decided once; attribution and money formatting both reuse `record.py` rather than being reimplemented, so a report and a conformance run cannot disagree about which control decided
+- [x] A5.7 `tesoro audit` — verifies the chain, exits `3` when it is broken. A test tampers with a journal to prove the BROKEN path
+- [x] A5.8 `tesoro conformance --profile aegs-1` — scores journalled records for **evidence completeness**, and says plainly that the full AEGS-CONF suite is a separate package
+- [x] A5.9 `tesoro record [--export|--file]` — carried from the prototype
+- [x] A5.10 `tesoro intent` / `tesoro identity` — carried from the prototype
 - [x] A5.11 `--json` on **every** subcommand, added by a loop over the subparsers rather than by hand — a hand-maintained list is how "every" quietly becomes "most". Accepted both before and after the subcommand
 - [x] A5.12 Five distinct exit codes documented in [`docs/cli.md`](docs/cli.md): `0` ok, `1` invalid, `2` refused, `3` chain, `4` usage. `4` exists because argparse's default of `2` would collide with **refused**, and a typo reading as a governance decision is the worst confusion this tool could hand someone
 - [x] A5.13 `scenarios` and `eval` dropped from the shipped CLI — a demo and a money-spending measurement, both now in integrations. `replay` kept: determinism is a user-facing guarantee
@@ -242,13 +242,13 @@ The vision's extensibility ask: users add their own policy types, and optionally
 own API keys for LLM-based policies.
 
 - [x] A6.1 **Derived facts** — `all`/`any`/`not` over existing facts, declared in the pack. Still data: fixed combinators, the same fixed comparator vocabulary, nothing to `eval`. Declaration order is evaluation order, so **a cycle cannot be written** rather than being written and then detected
-- [x] A6.2 **Engine registry** — [`extend.py`](src/aegoll/extend.py): `Engine` protocol, `Context`, `Assessment`, `register_engine()`
+- [x] A6.2 **Engine registry** — [`extend.py`](src/tesoro/extend.py): `Engine` protocol, `Context`, `Assessment`, `register_engine()`
 - [x] A6.3 Contract documented in [`docs/custom-policies.md`](docs/custom-policies.md) and enforced in code: pure function, values in, opinion + attribution out, may only narrow
 - [x] A6.4 **Corrected, not followed.** Widening is not *refused* — it is **unreachable**. An engine returns an opinion and the composition root applies `narrower()`, so one answering `APPROVE` against a standing `REJECT` has no effect. There is nothing to check because there is nothing to get wrong. Asserted by effect instead: a `Widener` voting APPROVE on everything leaves REVIEW as REVIEW and REJECT as REJECT, and the discarded opinion is recorded as `opinion_did_not_narrow`
 - [x] A6.5 **Refused at registration**, by reading the callable's own source: I/O, network, subprocess, sqlite3, clock reads, randomness, model clients, `open`/`eval`/`exec`/`compile`/`__import__`/`input`, and `global`. Twelve cases parametrized over arbitrary source. Unreadable source is itself refused unless explicitly opted into
-- [x] A6.6 BYOK handling carried over; keys never stored, logged or journalled, and `aegoll check` **refuses a key in the config file** — that file gets committed
+- [x] A6.6 BYOK handling carried over; keys never stored, logged or journalled, and `tesoro check` **refuses a key in the config file** — that file gets committed
 - [x] A6.7 Four advisor backends carried across in the A1 port
-- [x] A6.8 `aegoll[advisors]` extra; the core installs no model client
+- [x] A6.8 `tesoro[advisors]` extra; the core installs no model client
 - [x] A6.9 The advisor clamp and its tests carried intact
 - [x] A6.10 [`docs/advisors.md`](docs/advisors.md) — why the exclusion is *structural*, with the numbers, and what a model in the path costs in cost, latency, determinism and injection resistance
 - [x] A6.11 [`docs/custom-policies.md`](docs/custom-policies.md) — both extension points, when to use which, and why the data one comes first
@@ -276,15 +276,15 @@ imports a framework**.
 Order is by verified evidence, not by popularity: Claude SDK and Google ADK are the
 two verified end-to-end in the prototype.
 
-- [x] A7.1 [`adapters/base.py`](src/aegoll/adapters/base.py) — **two** contracts, not one. `RunGuard` is the framework hook (three calls, internal channel); `PaymentClient` is the rail contract (external channel). Both duck-typed, both exercised with fakes and **no framework installed** — a contract that needs a real SDK present is a contract nobody checks
-- [x] A7.2 `aegoll[claude]` — [`adapters/claude.py`](src/aegoll/adapters/claude.py). The SDK **already has** a cost ceiling, so the adapter's job is making two ceilings agree: `options_for()` returns the **tighter** and never raises the caller's own `max_budget_usd`. What it adds is what one per-run number cannot express — cumulative budget, attributed evidence, and refusal *before* the run rather than a stop with tokens already spent
-- [x] A7.3 `aegoll[adk]` — [`adapters/adk.py`](src/aegoll/adapters/adk.py). The opposite case: ADK caps `max_llm_calls`, which is a **step** ceiling, and one long-context call can cost more than fifty short ones. Here `should_stop()` is not a second opinion, it is the only thing watching money. `run_config_for()` leaves the step ceiling alone rather than deriving it — the two bound different things and neither substitutes
-- [x] A7.4 `aegoll[langgraph]` — [`adapters/langgraph.py`](src/aegoll/adapters/langgraph.py). `recursion_limit` bounds the graph's *shape*, so this supplies the spend ceiling. LangGraph has no polite stop, so the ceiling **raises** `GovernedBudgetExceeded` carrying the attributed control; only `on_llm_start` is implemented, because a callback firing after a call has cost what it cost is a report rather than a control. Config keys checked against the installed `RunnableConfig`
-- [~] A7.5 `aegoll[crewai]` — [`adapters/crewai.py`](src/aegoll/adapters/crewai.py) written, **and the one adapter whose framework surface is unverified**: no prototype precedent and the SDK was not installed, so `step_callback` / `max_iter` / `max_rpm` come from documentation rather than from a run. Governance behaviour is tested identically to the other three; the hook names are not. Stated as a table in [`docs/adapters.md`](docs/adapters.md) rather than implied. Close this by installing `crewai` and running one crew
-- [ ] A7.6 `aegoll[x402]` — the payment **rail** adapter. Migrate `adapters/x402_python.py` (245 LOC)
+- [x] A7.1 [`adapters/base.py`](src/tesoro/adapters/base.py) — **two** contracts, not one. `RunGuard` is the framework hook (three calls, internal channel); `PaymentClient` is the rail contract (external channel). Both duck-typed, both exercised with fakes and **no framework installed** — a contract that needs a real SDK present is a contract nobody checks
+- [x] A7.2 `tesoro[claude]` — [`adapters/claude.py`](src/tesoro/adapters/claude.py). The SDK **already has** a cost ceiling, so the adapter's job is making two ceilings agree: `options_for()` returns the **tighter** and never raises the caller's own `max_budget_usd`. What it adds is what one per-run number cannot express — cumulative budget, attributed evidence, and refusal *before* the run rather than a stop with tokens already spent
+- [x] A7.3 `tesoro[adk]` — [`adapters/adk.py`](src/tesoro/adapters/adk.py). The opposite case: ADK caps `max_llm_calls`, which is a **step** ceiling, and one long-context call can cost more than fifty short ones. Here `should_stop()` is not a second opinion, it is the only thing watching money. `run_config_for()` leaves the step ceiling alone rather than deriving it — the two bound different things and neither substitutes
+- [x] A7.4 `tesoro[langgraph]` — [`adapters/langgraph.py`](src/tesoro/adapters/langgraph.py). `recursion_limit` bounds the graph's *shape*, so this supplies the spend ceiling. LangGraph has no polite stop, so the ceiling **raises** `GovernedBudgetExceeded` carrying the attributed control; only `on_llm_start` is implemented, because a callback firing after a call has cost what it cost is a report rather than a control. Config keys checked against the installed `RunnableConfig`
+- [~] A7.5 `tesoro[crewai]` — [`adapters/crewai.py`](src/tesoro/adapters/crewai.py) written, **and the one adapter whose framework surface is unverified**: no prototype precedent and the SDK was not installed, so `step_callback` / `max_iter` / `max_rpm` come from documentation rather than from a run. Governance behaviour is tested identically to the other three; the hook names are not. Stated as a table in [`docs/adapters.md`](docs/adapters.md) rather than implied. Close this by installing `crewai` and running one crew
+- [ ] A7.6 `tesoro[x402]` — the payment **rail** adapter. Migrate `adapters/x402_python.py` (245 LOC)
 - [ ] A7.7 Rail adapter contract separated from framework adapter contract — they are different boundaries and merging them will hurt when AP2 arrives
-- [x] A7.8 Both checked. No adapter module imports its framework (AST walk, so a docstring naming an SDK does not fail while an import would), and `import aegoll` pulls in **no** adapter — asserted in a **subprocess**, because by the time a test file has run its own imports an in-process check passes regardless
-- [x] A7.9 A fake framework that knows nothing about `aegoll` beyond the three calls runs governed end to end. The adapter is not the coupling: an agent on a framework with no adapter here is governed by using `RunGuard` directly, which imports nothing
+- [x] A7.8 Both checked. No adapter module imports its framework (AST walk, so a docstring naming an SDK does not fail while an import would), and `import tesoro` pulls in **no** adapter — asserted in a **subprocess**, because by the time a test file has run its own imports an in-process check passes regardless
+- [x] A7.9 A fake framework that knows nothing about `tesoro` beyond the three calls runs governed end to end. The adapter is not the coupling: an agent on a framework with no adapter here is governed by using `RunGuard` directly, which imports nothing
 - [x] A7.10 Carried, and now stated as a *direction of control* rather than only an import rule: a framework **calls** the guard, whereas a rail adapter is **called by** the agent. That asymmetry is why the two contracts stay separate — a test fails if their members start to overlap
 
 **Exit:** 🔨 **four** framework adapters and one rail adapter, each optional, core clean — **45 tests**, all passing with **no SDK installed**. Three of the four have their hook shapes from real runs; CrewAI's are from documentation and labelled as such. A7.6 (migrating the rail adapter behind the `x402` extra) and A7.7 remain.
@@ -293,7 +293,7 @@ two verified end-to-end in the prototype.
 
 ## A8 — Test vectors ✅
 
-Consumes [`../aegs/PLAN.md`](../aegs/PLAN.md) B4. The reason aegoll can be checked
+Consumes [`../aegs/PLAN.md`](../aegs/PLAN.md) B4. The reason tesoro can be checked
 against a spec rather than against itself.
 
 - [x] A8.1 **Located by search, not vendored yet.** Two repos side by side is the normal layout; the module skips cleanly when the standard is absent, so a contributor with only this repo does not face red for something they cannot fix. Vendoring with a pin (like `_schemas/` and `_profiles/`) is the next step once the vectors stabilise
@@ -315,18 +315,18 @@ against a spec rather than against itself.
 - [x] A9.1 `pyproject.toml` complete — classifiers, urls, readme, licence, keywords, and six extras. Each extra must be **documented**: the guard that used to compare against a hardcoded set now fails an extra no document mentions, because the edit that keeps a hardcoded list passing is not the edit that explains a dependency to whoever is installing it
 - [ ] A9.2 GitHub Actions: test matrix on 3.11/3.12/3.13, Windows and Linux (the prototype was developed on Windows; do not discover a path bug at install time)
 - [x] A9.3 `python -m build` clean, `twine check` **PASSED** on both wheel and sdist. Package data all present (13 files: policies, `_schemas`, `_profiles`), and the 393 KB of vendored vectors correctly **excluded** — they are read by the test suite, and nothing in a user's site-packages needs them
-- [x] A9.4 **Clean-venv install and quickstart verified — from the built wheel, then from PyPI itself.** TestPyPI was skipped rather than failed: by the time a token arrived, every property the dry run existed to check had been checked against the identical artifact. Original note follows. **Clean-venv install and quickstart verified from the built wheel** — install pulls `aegoll` + `PyYAML` and nothing else, all five exit codes correct, the README snippet runs verbatim, `report --html` writes a self-contained page. The **TestPyPI upload itself is blocked**: no token in this environment. Everything it would prove has been proven against the same artifact locally
+- [x] A9.4 **Clean-venv install and quickstart verified — from the built wheel, then from PyPI itself.** TestPyPI was skipped rather than failed: by the time a token arrived, every property the dry run existed to check had been checked against the identical artifact. Original note follows. **Clean-venv install and quickstart verified from the built wheel** — install pulls `tesoro` + `PyYAML` and nothing else, all five exit codes correct, the README snippet runs verbatim, `report --html` writes a self-contained page. The **TestPyPI upload itself is blocked**: no token in this environment. Everything it would prove has been proven against the same artifact locally
 - [x] A9.5 `README.md` leads with the governed-budget claim and a comparison table against a per-payment cap. Its opening snippet **now runs** — it did not, and that is [F-A12](#f-a12--the-documented-api-did-not-exist--2026-08-17)
 - [ ] A9.5a `docs/vs-sdk-spend-controls.md` — an honest side-by-side against x402's own `maxAmountPerPayment`. State what theirs does well and where it stops. A comparison that pretends the alternative is nothing is not read twice
-- [ ] A9.5b Test the composition, not just the claim: `aegoll` running **with** SDK spend controls enabled, where their per-payment cap is one envelope among ours ([B3.6](../aegs/PLAN.md))
+- [ ] A9.5b Test the composition, not just the claim: `tesoro` running **with** SDK spend controls enabled, where their per-payment cap is one envelope among ours ([B3.6](../aegs/PLAN.md))
 - [x] A9.6 [`docs/quickstart.md`](docs/quickstart.md) — install to verified evidence in seven steps, every command **run from the installed wheel** rather than from the source tree. That is how both config bugs were found, and it is also where the Git Bash `MSYS_NO_PATHCONV` trap is documented: a resource starting with `/` is silently rewritten into the evidence record, which is worse than an error
 - [x] A9.7 [`CHANGELOG.md`](CHANGELOG.md), with a **Fixed** section that names each defect and a **Known limitations** section stated up front rather than buried. A changelog that lists features and hides fixes tells a reader what was added and not what was wrong
 - [x] A9.8 Stated in the README, the CHANGELOG header and the quickstart's closing section — the last one deliberately placed where a reader is about to point this at a wallet
 - [x] A9.9 **Trusted publishing (OIDC)** — [`release.yml`](.github/workflows/release.yml). No `password:` anywhere, and it is a gate rather than a button: the full suite on six OS/Python combinations, a tag-versus-`pyproject` version check, a refusal to republish an existing version, and a **clean-venv install that must refuse a payment** before anything uploads. One-time browser setup documented at the top of the file; until the publisher exists the publish step fails with a permissions error, which is correct because there is no token to fall back to
-- [x] A9.10 **[`aegoll 0.1.0`](https://pypi.org/project/aegoll/0.1.0/) and [`0.1.1`](https://pypi.org/project/aegoll/0.1.1/) published** 2026-08-18 — `0.1.1` by trusted publishing, no token involved. `pip install aegoll` pulls three packages into a clean venv and all seven quickstart steps run against the published artifact
+- [x] A9.10 **[`tesoro 0.1.0`](https://pypi.org/project/tesoro/0.1.0/) and [`0.1.1`](https://pypi.org/project/tesoro/0.1.1/) published** 2026-08-18 — `0.1.1` by trusted publishing, no token involved. `pip install tesoro` pulls three packages into a clean venv and all seven quickstart steps run against the published artifact
 - [ ] A9.11 Sealed experiment record for the packaged overhead, since packaging changed the import graph and the prototype's numbers were measured pre-split
 
-**Exit:** ✅ clean-environment install works and caps a real agent's spend — `pip install aegoll`, `aegoll init`, `aegoll check`, `aegoll decide`, verified end to end from the public index.
+**Exit:** ✅ clean-environment install works and caps a real agent's spend — `pip install tesoro`, `tesoro init`, `tesoro check`, `tesoro decide`, verified end to end from the public index.
 
 ---
 
@@ -348,14 +348,14 @@ the argument that justified a build step in the old plan — one SPA shared acro
 *and* a TypeScript core — died when the TS core was dropped. Hand-written vanilla HTML,
 CSS and JS, shipped as package data.
 
-### A10a — `aegoll report --html`, in 0.1
+### A10a — `tesoro report --html`, in 0.1
 
 A generated file, not a server. ~80% of the value at ~10% of the risk: no port, no
 listener, no auth surface, and it is an artifact you can send to someone. A generated
 file is not a localhost app, so pulling this forward does not contradict the vision.
 
-- [x] A10a.1 [`html.py`](src/aegoll/html.py) renders from `Report`. Self-containment is **tested**, not intended: the suite greps the rendered bytes for absolute URLs, `src` attributes, `<link>`, `@import` and every call that can reach the network. Written as a module rather than a template file — the CSS and JS are inline because they must be, so a separate template would be a file that only ever gets embedded
-- [x] A10a.2 `aegoll report --html [-o PATH]`, stdout by default so `> spend.html` works. `--html` with `--json` is a usage error rather than one silently winning, and `-o` without `--html` is too — accepting it and ignoring it would discard the file the user asked for
+- [x] A10a.1 [`html.py`](src/tesoro/html.py) renders from `Report`. Self-containment is **tested**, not intended: the suite greps the rendered bytes for absolute URLs, `src` attributes, `<link>`, `@import` and every call that can reach the network. Written as a module rather than a template file — the CSS and JS are inline because they must be, so a separate template would be a file that only ever gets embedded
+- [x] A10a.2 `tesoro report --html [-o PATH]`, stdout by default so `> spend.html` works. `--html` with `--json` is a usage error rather than one silently winning, and `-o` without `--html` is too — accepting it and ignoring it would discard the file the user asked for
 - [x] A10a.3 **Four panels**, each answering one question an agent developer has at 2am:
       **Policy** — which pack, its hash, rules in priority order, in plain terms → *what will this do?* ·
       **Envelopes** — both channels, every limit, headroom, **which one binds** → *how much is left?* ·
@@ -370,20 +370,20 @@ file is not a localhost app, so pulling this forward does not contradict the vis
 
 **Exit:** ✅ a single file a developer opens after a run and immediately sees which control refused what. 18 tests, and the escaping ones verified by removing `_e()` from one field and watching them go red.
 
-### A10b — `aegoll serve`, v0.2
+### A10b — `tesoro serve`, v0.2
 
 The same template, fed live. Same renderer, second transport.
 
 - [ ] A10b.1 Read-only HTTP API specified in `docs/read-api.md` — one small versioned JSON surface
-- [ ] A10b.2 Server is **stdlib `http.server`**. If that proves untenable, a dependency goes behind an `aegoll[serve]` extra — never into the core
+- [ ] A10b.2 Server is **stdlib `http.server`**. If that proves untenable, a dependency goes behind an `tesoro[serve]` extra — never into the core
 - [ ] A10b.3 **`127.0.0.1` only.** Never defaults to `0.0.0.0`
-- [ ] A10b.4 Off unless `aegoll serve` is run explicitly
+- [ ] A10b.4 Off unless `tesoro serve` is run explicitly
 - [ ] A10b.5 **No mutation endpoints. Ever.** Not even resolving a review — that is the CLI's job. Read-only is the whole security model, and it is what makes an unauthenticated page acceptable
 - [ ] A10b.6 Test: binding to a non-loopback address requires an explicit flag **and** prints a warning
 - [ ] A10b.7 Test: every route is read-only — no request of any method mutates policy, envelope or journal
 - [ ] A10b.8 Test: the page renders from the API alone, so the two transports cannot drift
 
-**Exit:** `aegoll serve` shows what the CLI says, on localhost, with no new attack surface.
+**Exit:** `tesoro serve` shows what the CLI says, on localhost, with no new attack surface.
 
 ---
 
@@ -411,7 +411,7 @@ fixable by tightening a limit.
 The vision says *"some enterprise features in the future (have to decode)"*. The
 decode is the deliverable here, not a feature.
 
-- [ ] A12.1 Write the test every candidate must pass: **does this turn a library into an operation with uptime obligations?** If yes, it is not in `aegoll`
+- [ ] A12.1 Write the test every candidate must pass: **does this turn a library into an operation with uptime obligations?** If yes, it is not in `tesoro`
 - [ ] A12.2 Candidate list with that test applied — multi-tenant policy management, SSO/RBAC on the review queue, hosted evidence anchor, shared policy registry, signed policy packs, SIEM export, air-gapped conformance reporting
 - [ ] A12.3 Note which candidates are *specification* work in `aegs` rather than product work here — signed packs and evidence anchoring both are
 - [ ] A12.4 Licence position: does an enterprise tier mean a second licence, and does that conflict with Apache-2.0 + standards ambition? Answer before building, not after
@@ -447,13 +447,13 @@ clean virtual environment. Not visible from the source tree, and not visible to 
 
 `docs/api-surface.md` was written before the code on purpose — W0.4, on the reasoning that a bad
 early API is the only permanent mistake available here. The code then grew a different shape
-underneath and **nothing checked the two against each other.** `from aegoll import Governor`
+underneath and **nothing checked the two against each other.** `from tesoro import Governor`
 returned `authorize.Governor`, the internal *rules evaluator*, which has no `load()`, no `wrap()`
 and no keyword `authorize()`. The README's own opening snippet raised `AttributeError` on its
 third line.
 
 Three surfaces called `Governor` existed at once: the evaluator (exported), the prototype's
-838-line `plugin.Governor` (working, with live consumers in `aegoll-integrations`), and the
+838-line `plugin.Governor` (working, with live consumers in `tesoro-integrations`), and the
 documented facade (absent). The evaluator is now `RuleEngine`, the facade is `governor.py`, and
 `plugin.Governor` keeps working undocumented so integrations do not break.
 
@@ -488,7 +488,7 @@ to.
 
 ### F-A14 · Evidence location was frozen at import — 2026-08-17
 
-`DATA_DIR = Path.cwd() / ".aegoll"` was evaluated when the module was imported and captured in
+`DATA_DIR = Path.cwd() / ".tesoro"` was evaluated when the module was imported and captured in
 `Paths.under()`'s default argument. So the journal's location was decided by whatever directory the
 process happened to start in, permanently: a process that changed directory kept writing to the
 original, and **two governors loaded from different directories shared one journal** — meaning one
@@ -536,7 +536,7 @@ did not**. That is enough for MUST_EXERCISE scoring, which only needs the boolea
 for a record a human reads: *we never asked* and *we asked and the answer was nothing* are a gap
 and a measurement, and the record showed them identically.
 
-Now `aegoll.states` classifies `absent` / `not-run` / `unknown` / `zero`, plus `no-opinion` for
+Now `tesoro.states` classifies `absent` / `not-run` / `unknown` / `zero`, plus `no-opinion` for
 [STATE-4](../aegs/spec/06-four-states.md) and `measured` for the ordinary case. `is_evidence` is
 **defined through** the classifier rather than beside it, so there is one rule; its behaviour is
 unchanged, which is why the existing 532 tests still passed unmodified.
@@ -550,7 +550,7 @@ vector the ordinary case.
 ### F-A11 · Twenty-eight vectors that ran nothing — 2026-08-17
 
 The 38 vectors added alongside spec sections 02, 06, 08, 09 and 10 used five operations the
-`aegoll` runner had no arm for. `tools/lint_normative.py` counted their clauses as tested, the
+`tesoro` runner had no arm for. `tools/lint_normative.py` counted their clauses as tested, the
 coverage report said 56 clauses, and **28 of the vectors executed no implementation code at all**
 — they errored as unrunnable, and had the runner been more forgiving they would have skipped
 silently.
@@ -559,7 +559,7 @@ Caught by running the suite before committing rather than by trusting the covera
 
 The general form is worth keeping: **a coverage count is not a coverage claim unless something
 executes.** A linter that reads a `clause` field is measuring intent. The same shape had already
-appeared once as [F-C1](../aegoll-integrations/PLAN.md) — a test scanning a path that resolved to
+appeared once as [F-C1](../tesoro-integrations/PLAN.md) — a test scanning a path that resolved to
 nothing — and it will appear again, which is why both are recorded rather than just fixed.
 
 Closed with five arms, each driving real code — the state classifier, the packaged profile

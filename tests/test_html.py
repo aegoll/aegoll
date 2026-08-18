@@ -19,8 +19,8 @@ import re
 
 import pytest
 
-from aegoll.html import render
-from aegoll.reporting import (
+from tesoro.html import render
+from tesoro.reporting import (
     ChainView,
     DecisionView,
     EnvelopeView,
@@ -82,7 +82,7 @@ def a_report(**overrides) -> Report:
         ),
         pending_reviews=1,
         chain=ChainView(entries=4, valid=True, hash_name="sha256", hash_bits=128),
-        aegoll_version="0.1.0",
+        tesoro_version="0.1.0",
         aegs_version="0.1",
     )
     defaults.update(overrides)

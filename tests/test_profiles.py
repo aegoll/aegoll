@@ -18,18 +18,18 @@ import tempfile
 import pytest
 from conftest import imported_names, package_dir
 
-from aegoll import record as record_mod
-from aegoll.config import load_bundle
-from aegoll.domain import Purpose, Vendor
-from aegoll.errors import ConfigError
-from aegoll.profiles import RANK, Profile, available_profiles
-from aegoll.runtime import Aegoll, Paths
+from tesoro import record as record_mod
+from tesoro.config import load_bundle
+from tesoro.domain import Purpose, Vendor
+from tesoro.errors import ConfigError
+from tesoro.profiles import RANK, Profile, available_profiles
+from tesoro.runtime import Tesoro, Paths
 
 
 @pytest.fixture(scope="module")
 def a_record():
     """One real Decision Record from a real decision, with no intent declared."""
-    layer = Aegoll(
+    layer = Tesoro(
         bundle=load_bundle(), paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="p-agent"
     )
     try:
@@ -98,7 +98,7 @@ def test_the_verdict_is_identical_under_every_profile(name):
     The profile is not even passed to the layer — which is itself the evidence. There is
     no parameter to pass it through, because the decision path has no use for one.
     """
-    layer = Aegoll(
+    layer = Tesoro(
         bundle=load_bundle(), paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="v-agent"
     )
     try:
@@ -230,7 +230,7 @@ def test_a_missing_key_does_not_satisfy_must_record(a_record):
 
 
 def test_declaring_an_intent_exercises_the_control():
-    layer = Aegoll(
+    layer = Tesoro(
         bundle=load_bundle(), paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id="i-agent"
     )
     try:

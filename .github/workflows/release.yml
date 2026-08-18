@@ -11,8 +11,8 @@ name: release
 # ONE-TIME SETUP, done in the browser and not by this file:
 #
 #   pypi.org -> your project -> Manage -> Publishing -> Add a new publisher -> GitHub
-#     Owner:            aegoll
-#     Repository:       aegoll
+#     Owner:            tesoro
+#     Repository:       tesoro
 #     Workflow name:    release.yml
 #     Environment:      pypi
 #
@@ -100,9 +100,9 @@ jobs:
         # not bumped.
         run: |
           code=$(curl -s -o /dev/null -w '%{http_code}' \
-            "https://pypi.org/pypi/aegoll/${{ steps.version.outputs.version }}/json")
+            "https://pypi.org/pypi/tesoro/${{ steps.version.outputs.version }}/json")
           if [ "$code" = "200" ]; then
-            echo "::error::aegoll ${{ steps.version.outputs.version }} is already published. Bump the version."
+            echo "::error::tesoro ${{ steps.version.outputs.version }} is already published. Bump the version."
             exit 1
           fi
           echo "version ${{ steps.version.outputs.version }} is unpublished (HTTP $code)"
@@ -114,10 +114,10 @@ jobs:
           python -m venv /tmp/fresh
           /tmp/fresh/bin/pip install --quiet dist/*.whl
           /tmp/fresh/bin/python -c "
-          import aegoll
-          print('version     :', aegoll.__version__)
-          print('AEGS version:', aegoll.AEGS_VERSION)
-          gov = aegoll.Governor.load()
+          import tesoro
+          print('version     :', tesoro.__version__)
+          print('AEGS version:', tesoro.AEGS_VERSION)
+          gov = tesoro.Governor.load()
           d = gov.authorize(amount_usd='5000', vendor='v', resource='/r')
           assert not d.approved, 'a \$5000 payment was approved on a default install'
           assert d.attributed_control, 'a refusal with no attributed control'

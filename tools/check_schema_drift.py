@@ -40,8 +40,8 @@ HERE = Path(__file__).resolve().parents[1]
 #: its own pin, so schemas and profiles can be raised independently — they are separate
 #: artifacts of the standard and change for different reasons.
 VENDORED = (
-    HERE / "src" / "aegoll" / "_schemas",
-    HERE / "src" / "aegoll" / "_profiles",
+    HERE / "src" / "tesoro" / "_schemas",
+    HERE / "src" / "tesoro" / "_profiles",
     HERE / "tests" / "_vectors",
 )
 API = "https://api.github.com/repos/{repo}/contents/{path}{name}?ref={commit}"

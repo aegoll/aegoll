@@ -19,11 +19,11 @@ import tempfile
 
 import pytest
 
-from aegoll import extend
-from aegoll.config import load_bundle
-from aegoll.domain import Purpose, Vendor
-from aegoll.errors import RegistrationError
-from aegoll.runtime import Aegoll, Paths
+from tesoro import extend
+from tesoro.config import load_bundle
+from tesoro.domain import Purpose, Vendor
+from tesoro.errors import RegistrationError
+from tesoro.runtime import Tesoro, Paths
 
 
 @pytest.fixture(autouse=True)
@@ -38,13 +38,13 @@ def _clean_registry():
     extend.clear_engines()
 
 
-def a_layer(agent_id: str = "x-agent") -> Aegoll:
-    return Aegoll(
+def a_layer(agent_id: str = "x-agent") -> Tesoro:
+    return Tesoro(
         bundle=load_bundle(), paths=Paths.ephemeral(tempfile.mkdtemp()), agent_id=agent_id
     )
 
 
-def a_request(layer: Aegoll, amount: str = "2.50"):
+def a_request(layer: Tesoro, amount: str = "2.50"):
     return layer.build_request(
         resource="/market/snapshot",
         amount_usd=amount,
@@ -195,7 +195,7 @@ def engine_from_source(tmp_path, body: str, name: str = "impure"):
     module_name = f"_engine_{abs(hash(body)) % 10**8}"
     path = tmp_path / f"{module_name}.py"
     path.write_text(
-        "from aegoll import extend\n\n\n"
+        "from tesoro import extend\n\n\n"
         "class Subject:\n"
         f"    name = {name!r}\n\n"
         "    def assess(self, context):\n"

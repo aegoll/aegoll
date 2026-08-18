@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from aegoll.advisors import keys as keymod
+from tesoro.advisors import keys as keymod
 
 SAMPLE = "sk-test-abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -161,7 +161,7 @@ def test_advisor_picks_up_a_runtime_key(monkeypatch):
     """
     pytest.importorskip("openai", reason="advisors is an optional extra")
 
-    from aegoll.advisors import build_advisor
+    from tesoro.advisors import build_advisor
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     keymod.clear_runtime_key("openai")
@@ -173,7 +173,7 @@ def test_advisor_picks_up_a_runtime_key(monkeypatch):
 
 
 def test_key_test_reports_missing_key_without_calling_out():
-    from aegoll.advisors import test_key
+    from tesoro.advisors import test_key
 
     keymod.clear_runtime_key("openai")
     result = test_key("openai", "gpt-4o-mini", api_key="")

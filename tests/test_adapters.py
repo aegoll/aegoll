@@ -19,12 +19,12 @@ from pathlib import Path
 
 import pytest
 
-from aegoll import Governor
-from aegoll.adapters.adk import GoogleADKAdapter
-from aegoll.adapters.base import RunGuard, conforms_as_payment_client
-from aegoll.adapters.claude import SDK_BUDGET_STOP, ClaudeAgentAdapter
-from aegoll.adapters.crewai import CrewAIAdapter
-from aegoll.adapters.langgraph import LangGraphAdapter
+from tesoro import Governor
+from tesoro.adapters.adk import GoogleADKAdapter
+from tesoro.adapters.base import RunGuard, conforms_as_payment_client
+from tesoro.adapters.claude import SDK_BUDGET_STOP, ClaudeAgentAdapter
+from tesoro.adapters.crewai import CrewAIAdapter
+from tesoro.adapters.langgraph import LangGraphAdapter
 
 
 @pytest.fixture
@@ -379,7 +379,7 @@ def test_the_langgraph_callback_raises_with_the_attributed_control(gov):
     says so or when something raises. So the ceiling surfaces as control flow, carrying which
     control decided: "the run stopped" is not actionable, "the treasury ceiling stopped it" is.
     """
-    from aegoll.adapters.langgraph import GovernedBudgetExceeded
+    from tesoro.adapters.langgraph import GovernedBudgetExceeded
 
     adapter = LangGraphAdapter(gov, budget_usd="0.01")
     assert adapter.before_run(model="gpt-4o-mini")[0]
@@ -420,7 +420,7 @@ def test_crewai_fills_the_step_ceiling_only_when_absent(gov):
 
 
 def test_the_crewai_callback_raises_when_the_budget_is_reached(gov):
-    from aegoll.adapters.crewai import GovernedBudgetExceeded
+    from tesoro.adapters.crewai import GovernedBudgetExceeded
 
     adapter = CrewAIAdapter(gov, budget_usd="0.01")
     assert adapter.before_run(model="gpt-4o-mini")[0]
@@ -492,7 +492,7 @@ def test_the_two_contracts_are_separate():
     arrives it needs the rail contract and none of the framework one.
     """
     guard_members = set(dir(RunGuard))
-    from aegoll.adapters.base import PAYMENT_CLIENT_MEMBERS
+    from tesoro.adapters.base import PAYMENT_CLIENT_MEMBERS
 
     overlap = guard_members & set(PAYMENT_CLIENT_MEMBERS)
     assert not overlap, f"the contracts have started to merge: {overlap}"
@@ -510,9 +510,9 @@ def test_no_adapter_imports_its_framework(module):
     An AST walk rather than a text scan, so a docstring naming the SDK does not fail the test
     while an actual import would.
     """
-    import aegoll
+    import tesoro
 
-    source = Path(aegoll.__file__).parent / "adapters" / module
+    source = Path(tesoro.__file__).parent / "adapters" / module
     banned = {
         "claude_agent_sdk", "anthropic", "google", "google_adk", "langgraph", "crewai",
     }
@@ -528,8 +528,8 @@ def test_no_adapter_imports_its_framework(module):
     assert not offenders, "\n  ".join(offenders)
 
 
-def test_importing_aegoll_does_not_import_an_adapter():
-    """`import aegoll` must not pull in a framework or a payment SDK.
+def test_importing_tesoro_does_not_import_an_adapter():
+    """`import tesoro` must not pull in a framework or a payment SDK.
 
     Checked as a subprocess, because by the time this test file has run its own imports the
     modules are already in `sys.modules` and an in-process check would pass regardless.
@@ -540,13 +540,13 @@ def test_importing_aegoll_does_not_import_an_adapter():
     result = subprocess.run(
         [
             sys.executable, "-c",
-            "import aegoll, sys; "
-            "leaked = [m for m in sys.modules if m.startswith('aegoll.adapters')]; "
+            "import tesoro, sys; "
+            "leaked = [m for m in sys.modules if m.startswith('tesoro.adapters')]; "
             "print(leaked)",
         ],
         capture_output=True, text=True, check=True,
     )
-    assert result.stdout.strip() == "[]", f"importing aegoll pulled in {result.stdout.strip()}"
+    assert result.stdout.strip() == "[]", f"importing tesoro pulled in {result.stdout.strip()}"
 
 
 def test_a_fake_framework_satisfies_the_contract(gov):
@@ -558,7 +558,7 @@ def test_a_fake_framework_satisfies_the_contract(gov):
     guard = RunGuard(gov, budget_usd="0.01")
 
     class SomeOtherFramework:
-        """Knows nothing about aegoll beyond the three calls."""
+        """Knows nothing about tesoro beyond the three calls."""
 
         def __init__(self, hook):
             self.hook = hook

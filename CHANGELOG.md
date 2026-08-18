@@ -1,5 +1,36 @@
 # Changelog
 
+## Renamed from `aegoll`, 2026-08-18
+
+This package was published as **`aegoll`** for its first two releases and is now **`tesoro`**.
+`aegoll` was a coined word nobody could spell from hearing it, which is a real cost for something
+you have to say out loud; *tesoro* is Italian for treasure, and short enough to tell someone once.
+
+The entries below **keep the old name where they describe the past**, deliberately. `0.1.0` and
+`0.1.1` really did ship as `aegoll`, and rewriting those lines to say otherwise would be the same
+mistake as editing a sealed research record: the history stops being checkable. Anything describing
+the *present* says `tesoro`.
+
+What changed for a user, all at once and never again:
+
+| was | is |
+|---|---|
+| `pip install aegoll` | `pip install tesoro` |
+| `import aegoll` | `import tesoro` |
+| `aegoll` (CLI) | `tesoro` |
+| `aegoll.yaml` | `tesoro.yaml` |
+| `.aegoll/` | `.tesoro/` |
+| `versions.aegoll` in a Decision Record | `versions.tesoro` |
+
+The `aegoll` project was removed from PyPI rather than left as a yanked shell. It had no recorded
+downloads, so nothing depended on it — and that was the whole argument for doing this now rather
+than after somebody had a config file.
+
+**AEGS and AEGL are unchanged.** They name the standard and the category, not this package, and the
+schema `$id`s still resolve through `aegoll.github.io` because the GitHub *organisation* keeps its
+name. A package whose name does not echo its standard is normal — nobody thinks `requests` sounds
+like HTTP.
+
 Notable changes to `aegoll`. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [semantic versioning](https://semver.org/), with the caveat that **`0.x` means
 the API may change** — see [`docs/api-surface.md`](docs/api-surface.md) for which symbols carry
@@ -8,7 +39,12 @@ which stability tier.
 Entries name the defect a change fixes, not only the change. A changelog that lists features
 and hides fixes tells a reader what was added and not what was wrong.
 
-## [0.1.1] — 2026-08-18
+## [0.1.0] — 2026-08-18 · first release as `tesoro`
+
+Identical code to what would have been `aegoll` 0.1.2. A new name gets a clean `0.1.0` rather
+than inheriting a version line from a package that no longer exists.
+
+## [0.1.1] — 2026-08-18 · as `aegoll`
 
 Small, and two of the three entries are things `0.1.0` claimed and did not have.
 
@@ -40,9 +76,9 @@ Small, and two of the three entries are things `0.1.0` claimed and did not have.
   with `pyproject.toml`, and installs the built wheel into a fresh venv and makes it refuse a
   payment before uploading anything.
 
-## [0.1.0] — 2026-08-18
+## [0.1.0] — 2026-08-18 · as `aegoll`
 
-First release, [live on PyPI](https://pypi.org/project/aegoll/0.1.0/). Ported from the
+First release, [was live on PyPI](https://pypi.org/project/aegoll/0.1.0/). Ported from the
 [proof-of-concept](https://github.com/Jayzilva/x402) — see [`PROVENANCE.md`](PROVENANCE.md) for
 what came from where, and from which commit.
 

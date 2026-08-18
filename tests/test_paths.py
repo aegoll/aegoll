@@ -122,7 +122,7 @@ def test_no_module_imports_dotenv_style_loaders():
 
 def test_packaged_policies_are_reachable_through_resources():
     """The starter policies must be package data, not a sibling directory."""
-    from aegoll.config import DEFAULT_BUNDLE, available_bundles
+    from tesoro.config import DEFAULT_BUNDLE, available_bundles
 
     assert DEFAULT_BUNDLE.is_file(), f"{DEFAULT_BUNDLE} is not there"
     assert DEFAULT_BUNDLE.resolve().is_relative_to(package_dir()), (
@@ -134,9 +134,9 @@ def test_packaged_policies_are_reachable_through_resources():
 
 def test_vendored_schemas_are_reachable_and_declared():
     """Each vendored schema resolves inside the package and has stated provenance."""
-    from aegoll import record
-    from aegoll.engines.economic import intent
-    from aegoll.engines.evidence import identity
+    from tesoro import record
+    from tesoro.engines.economic import intent
+    from tesoro.engines.evidence import identity
 
     for module in (record, intent, identity):
         path = module.SCHEMA_PATH
@@ -155,11 +155,11 @@ def test_vendored_schemas_are_reachable_and_declared():
     assert "commit:" in text and "aegoll/aegs" in text
 
 
-@pytest.mark.parametrize("module_name", ["aegoll", "aegoll.config", "aegoll.advisors"])
+@pytest.mark.parametrize("module_name", ["tesoro", "tesoro.config", "tesoro.advisors"])
 def test_importing_does_not_touch_the_environment(module_name, tmp_path):
     """Importing the package must not export anything into `os.environ`.
 
-    `_load_repo_env()` used to run at import time in two places, so `import aegoll` had
+    `_load_repo_env()` used to run at import time in two places, so `import tesoro` had
     the side effect of reading a `.env` two directories up and exporting its contents.
 
     Run in a **subprocess**, with a `.env` planted in its working directory as bait. The
@@ -173,7 +173,7 @@ def test_importing_does_not_touch_the_environment(module_name, tmp_path):
     import sys
 
     (tmp_path / ".env").write_text(
-        "AEGOLL_CANARY_KEY=should-never-be-exported\n", encoding="utf-8"
+        "TESORO_CANARY_KEY=should-never-be-exported\n", encoding="utf-8"
     )
 
     program = (

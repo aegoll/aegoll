@@ -17,15 +17,15 @@ import json
 
 import pytest
 
-from aegoll.config import (
+from tesoro.config import (
     PACK_SUFFIXES,
     available_bundles,
     load_bundle,
     parse_pack_text,
 )
-from aegoll.errors import ConfigError, PolicyError
-from aegoll.settings import Config, find_config, validate_config
-from aegoll.validate import format_problems, has_errors, known_facts, validate_pack
+from tesoro.errors import ConfigError, PolicyError
+from tesoro.settings import Config, find_config, validate_config
+from tesoro.validate import format_problems, has_errors, known_facts, validate_pack
 
 MINIMAL = {
     "version": 1,
@@ -235,7 +235,7 @@ def test_every_fact_the_starters_use_is_in_the_vocabulary():
 
 
 def test_no_config_file_is_not_an_error(tmp_path, monkeypatch):
-    """`pip install aegoll` then govern something, immediately."""
+    """`pip install tesoro` then govern something, immediately."""
     monkeypatch.chdir(tmp_path)
     config = Config.load()
     assert config.source is None
@@ -249,14 +249,14 @@ def test_config_is_found_in_the_working_directory_only(tmp_path, monkeypatch):
     `_load_repo_env()` in the prototype walked up looking for a `.env` and read whatever
     it found, which is a security problem in a library that handles keys.
     """
-    (tmp_path / "aegoll.yaml").write_text("profile: none\n", encoding="utf-8")
+    (tmp_path / "tesoro.yaml").write_text("profile: none\n", encoding="utf-8")
     nested = tmp_path / "deep" / "deeper"
     nested.mkdir(parents=True)
     monkeypatch.chdir(nested)
     assert find_config() is None, "config was found by walking up the tree"
 
 
-@pytest.mark.parametrize("name", ["aegoll.yaml", "aegoll.yml", "aegoll.json"])
+@pytest.mark.parametrize("name", ["tesoro.yaml", "tesoro.yml", "tesoro.json"])
 def test_all_three_config_names_load(tmp_path, monkeypatch, name):
     body = {"profile": "none"}
     write(tmp_path / name, body, as_json=name.endswith(".json"))
@@ -265,15 +265,15 @@ def test_all_three_config_names_load(tmp_path, monkeypatch, name):
 
 
 def test_an_unknown_profile_is_rejected(tmp_path):
-    write(tmp_path / "aegoll.yaml", {"profile": "aegs-9"})
+    write(tmp_path / "tesoro.yaml", {"profile": "aegs-9"})
     with pytest.raises(ConfigError, match="aegs-9"):
-        Config.load(tmp_path / "aegoll.yaml")
+        Config.load(tmp_path / "tesoro.yaml")
 
 
 def test_profile_none_is_accepted(tmp_path):
     """An escape hatch that does not work is an escape hatch people fork around."""
-    write(tmp_path / "aegoll.yaml", {"profile": "none"})
-    assert Config.load(tmp_path / "aegoll.yaml").profile == "none"
+    write(tmp_path / "tesoro.yaml", {"profile": "none"})
+    assert Config.load(tmp_path / "tesoro.yaml").profile == "none"
 
 
 def test_an_unknown_channel_is_rejected():
@@ -297,16 +297,16 @@ def test_a_key_in_the_config_file_is_rejected():
 
 
 def test_a_relative_policy_path_resolves_against_the_config_not_the_cwd(tmp_path, monkeypatch):
-    """Otherwise `aegoll check` and a running agent could read two different policies
+    """Otherwise `tesoro check` and a running agent could read two different policies
     from one config, depending on where each was started."""
     (tmp_path / "policies").mkdir()
     write(tmp_path / "policies" / "mine.yaml", MINIMAL)
-    write(tmp_path / "aegoll.yaml", {"profile": "none", "policy": "policies/mine.yaml"})
+    write(tmp_path / "tesoro.yaml", {"profile": "none", "policy": "policies/mine.yaml"})
 
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()
     monkeypatch.chdir(elsewhere)
-    config = Config.load(tmp_path / "aegoll.yaml")
+    config = Config.load(tmp_path / "tesoro.yaml")
     assert config.policy().name == "t"
 
 
@@ -316,9 +316,9 @@ def test_validate_reports_a_broken_pack_the_config_points_at(tmp_path):
     bad = dict(MINIMAL)
     bad["rules"] = [{"id": "r", "when": {}, "then": "MAYBE"}]
     write(tmp_path / "policies" / "bad.yaml", bad)
-    write(tmp_path / "aegoll.yaml", {"profile": "none", "policy": "policies/bad.yaml"})
+    write(tmp_path / "tesoro.yaml", {"profile": "none", "policy": "policies/bad.yaml"})
 
-    problems = Config.load(tmp_path / "aegoll.yaml").validate()
+    problems = Config.load(tmp_path / "tesoro.yaml").validate()
     assert has_errors(problems)
     assert any("MAYBE" in str(p) for p in problems)
 
@@ -329,18 +329,18 @@ def test_a_broken_pack_is_reported_once_not_twice(tmp_path):
     bad = dict(MINIMAL)
     bad["rules"] = [{"id": "r", "when": {}, "then": "MAYBE"}]
     write(tmp_path / "policies" / "bad.yaml", bad)
-    write(tmp_path / "aegoll.yaml", {"profile": "none", "policy": "policies/bad.yaml"})
+    write(tmp_path / "tesoro.yaml", {"profile": "none", "policy": "policies/bad.yaml"})
 
-    problems = Config.load(tmp_path / "aegoll.yaml").validate()
+    problems = Config.load(tmp_path / "tesoro.yaml").validate()
     assert sum("MAYBE" in str(p) for p in problems) == 1, [str(p) for p in problems]
 
 
 def test_config_and_policy_hash_separately(tmp_path):
     """They version independently, and a record carries both. A config change with an
     untouched rule file is still a different deployment."""
-    write(tmp_path / "aegoll.yaml", {"profile": "aegs-1"})
-    a = Config.load(tmp_path / "aegoll.yaml")
-    write(tmp_path / "aegoll.yaml", {"profile": "aegs-2"})
-    b = Config.load(tmp_path / "aegoll.yaml")
+    write(tmp_path / "tesoro.yaml", {"profile": "aegs-1"})
+    a = Config.load(tmp_path / "tesoro.yaml")
+    write(tmp_path / "tesoro.yaml", {"profile": "aegs-2"})
+    b = Config.load(tmp_path / "tesoro.yaml")
     assert a.content_hash != b.content_hash
     assert a.policy().hash == b.policy().hash
