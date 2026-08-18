@@ -279,6 +279,87 @@ def test_an_sdk_budget_stop_is_distinguishable_from_a_governed_stop():
 # --- langgraph and crewai -------------------------------------------------
 
 
+def test_the_declared_run_budget_is_enforced_mid_run(gov):
+    """Two ceilings, and the tighter one wins.
+
+    `budget_usd` was checked at `start()` and then never again: `should_stop()` asked only the
+    policy pack, so a caller passing `budget_usd="0.02"` could spend **four times that** without
+    a stop, because the pack's micro-approval threshold sat higher. The run budget is a limit the
+    caller set, and invariant 6 applies to this guard as much as to an engine -- nothing may
+    widen a limit somebody else declared.
+    """
+    guard = RunGuard(gov, budget_usd="0.02")
+    assert guard.start(model="m", provider="openai")[0]
+
+    assert guard.should_stop(10_000) is False, "stopped well inside the declared budget"
+    assert guard.should_stop(20_000) is False, (
+        "stopped *at* the budget; spending exactly the budget is within it, which is how every "
+        "envelope treats its own boundary"
+    )
+    assert guard.should_stop(20_001) is True, "one atomic unit over the budget did not stop"
+    assert guard.stop_reason == "run-budget"
+
+
+def test_a_policy_envelope_can_stop_a_run_that_is_inside_its_own_budget(gov):
+    """The reason `should_stop()` asks the layer at all, demonstrated rather than asserted.
+
+    Four runs of $0.04 exhaust the internal **daily** envelope of $0.15. A fifth run is then
+    authorised (its own budget is fine) and stopped mid-run by a limit it knows nothing about --
+    the day, not the run. A guard that only compared against `budget_usd` would let it continue.
+
+    And the stop is attributed to the control, not to `run-budget`: those are adjusted in
+    different places, and reporting one as the other sends whoever is debugging to edit a policy
+    file that had nothing to do with it, or vice versa.
+    """
+    for _ in range(4):
+        guard = RunGuard(gov, budget_usd="0.04")
+        allowed, why = guard.start(model="m", provider="openai")
+        if not allowed:
+            break
+        guard.finish("0.04")
+
+    guard = RunGuard(gov, budget_usd="0.04")
+    allowed, why = guard.start(model="m", provider="openai")
+    if not allowed:
+        # The day is already exhausted, so the fifth run is refused before it begins. That is
+        # the same control doing the same job one step earlier, and it is still not run-budget.
+        assert "treasury" in why, why
+        return
+
+    assert guard.should_stop("0.01") is True, (
+        "a spend well inside the run's own budget was not stopped, so the daily envelope is "
+        "not reaching the guard"
+    )
+    assert guard.stop_reason != "run-budget", (
+        f"a daily-envelope stop was reported as a run-budget stop ({guard.stop_reason})"
+    )
+    assert guard.stop_reason, "the stop has no attributed control"
+
+
+def test_no_declared_budget_means_no_run_budget_ceiling(gov):
+    """Silence is not zero. A run with no declared budget is ungoverned on that axis, and
+    inventing a ceiling of zero would refuse the first step of every such run."""
+    guard = RunGuard(gov, budget_usd=None)
+    assert guard.start(model="m", provider="openai")[0]
+    assert guard.should_stop(1) is False
+    assert guard.should_stop(500) is False
+
+
+def test_the_run_budget_is_compared_in_atomic_units(gov):
+    """Invariant 3 does not stop applying because the number came from a token counter.
+
+    `"0.02"` and `20_000` are the same ceiling, and a float comparison would make one of them
+    slightly different.
+    """
+    as_string = RunGuard(gov, budget_usd="0.02")
+    as_atomic = RunGuard(gov, budget_usd=20_000)
+    for guard in (as_string, as_atomic):
+        guard.start(model="m", provider="openai")
+
+    assert as_string.should_stop(20_000) == as_atomic.should_stop(20_000)
+    assert as_string.should_stop(20_001) == as_atomic.should_stop(20_001) is True
+
+
 def test_langgraph_step_ceiling_is_not_derived_from_the_spend_ceiling(gov):
     """`recursion_limit` bounds the graph's shape; a budget bounds its bill.
 
