@@ -30,18 +30,6 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        # Defaults to true so a manual run cannot publish by accident. A tag push always
-        # publishes -- `github.event_name == 'push'` short-circuits this input entirely.
-        #
-        # This input did not exist while the `publish` job already gated on it. An undefined
-        # input compares equal to `false` in a GitHub expression, so the gate that reads as
-        # "skip on a dry run" in fact published on every manual run. A condition referring to
-        # something undeclared is not a safety check.
-        description: "Build and verify everything, publish nothing"
-        type: boolean
-        default: true
-    inputs:
-      dry_run:
         description: "Build and check, but do not publish"
         type: boolean
         default: true

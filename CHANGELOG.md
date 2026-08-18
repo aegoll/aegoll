@@ -56,12 +56,17 @@ can omit a file without telling anyone -- which is exactly what happened.
   following the comment configured a publisher that could never match, and the failure surfaces
   minutes later as an opaque permissions error at the final step. A setup instruction that is
   wrong is worse than one that is missing: it produces confident, incorrect configuration.
-- **The `publish` job gated on an input that did not exist.** The condition read
-  `inputs.dry_run == false` while `workflow_dispatch` declared no `dry_run`. An undeclared input
-  compares equal to `false` in a GitHub expression, so the guard that reads as "skip on a dry
-  run" in fact published on **every** manual run. `dry_run` is now declared, typed `boolean`, and
-  defaults to `true` -- a manual run cannot publish unless someone unticks it. A condition that
-  references something undeclared is not a check; it is a comment that evaluates.
+- **Every workflow file is now checked for duplicate keys**, by a test rather than by a run
+  failing. Preparing this release, `workflow_dispatch` was given a second `inputs:` block on the
+  belief that it declared none -- the belief came from reading the first 30 lines of the file,
+  which end exactly at `workflow_dispatch:`. `dry_run` was already there, correctly typed and
+  defaulting to `true`.
+
+  What a duplicate key costs is worth recording: GitHub does not report it as a configuration
+  error. It stops resolving the workflow, so the `on: push: tags:` filter is not applied -- the
+  workflow fires on **branch** pushes it should ignore, fails instantly, and appears in the run
+  list named `.github/workflows/release.yml` instead of `release`. That filename is the only
+  signal, and it looks like the release simply failed again. Two such runs happened here.
 - **The `purity` CI job was red.** `test_not_being_able_to_validate_is_not_the_same_as_invalid`
   asserted `can_validate()` -- requiring the validator whose *absence* is the state under test,
   in the one job that deliberately installs the core alone. It skips there now. The test made the
