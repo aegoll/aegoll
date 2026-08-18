@@ -12,6 +12,7 @@ its cost and latency guarantees are gone.
 
 from .engines.evidence.audit import AuditLog
 from .governor import Governor
+from .record import AEGS_VERSION
 from .clock import FixedClock, SystemClock
 from .config import PolicyBundle, load_bundle
 from .engines.evidence.escalation import ReviewItem, ReviewQueue
@@ -33,6 +34,7 @@ __all__ = [
     "AuditLog",
     "Decision",
     "FixedClock",
+    "AEGS_VERSION",
     "Governor",
     "HistorySnapshot",
     "PaymentRequest",

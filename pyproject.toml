@@ -49,6 +49,8 @@ x402 = ["x402[evm,httpx]>=2.18.0"]
 # AttributeError at run time.
 claude = ["claude-agent-sdk>=0.1"]
 adk = ["google-adk>=1.0"]
+langgraph = ["langgraph>=0.2"]
+crewai = ["crewai>=0.80"]
 
 # Advisory models. Never in the decision path -- see docs/api-surface.md §5 and
 # the clamp in eiap.py. Each backend is separately installable.

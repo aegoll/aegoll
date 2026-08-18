@@ -5,6 +5,7 @@ Two boundaries, deliberately separate.
 | | Governs | Direction | Contract |
 |---|---|---|---|
 | **Framework** adapter | the **internal** channel — tokens the agent burns thinking | the *framework* calls the adapter | [`RunGuard`](../src/aegoll/adapters/base.py) |
+| | `aegoll[claude]` · `aegoll[adk]` · `aegoll[langgraph]` · `aegoll[crewai]` | | |
 | **Rail** adapter | the **external** channel — what the agent pays out | the *agent* calls the adapter | [`PaymentClient`](../src/aegoll/adapters/base.py) |
 
 Merging them would be tempting and wrong. They differ in currency, in counterparty, in failure
@@ -123,19 +124,76 @@ the other would silently drop half the coverage.
 construction is the spend before the run began — always zero — so the ceiling would never trip
 while the callback appeared to work.
 
+## `aegoll[langgraph]` — LangGraph
+
+```python
+from aegoll.adapters.langgraph import LangGraphAdapter
+
+adapter = LangGraphAdapter(Governor.load(), budget_usd="0.40")
+config = adapter.config_for({"recursion_limit": 25})
+result = graph.invoke(state, config=config)
+```
+
+LangGraph caps `recursion_limit`, which bounds the graph's **shape** and says nothing about
+money. Same situation as ADK: `should_stop()` is the only thing here watching spend.
+
+`callback_for(getter)` returns a callback that **raises** `GovernedBudgetExceeded` when the
+ceiling is reached. LangGraph has no "stop politely" return value the way ADK's
+`before_model_callback` does — a graph ends when a node says so or when something raises — so
+the ceiling surfaces as control flow. The exception carries the attributed control, because
+*the run stopped* is not actionable and *the daily envelope stopped it* is. Only `on_llm_start`
+is implemented, since that is the moment **before** money is spent; a callback that fires after
+a call has already cost what it cost is a report, not a control. Every other hook is a no-op, so
+a new one in LangChain's still-moving callback surface cannot break a governed run.
+
+Verified against the installed `RunnableConfig`, whose keys are `callbacks`, `configurable`,
+`max_concurrency`, `metadata`, `recursion_limit`, `run_id`, `run_name` and `tags`.
+
+## `aegoll[crewai]` — CrewAI
+
+```python
+from aegoll.adapters.crewai import CrewAIAdapter
+
+adapter = CrewAIAdapter(Governor.load(), budget_usd="0.40")
+crew = Crew(agents=[...], tasks=[...], **adapter.crew_kwargs(spent_getter))
+```
+
+**This is the one adapter whose framework surface is unverified**, and the asymmetry is worth
+being blunt about:
+
+| | Governance behaviour | Framework hook names |
+|---|---|---|
+| `claude`, `adk`, `langgraph` | tested | from SDKs that ran end to end in the proof-of-concept |
+| `crewai` | tested identically | **from documentation only** — no prototype precedent, SDK not installed |
+
+So `step_callback`, `task_callback`, `max_iter` and `max_rpm` are CrewAI's documented names and
+not names observed in a run. A version that renames one breaks this adapter without breaking a
+single test. If they are wrong, `crew_kwargs()` produces a dict CrewAI rejects immediately —
+which is the loud kind of wrong, and the kind to prefer.
+
+`crew_kwargs()` **chains** an existing `step_callback` rather than replacing it: silently
+dropping a caller's callback would remove their telemetry to install ours.
+
+One note on `max_rpm`, because it looks like a cost control and is not. Pacing at a rate limit
+is unbounded in total — sixty requests a minute, held all day, is eighty-six thousand requests.
+That is the velocity evasion [AEGS-0.1-SEC-6](https://github.com/aegoll/aegs/blob/main/spec/12-security-considerations.md)
+records as **open**, and no rate limit closes it.
+
 ## What is verified, and what is not
 
 Stated plainly, because "supports the Claude Agent SDK" is the kind of claim that gets read as
 more than it is.
 
-**Verified here:** both adapters, against fakes, with **no SDK installed** — the three calls, the
+**Verified here:** all four adapters, against fakes, with **no SDK installed** — the three calls, the
 tightening rules, channel separation, consumption on finish, refusal before start, attribution on
 every refusal and stop, and that neither module imports its framework.
 
-**Not verified here:** that the hook *names and signatures* still match the current SDKs. The
-shapes come from the [proof-of-concept](https://github.com/Jayzilva/x402), where all three
-frameworks ran end to end, and an SDK that moves a hook will break the integration without
-breaking these tests. That is what the version pins in `[project.optional-dependencies]` are for,
+**Not verified here:** that the hook *names and signatures* still match the current SDKs. For
+`claude`, `adk` and `langgraph` the shapes come from the
+[proof-of-concept](https://github.com/Jayzilva/x402), where those frameworks ran end to end;
+LangGraph's config keys were additionally checked against the installed `RunnableConfig`. For
+**`crewai` they come from documentation only** — see the table above. An SDK that moves a hook
+will break the integration without breaking these tests. That is what the version pins in `[project.optional-dependencies]` are for,
 and it is why [`aegoll-integrations`](https://github.com/aegoll/aegoll-integrations) — which does
 install the real SDKs — is where end-to-end runs belong.
 

@@ -23,6 +23,8 @@ from aegoll import Governor
 from aegoll.adapters.adk import GoogleADKAdapter
 from aegoll.adapters.base import RunGuard, conforms_as_payment_client
 from aegoll.adapters.claude import SDK_BUDGET_STOP, ClaudeAgentAdapter
+from aegoll.adapters.crewai import CrewAIAdapter
+from aegoll.adapters.langgraph import LangGraphAdapter
 
 
 @pytest.fixture
@@ -36,7 +38,10 @@ def gov(tmp_path, monkeypatch):
 # --- ungoverned is a valid state -----------------------------------------
 
 
-@pytest.mark.parametrize("adapter_cls", [ClaudeAgentAdapter, GoogleADKAdapter])
+@pytest.mark.parametrize(
+    "adapter_cls",
+    [ClaudeAgentAdapter, GoogleADKAdapter, LangGraphAdapter, CrewAIAdapter],
+)
 def test_no_governor_means_everything_proceeds(adapter_cls):
     """An agent written against an adapter must run identically with governance absent.
 
@@ -52,7 +57,10 @@ def test_no_governor_means_everything_proceeds(adapter_cls):
     assert adapter.as_dict()["governed"] is False
 
 
-@pytest.mark.parametrize("adapter_cls", [ClaudeAgentAdapter, GoogleADKAdapter])
+@pytest.mark.parametrize(
+    "adapter_cls",
+    [ClaudeAgentAdapter, GoogleADKAdapter, LangGraphAdapter, CrewAIAdapter],
+)
 def test_a_governor_with_no_budget_does_not_invent_a_ceiling(adapter_cls, gov):
     """A governance layer must not impose a limit the caller never asked for.
 
@@ -268,6 +276,101 @@ def test_an_sdk_budget_stop_is_distinguishable_from_a_governed_stop():
     assert adapter.stopped_by_sdk(object()) is False
 
 
+# --- langgraph and crewai -------------------------------------------------
+
+
+def test_langgraph_step_ceiling_is_not_derived_from_the_spend_ceiling(gov):
+    """`recursion_limit` bounds the graph's shape; a budget bounds its bill.
+
+    A cycle whose steps are nearly free is a real failure mode that a spend ceiling notices only
+    slowly, and one long-context call is a real failure mode a step ceiling never notices. Neither
+    substitutes, so neither is derived from the other.
+    """
+    adapter = LangGraphAdapter(gov, budget_usd="0.40")
+    assert adapter.config_for({})["recursion_limit"] == adapter.DEFAULT_RECURSION_LIMIT
+    assert adapter.config_for({"recursion_limit": 5})["recursion_limit"] == 5, (
+        "the caller's recursion limit was overwritten"
+    )
+
+
+def test_the_langgraph_callback_raises_with_the_attributed_control(gov):
+    """LangGraph has no "stop politely" return value the way ADK does -- a graph ends when a node
+    says so or when something raises. So the ceiling surfaces as control flow, carrying which
+    control decided: "the run stopped" is not actionable, "the treasury ceiling stopped it" is.
+    """
+    from aegoll.adapters.langgraph import GovernedBudgetExceeded
+
+    adapter = LangGraphAdapter(gov, budget_usd="0.01")
+    assert adapter.before_run(model="gpt-4o-mini")[0]
+
+    spent = ["0.001"]
+    callback = adapter.callback_for(lambda: spent[0])
+    callback.on_llm_start()  # within budget, proceeds silently
+
+    spent[0] = "5000"
+    with pytest.raises(GovernedBudgetExceeded) as excinfo:
+        callback.on_llm_start()
+    assert excinfo.value.attributed_control, "a stop with no attribution is not auditable"
+
+
+def test_the_langgraph_callback_ignores_hooks_it_does_not_participate_in(gov):
+    """LangChain's callback surface is wide and still moving. Answering an unknown hook with a
+    no-op means a new one cannot break a governed run."""
+    adapter = LangGraphAdapter(gov, budget_usd="0.01")
+    callback = adapter.callback_for(lambda: "0.001")
+    for hook in ("on_chain_start", "on_tool_end", "on_retriever_error", "on_some_future_hook"):
+        assert getattr(callback, hook)() is None
+
+
+def test_crewai_chains_an_existing_step_callback_rather_than_replacing_it(gov):
+    """Silently dropping a caller's callback would remove their telemetry to install ours."""
+    adapter = CrewAIAdapter(gov, budget_usd="0.40")
+    seen = []
+    kwargs = adapter.crew_kwargs(lambda: "0.001", {"step_callback": lambda *a: seen.append(1)})
+
+    kwargs["step_callback"]()
+    assert seen == [1], "the caller's step_callback was not called"
+
+
+def test_crewai_fills_the_step_ceiling_only_when_absent(gov):
+    adapter = CrewAIAdapter(gov, budget_usd="0.40")
+    assert adapter.crew_kwargs(lambda: "0", {})["max_iter"] == adapter.DEFAULT_MAX_ITER
+    assert adapter.crew_kwargs(lambda: "0", {"max_iter": 3})["max_iter"] == 3
+
+
+def test_the_crewai_callback_raises_when_the_budget_is_reached(gov):
+    from aegoll.adapters.crewai import GovernedBudgetExceeded
+
+    adapter = CrewAIAdapter(gov, budget_usd="0.01")
+    assert adapter.before_run(model="gpt-4o-mini")[0]
+
+    spent = ["0.001"]
+    callback = adapter.step_callback(lambda: spent[0])
+    callback()
+
+    spent[0] = "5000"
+    with pytest.raises(GovernedBudgetExceeded):
+        callback()
+
+
+@pytest.mark.parametrize(
+    "adapter_cls, framework",
+    [
+        (ClaudeAgentAdapter, "claude-agent-sdk"),
+        (GoogleADKAdapter, "google-adk"),
+        (LangGraphAdapter, "langgraph"),
+        (CrewAIAdapter, "crewai"),
+    ],
+)
+def test_every_adapter_names_itself_and_its_channel(adapter_cls, framework):
+    """Telemetry that says a run was governed without saying by what is not evidence."""
+    adapter = adapter_cls(None)
+    assert adapter.channel == "internal", (
+        "a framework adapter governs the token channel; a payout is the rail adapter's business"
+    )
+    assert adapter.as_dict()["framework"] == framework
+
+
 # --- the rail contract ---------------------------------------------------
 
 
@@ -317,7 +420,9 @@ def test_the_two_contracts_are_separate():
 # --- the dependency arrow -------------------------------------------------
 
 
-@pytest.mark.parametrize("module", ["base.py", "claude.py", "adk.py"])
+@pytest.mark.parametrize(
+    "module", ["base.py", "claude.py", "adk.py", "langgraph.py", "crewai.py"]
+)
 def test_no_adapter_imports_its_framework(module):
     """Invariant 8, and the reason these are testable with nothing installed.
 

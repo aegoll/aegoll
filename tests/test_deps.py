@@ -123,6 +123,30 @@ def test_streamlit_is_not_declared_anywhere():
 _TOOLING_EXTRAS = {"dev"}
 
 
+def test_both_version_lines_are_on_the_package():
+    """Two versions, and they answer different questions.
+
+    `__version__` says what this implementation is; `AEGS_VERSION` says which specification it
+    implements. A record carrying only the first cannot be audited later, because a reader has no
+    way to know which version of the rules it was scored against.
+
+    This test exists because `AEGS_VERSION` was **not** exported when 0.1.0 shipped. It lived in
+    `aegoll.record`, the plan claimed it on the package, and nothing compared the two -- the same
+    shape as F-A12. A version line nobody imports is a version line that quietly stops existing.
+    """
+    import aegoll
+
+    assert aegoll.__version__, "no implementation version"
+    assert aegoll.AEGS_VERSION, "no specification version"
+    assert {"AEGS_VERSION", "__version__"} <= set(aegoll.__all__) | {"__version__"}, (
+        f"AEGS_VERSION is reachable but not public: {sorted(aegoll.__all__)}"
+    )
+
+    from aegoll.record import AEGS_VERSION as internal
+
+    assert aegoll.AEGS_VERSION == internal, "two spec versions that disagree is worse than one"
+
+
 def test_every_extra_has_a_stated_purpose():
     """An extra nobody can explain is an extra nobody should install.
 
