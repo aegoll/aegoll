@@ -437,6 +437,8 @@ is now `tests/test_governor.py`, which runs §1's snippet verbatim.
 
 **`AEGS_VERSION` was claimed and absent.** [W0.7](../PLAN.md) promised two version lines on the
 package; one of them lived in `tesoro.record` and was never exported, so the documented name
-raised in the published `0.1.0`. Fixed in `0.1.1`, with a test.
+raised in the published `aegoll` `0.1.0`. Fixed before `tesoro` `0.1.0`, with a test.
+(The version numbers reset at the rename, so the release that had the defect is named by
+its old package name -- otherwise this paragraph would libel a release that never had it.)
 
 Both are the same failure: **a designed API is only a contract if something asserts it exists.**

@@ -20,14 +20,14 @@ htmlcov/
 *.key
 
 # Runtime state written by the layer itself
-.aegoll/
+.tesoro/
 *.jsonl
 !tests/**/*.jsonl
 !vectors/**/*.jsonl
 
 # Local config, not the shipped starters
-/aegoll.yaml
-/aegoll.json
+/tesoro.yaml
+/tesoro.json
 
 # Editors / OS
 .vscode/

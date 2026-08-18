@@ -8,7 +8,7 @@
 # change constantly, and a user installing a wheel is not their audience.
 include CHANGELOG.md
 include LICENSE
-recursive-include src/aegoll/policies *.yaml *.json
-recursive-include src/aegoll/_schemas *.json *.txt
-recursive-include src/aegoll/_profiles *.json *.txt
+recursive-include src/tesoro/policies *.yaml *.json
+recursive-include src/tesoro/_schemas *.json *.txt
+recursive-include src/tesoro/_profiles *.json *.txt
 prune tests/_vectors

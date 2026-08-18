@@ -130,7 +130,9 @@ def test_both_version_lines_are_on_the_package():
     implements. A record carrying only the first cannot be audited later, because a reader has no
     way to know which version of the rules it was scored against.
 
-    This test exists because `AEGS_VERSION` was **not** exported when 0.1.0 shipped. It lived in
+    This test exists because `AEGS_VERSION` was **not** exported when `aegoll` 0.1.0 shipped --
+    named by the old package name because the version line reset at the rename, and `tesoro`
+    0.1.0 does export it. It lived in
     `tesoro.record`, the plan claimed it on the package, and nothing compared the two -- the same
     shape as F-A12. A version line nobody imports is a version line that quietly stops existing.
     """
