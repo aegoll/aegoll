@@ -131,3 +131,29 @@ def test_the_setup_instructions_name_the_organisation_as_the_owner():
     assert values["Repository"] == "tesoro"
     assert values["Workflow name"] == "release.yml"
     assert values["Environment"] == "pypi"
+
+
+def test_a_release_must_carry_both_a_wheel_and_an_sdist():
+    """Twice now, a release has gone out as a wheel with no tarball.
+
+    0.1.0: uploaded by hand, and the hand named one file. 0.1.1: the publish step uploaded the
+    wheel and failed before the tarball. `pip install` works in both cases, which is exactly why
+    neither looked wrong -- the people who need the sdist are the ones doing a source build,
+    packaging for a distribution, or auditing what they actually run.
+
+    A version's files cannot be replaced once published, so a half-published release is a worse
+    position than a failed one. The guard cannot make the upload atomic; it fails the run before
+    a credential is minted if the build did not produce both.
+    """
+    release = next(p for p in WORKFLOWS if p.name == "release.yml")
+    steps = _load(release)["jobs"]["build"]["steps"]
+
+    names = [s.get("name", "") for s in steps]
+    guard = next((i for i, n in enumerate(names) if "Both artifacts exist" in n), None)
+    assert guard is not None, f"the wheel+sdist guard is gone from build: {names}"
+
+    body = steps[guard]["run"]
+    assert "*.whl" in body and "*.tar.gz" in body, "the guard counts only one kind of artifact"
+
+    upload = next(i for i, s in enumerate(steps) if "upload-artifact" in str(s.get("uses", "")))
+    assert guard < upload, "the guard must run before dist/ is handed to the publish job"

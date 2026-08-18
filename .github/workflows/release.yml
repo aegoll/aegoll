@@ -107,6 +107,30 @@ jobs:
           fi
           echo "version ${{ steps.version.outputs.version }} is unpublished (HTTP $code)"
 
+      - name: Both artifacts exist, before anything is uploaded
+        # 0.1.0 reached PyPI as a wheel with no sdist, because the upload was done by hand and
+        # the hand named one file. `pip install tesoro` worked, so nothing looked wrong;
+        # `pip download --no-binary :all: tesoro` did not, which is what a distribution
+        # packager, a source build and anyone auditing what they run all need.
+        #
+        # 0.1.1 then reached the same shape a second way: the publish step uploaded the wheel
+        # and failed before the tarball, leaving a release half-published. A version's files
+        # cannot be replaced once they exist, so "we will add the sdist later" is a much worse
+        # position than "we did not publish".
+        #
+        # Counting them here is not sufficient -- it cannot make an upload atomic -- but it is
+        # necessary: it fails the run before the credential is ever minted if the build did not
+        # produce both.
+        run: |
+          wheels=$(ls -1 dist/*.whl 2>/dev/null | wc -l)
+          sdists=$(ls -1 dist/*.tar.gz 2>/dev/null | wc -l)
+          echo "dist/ holds $wheels wheel(s) and $sdists sdist(s):"
+          ls -1 dist/
+          if [ "$wheels" != "1" ] || [ "$sdists" != "1" ]; then
+            echo "::error::a release must be exactly one wheel and one sdist, got $wheels and $sdists"
+            exit 1
+          fi
+
       - name: A clean install works, and pulls nothing unexpected
         # The check that found six defects before 0.1.0, none of which were visible from the
         # source tree. Never publish an artifact nobody installed.
