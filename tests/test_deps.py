@@ -119,6 +119,20 @@ def test_streamlit_is_not_declared_anywhere():
     assert not [d for d in everything if "streamlit" in d.lower()], everything
 
 
+def _can_validate() -> bool:
+    """Whether schema validation is available in *this* environment.
+
+    Used by a `skipif` above, so it has to be callable at collection time. Wrapped rather than
+    imported directly because `tesoro.record` importing cleanly is itself something other tests
+    assert, and a collection-time ImportError would take the whole file down with it.
+    """
+    try:
+        from tesoro.record import can_validate
+    except Exception:  # pragma: no cover - the other tests report this properly
+        return False
+    return can_validate()
+
+
 #: Extras whose purpose is the build itself, so no user-facing document explains them.
 _TOOLING_EXTRAS = {"dev"}
 
@@ -168,6 +182,14 @@ def test_the_dev_extra_can_validate_schemas():
     )
 
 
+@pytest.mark.skipif(
+    not _can_validate(),
+    reason=(
+        "no validator installed, which is the state this test cannot assert from. The `purity` CI "
+        "job installs the core alone -- deliberately -- so this must SKIP there rather than fail. "
+        "test_the_dev_extra_can_validate_schemas keeps the skip from becoming permanent."
+    ),
+)
 def test_not_being_able_to_validate_is_not_the_same_as_invalid():
     """Invariant 5, inside the validator. `absent` is not `invalid`.
 
@@ -178,9 +200,7 @@ def test_not_being_able_to_validate_is_not_the_same_as_invalid():
     for assessors and the reasoning is identical. What changed is that the two are now
     distinguishable.
     """
-    from tesoro.record import NOT_VALIDATED, can_validate, validate
-
-    assert can_validate(), "this test needs the dev extra it is asserting the contents of"
+    from tesoro.record import NOT_VALIDATED, validate
 
     ok, problems = validate({"not": "a record"})
     assert ok is False

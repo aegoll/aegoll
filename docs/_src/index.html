@@ -1,0 +1,284 @@
+<!-- title: Autonomous economic governance — what it is and why it needs a layer -->
+<!-- description: An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit. -->
+
+<h1>Autonomous economic governance</h1>
+<p class="lede">
+  An agent that can pay is an agent that can overpay. This is about the layer that decides whether
+  it may — <em>before</em> it does — and why nothing built for human spending fits the job.
+</p>
+
+<div class="note">
+  <p>
+    <strong>New here?</strong> Read this page and <a href="types.html">the four kinds of AEGL</a>
+    first. They are about the problem, not about any particular software. Tesoro — one
+    implementation — starts at <a href="tesoro.html">What Tesoro is</a>.
+  </p>
+</div>
+
+<h2 id="problem">The problem, stated precisely</h2>
+
+<p>
+  Give an agent a wallet and a task, and you have created something new: an actor that makes
+  economic decisions at machine speed, thousands of times an hour, with no intuition about money and
+  no sense that a number is unusual.
+</p>
+
+<p>
+  It is not that agents are careless. It is that <strong>every control we have was designed around a
+  human being present.</strong> Consider what actually happens when a person overspends:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Control</th><th>Assumes</th><th>Against an agent</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>A monthly statement</td>
+      <td>somebody reads it, monthly</td>
+      <td>30 days late; the run finished in 90 seconds</td>
+    </tr>
+    <tr>
+      <td>An approval workflow</td>
+      <td>the requester can wait for a reply</td>
+      <td>nothing to wait with — the agent is mid-execution</td>
+    </tr>
+    <tr>
+      <td>A fraud alert</td>
+      <td>anomalies are rare and worth a phone call</td>
+      <td>every action is anomalous; alerting on all of them is noise</td>
+    </tr>
+    <tr>
+      <td>A card limit</td>
+      <td>one purchase at a time, considered</td>
+      <td>bounds one payment and nothing about ten thousand</td>
+    </tr>
+    <tr>
+      <td>Human judgement</td>
+      <td>“this feels wrong”</td>
+      <td>the agent has no such feeling, and cannot acquire one</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Every row in that table is a <strong>report</strong> rather than a control. It tells you what
+  happened. At machine speed, by the time it tells you, the money is gone — and the agent has made
+  four hundred more decisions.
+</p>
+
+<h2 id="definition">What an AEGL is</h2>
+
+<div class="key">
+  <p>
+    An <strong>Autonomous Economic Governance Layer</strong> is any layer that decides whether an
+    autonomous agent may spend, <strong>before it spends</strong>.
+  </p>
+</div>
+
+<p>
+  That is the whole category definition, and the word carrying it is <em>before</em>. A layer that
+  observes, records, alerts or reconciles is doing something useful and is not this. The distinction
+  is not about sophistication — it is about <strong>where in time the decision sits</strong>.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-label="Diagram contrasting a control that decides before payment with a report that observes after">
+  <text class="label" x="14" y="20" style="font-weight:700">A control</text>
+
+  <rect class="box" x="14" y="34" width="112" height="44" rx="6"/>
+  <text class="label-sm" x="70" y="52" text-anchor="middle">agent wants</text>
+  <text class="label-sm" x="70" y="66" text-anchor="middle">to spend</text>
+
+  <rect class="box-accent" x="170" y="34" width="112" height="44" rx="6"/>
+  <text class="label" x="226" y="55" text-anchor="middle" style="font-weight:700">decide</text>
+  <text class="label-sm" x="226" y="70" text-anchor="middle">yes / no / ask</text>
+
+  <rect class="box" x="326" y="34" width="112" height="44" rx="6"/>
+  <text class="label-sm" x="382" y="52" text-anchor="middle">money moves</text>
+  <text class="label-sm" x="382" y="66" text-anchor="middle">or does not</text>
+
+  <path class="flow-strong" d="M126 56 H164" marker-end="url(#h1)"/>
+  <path class="flow-strong" d="M282 56 H320" marker-end="url(#h1)"/>
+  <text class="label-sm fill-ok" x="470" y="60">refusable</text>
+
+  <line x1="14" y1="112" x2="686" y2="112" class="flow" stroke-dasharray="3 4"/>
+
+  <text class="label" x="14" y="146" style="font-weight:700">A report</text>
+
+  <rect class="box" x="14" y="160" width="112" height="44" rx="6"/>
+  <text class="label-sm" x="70" y="178" text-anchor="middle">agent wants</text>
+  <text class="label-sm" x="70" y="192" text-anchor="middle">to spend</text>
+
+  <rect class="box" x="170" y="160" width="112" height="44" rx="6"/>
+  <text class="label-sm" x="226" y="178" text-anchor="middle">money moves</text>
+
+  <rect class="box" x="326" y="160" width="112" height="44" rx="6"/>
+  <text class="label" x="382" y="181" text-anchor="middle">observe</text>
+  <text class="label-sm" x="382" y="196" text-anchor="middle">alert, reconcile</text>
+
+  <path class="flow" d="M126 182 H164" marker-end="url(#h1)"/>
+  <path class="flow" d="M282 182 H320" marker-end="url(#h1)"/>
+  <text class="label-sm fill-bad" x="470" y="186">already spent</text>
+
+  <defs>
+    <marker id="h1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  Same components, one difference in ordering, and it decides whether the thing is a control at all.
+  Most “agent spend monitoring” is the lower row.
+</figcaption>
+</figure>
+
+<h2 id="why-now">Why this became a real problem recently</h2>
+
+<p>
+  Agents could always burn tokens. What changed is that they can now <strong>pay counterparties
+  directly</strong>, without a human in the transaction. Machine-payable APIs — HTTP 402 revived by
+  x402, agent payment protocols like AP2, stablecoin rails settling in seconds — remove the last
+  human step that used to act as an accidental control.
+</p>
+
+<p>
+  So an agent now spends in <strong>two directions at once</strong>, and they are not the same money:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>Internal channel</th><th>External channel</th></tr></thead>
+  <tbody>
+    <tr><td><strong>What</strong></td><td>tokens the agent burns thinking</td><td>what it pays out</td></tr>
+    <tr><td><strong>Currency</strong></td><td>real money, on your provider key</td><td>often stablecoin, on a chain</td></tr>
+    <tr><td><strong>Counterparty</strong></td><td>one model provider you chose</td><td>anyone the agent decides to buy from</td></tr>
+    <tr><td><strong>Failure</strong></td><td>a runaway loop, one enormous context</td><td>paying the wrong party, or too often</td></tr>
+    <tr><td><strong>If exhausted</strong></td><td>no human is in the loop — must stop</td><td>a payout can wait for a person</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  That last row is the one people miss, and it is why the two channels are governed separately
+  everywhere in this documentation: <strong>the same breach has a different correct response
+  depending on which money it was.</strong> It is not tidy bookkeeping.
+</p>
+
+<h2 id="not-a-cap">Why a cap on one payment is not enough</h2>
+
+<p>
+  The obvious control is a per-payment limit, and it is genuinely useful — it is also the easiest
+  thing in this space to build, which is why several tools now ship one.
+</p>
+
+<p>
+  It cannot express a great deal. Here is one cent, six times, against a <strong>ten dollar</strong>
+  per-payment ceiling none of these comes near:
+</p>
+
+<pre><code>purchase 1: $0.01  <span class="s">APPROVE</span>
+purchase 2: $0.01  <span class="s">APPROVE</span>
+purchase 3: $0.01  <span class="s">APPROVE</span>
+purchase 4: $0.01  <span class="s">APPROVE</span>
+purchase 5: $0.01  <span class="s">APPROVE</span>
+purchase 6: $0.01  <span class="k">REVIEW</span>  <span class="c">← a cumulative daily limit, not the per-payment one</span></code></pre>
+
+<p>
+  The refused payment is byte-for-byte identical to the five approved before it. A limit with no
+  memory cannot produce that outcome, and <strong>tightening the per-payment ceiling does not
+  help</strong> — it only makes legitimate purchases fail.
+</p>
+
+<p>
+  And there is a harder case still. Consider a purchase that is affordable, from a trusted
+  counterparty, well inside every budget, at a completely ordinary price — for something the agent
+  was never asked to buy. No amount of arithmetic about money detects that, because nothing about it
+  is a money problem.
+</p>
+
+<h2 id="questions">The four questions a governance layer has to answer</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>1 · May this happen?</h3>
+    <p>The verdict. Approve, refuse, or send it to a human — decided before money moves.</p>
+  </div>
+  <div class="card">
+    <h3>2 · Which control decided?</h3>
+    <p>Not <em>what</em> was decided. <strong>Which control</strong> — the field you need when an
+    agent stops at 2am and you have to know what to change.</p>
+  </div>
+  <div class="card">
+    <h3>3 · Can I prove it later?</h3>
+    <p>An account of what was decided and why, that resists being quietly edited afterwards.</p>
+  </div>
+  <div class="card">
+    <h3>4 · What is <em>not</em> covered?</h3>
+    <p>The honest one. A layer that cannot tell you where it is weak invites you to assume it is
+    strong everywhere.</p>
+  </div>
+</div>
+
+<p>
+  Question 2 is the one that separates a governance layer from a limit. A per-payment cap has
+  exactly one rule to blame, so attribution is trivial and useless. Once several controls can each
+  refuse, <em>which one did</em> becomes the only actionable piece of information in the record —
+  and it turns out to be surprisingly hard to get right, which is why
+  <a href="aegs.html">the standard</a> devotes a whole section to it.
+</p>
+
+<h2 id="not-this">What an AEGL is not</h2>
+
+<ul class="gap-list">
+  <li>
+    <strong>Not a wallet.</strong> It does not hold keys or custody funds. It decides; something else
+    pays.
+  </li>
+  <li>
+    <strong>Not a compliance product.</strong> It can produce evidence a compliance process might
+    use. It does not make anyone compliant with anything, and a layer that claims to should be read
+    carefully.
+  </li>
+  <li>
+    <strong>Not a fraud system.</strong> Fraud detection asks whether a transaction is fraudulent.
+    This asks whether an agent is <em>authorised</em> — a different question with a different
+    answer even when both say no.
+  </li>
+  <li>
+    <strong>Not an agent framework.</strong> It governs agents; it does not build them. If it needs
+    to be part of your agent, it is a dependency rather than a layer.
+  </li>
+  <li>
+    <strong>Not a model.</strong> A layer that needs an LLM to decide whether a payment may happen
+    has given up its cost and latency guarantees, and acquired a prose-injection surface where its
+    decisions live. There are reasons to consult a model <em>alongside</em> the decision; putting one
+    <em>on</em> the path is a different choice with different consequences.
+  </li>
+</ul>
+
+<h2 id="next">Where to go from here</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Four kinds of AEGL</h3>
+    <p>The types, ordered by what each can express — and where the useful boundary falls.</p>
+    <a href="types.html">types →</a>
+  </div>
+  <div class="card">
+    <h3>The shared vocabulary</h3>
+    <p>Channels, verdicts, controls, envelopes and the four states — the words the rest of this
+    documentation uses precisely.</p>
+    <a href="vocabulary.html">vocabulary →</a>
+  </div>
+  <div class="card">
+    <h3>Tesoro</h3>
+    <p>One implementation of the above, and what it does not do.</p>
+    <a href="tesoro.html">tesoro →</a>
+  </div>
+  <div class="card">
+    <h3>AEGS</h3>
+    <p>The open standard an AEGL can conform to, and a suite that scores one.</p>
+    <a href="aegs.html">the standard →</a>
+  </div>
+</div>
