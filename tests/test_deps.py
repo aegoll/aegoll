@@ -147,6 +147,47 @@ def test_both_version_lines_are_on_the_package():
     assert aegoll.AEGS_VERSION == internal, "two spec versions that disagree is worse than one"
 
 
+def test_the_dev_extra_can_validate_schemas():
+    """A suite that skips its schema checks is not checking the interoperability surface.
+
+    Seven tests validate Decision Records against the AEGS schema, and they skip without
+    `jsonschema` -- which is right for a contributor who installed the core alone, and wrong
+    for CI. For a while it *was* CI: `pip install -e ".[dev]"` did not include the validator,
+    those seven failed (not skipped -- `validate()` returned `False` for "could not check", and
+    they read it as "invalid"), and all six matrix jobs were red.
+
+    So `jsonschema` belongs in `dev` as well as in `schema`, and this test is what keeps it
+    there. Without it the skips would be permanent and invisible.
+    """
+    dev = _project()["project"]["optional-dependencies"]["dev"]
+    assert any("jsonschema" in d for d in dev), (
+        f"the dev extra cannot validate schemas: {dev}. The seven schema tests would skip, "
+        "and nothing would check the records this implementation emits against the standard."
+    )
+
+
+def test_not_being_able_to_validate_is_not_the_same_as_invalid():
+    """Invariant 5, inside the validator. `absent` is not `invalid`.
+
+    `validate()` returned a bare `False` both for a record that broke the schema and for a
+    missing validator, so a caller could not tell them apart -- and seven tests duly reported
+    "invalid" when the real answer was "unchecked". It still fails **closed**, because reporting
+    a record valid without validating it would be the fail-open mistake AEGS-0.1-PATH-3 forbids
+    for assessors and the reasoning is identical. What changed is that the two are now
+    distinguishable.
+    """
+    from aegoll.record import NOT_VALIDATED, can_validate, validate
+
+    assert can_validate(), "this test needs the dev extra it is asserting the contents of"
+
+    ok, problems = validate({"not": "a record"})
+    assert ok is False
+    assert NOT_VALIDATED not in problems, (
+        "a real schema violation reported itself as 'cannot validate'"
+    )
+    assert any("required property" in p for p in problems), problems
+
+
 def test_every_extra_has_a_stated_purpose():
     """An extra nobody can explain is an extra nobody should install.
 

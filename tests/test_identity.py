@@ -24,6 +24,7 @@ from aegoll.domain import Vendor, Verdict
 from aegoll.engines.evidence.identity import Credential, Identity, IdentityStore, Party
 from aegoll.plugin import Governor
 from aegoll.runtime import Aegoll, Paths
+from aegoll.record import can_validate
 
 BASE = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 SELLER = Vendor(id="x402-poc-desk", name="POC Desk")
@@ -122,6 +123,15 @@ def test_the_journal_carries_only_the_vendor_projection(aegoll):
     assert "acme-ltd" not in blob
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_the_decision_record_carries_no_controller(gov):
     from aegoll import record as record_mod
 
@@ -389,6 +399,15 @@ def test_a_listed_credential_is_not_claimed_as_verified(aegoll):
 # --- the schema -----------------------------------------------------------
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_a_registered_identity_validates(aegoll):
     identity = aegoll.identities.register(
         agent_id="agent-1", purpose="buy data", controller=ACME,

@@ -28,6 +28,7 @@ from aegoll.domain import Channel, Purpose, Vendor, Verdict
 from aegoll.engines.economic.intent import Intent, IntentStore
 from aegoll.plugin import Governor
 from aegoll.runtime import Aegoll, Paths
+from aegoll.record import can_validate
 
 BASE = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 SELLER = Vendor(id="x402-poc-desk", name="POC Desk")
@@ -295,6 +296,15 @@ def test_a_run_without_an_intent_reports_none(gov):
     assert gov.report()["intent"] is None
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_the_decision_record_carries_the_intent_id(gov):
     from aegoll import record as record_mod
 
@@ -306,6 +316,15 @@ def test_the_decision_record_carries_the_intent_id(gov):
     assert record_mod.validate(record)[0] is True
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_a_record_without_an_intent_has_a_null_id_and_stays_valid(gov):
     from aegoll import record as record_mod
 
@@ -319,6 +338,15 @@ def test_a_record_without_an_intent_has_a_null_id_and_stays_valid(gov):
 # --- the schema -----------------------------------------------------------
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_a_declared_intent_validates_against_the_schema(aegoll):
     declared = aegoll.intents.declare(
         agent_id="agent-1", purpose="buy data", maximum_usd="0.05",

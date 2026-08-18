@@ -351,17 +351,45 @@ def records_from_journal(
 # --- validation -----------------------------------------------------------
 
 
+#: The problem string `validate()` returns when it has no validator. Exported so a caller can
+#: tell *this record is invalid* from *I could not check*, which are different answers and were
+#: previously the same `False`.
+NOT_VALIDATED = "jsonschema is not installed; cannot validate"
+
+
+def can_validate() -> bool:
+    """Whether schema validation is available at all.
+
+    `jsonschema` is the `schema` extra, because the layer governs correctly without it. But that
+    makes *not checked* a real state, and invariant 5 applies to a validator as much as to a
+    control: `absent` is not `invalid`. A caller that cannot tell them apart will eventually
+    report a conforming record as broken, or -- worse -- treat "could not check" as "checked".
+    """
+    try:
+        import jsonschema  # noqa: F401, PLC0415
+    except ImportError:
+        return False
+    return True
+
+
 def validate(record: dict[str, Any]) -> tuple[bool, list[str]]:
     """Check a record against the AEGS schema. Returns (ok, problems).
 
     Any implementation can run this against its own output; that is what makes the
-    schema an interoperability surface rather than AEGL's internal format written
+    schema an interoperability surface rather than this layer's internal format written
     down.
+
+    **Fails closed when it cannot check.** With no validator installed the answer is
+    `(False, [NOT_VALIDATED])` rather than `(True, [])`: reporting a record valid without having
+    validated it would be the fail-open mistake that AEGS-0.1-PATH-3 forbids for assessors, and
+    the reasoning is identical. Use `can_validate()` to tell the two `False`s apart -- or check
+    for `NOT_VALIDATED` in the problems, which is why it is a named constant rather than a
+    literal buried here.
     """
-    try:
-        import jsonschema  # noqa: PLC0415
-    except ImportError:
-        return False, ["jsonschema is not installed; cannot validate"]
+    if not can_validate():
+        return False, [NOT_VALIDATED]
+
+    import jsonschema  # noqa: PLC0415
 
     validator = jsonschema.Draft202012Validator(load_schema())
     problems = [

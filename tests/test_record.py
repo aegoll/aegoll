@@ -21,6 +21,7 @@ import pytest
 
 from aegoll import record as record_mod
 from aegoll.plugin import Governor
+from aegoll.record import can_validate
 
 BASE = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 
@@ -72,6 +73,15 @@ class FakeBuyer:
 # --- the schema holds against real journals -------------------------------
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_every_decision_produces_a_valid_record(gov):
     gov.authorize_run(model="claude-haiku-4-5", provider="anthropic", budget_usd=0.03)
     gov.authorize_run(model="m", provider="openai", budget_usd=0.10)  # refused
@@ -90,6 +100,15 @@ def test_a_malformed_record_is_rejected():
     assert problems
 
 
+@pytest.mark.skipif(
+    not can_validate(),
+    reason=(
+        "schema validation needs the `schema` extra (jsonschema). Skipped rather than "
+        "failed: without a validator this test cannot distinguish an invalid record from "
+        "an unchecked one, which is the very thing it asserts. "
+        "test_ci_can_validate_schemas keeps this from becoming permanent."
+    ),
+)
 def test_an_unknown_field_is_rejected(gov):
     """`additionalProperties: false` — a vendor cannot smuggle meaning into a record
     and still claim conformance."""

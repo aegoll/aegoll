@@ -56,7 +56,12 @@ crewai = ["crewai>=0.80"]
 # the clamp in eiap.py. Each backend is separately installable.
 advisors = ["anthropic>=0.40", "openai>=1.50", "google-genai>=0.3", "groq>=0.13"]
 
-dev = ["pytest>=8.0", "build>=1.2", "twine>=5.0"]
+# `jsonschema` is here as well as in `schema` on purpose. Without it the seven
+# schema tests skip, and a suite that skips its schema checks is a suite that
+# does not check the interoperability surface -- which is the one thing an
+# implementation of a standard must not stop checking. See
+# tests/test_deps.py::test_the_dev_extra_can_validate_schemas.
+dev = ["pytest>=8.0", "build>=1.2", "twine>=5.0", "jsonschema>=4.20"]
 
 [project.scripts]
 aegoll = "aegoll.cli:main"
