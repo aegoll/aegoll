@@ -39,6 +39,45 @@ which stability tier.
 Entries name the defect a change fixes, not only the change. A changelog that lists features
 and hides fixes tells a reader what was added and not what was wrong.
 
+## [0.1.1] — 2026-08-18
+
+The release *pipeline* release. `0.1.0` reached PyPI by hand, and a manual upload is a step that
+can omit a file without telling anyone -- which is exactly what happened.
+
+### Fixed
+
+- **PyPI carries no sdist for `0.1.0`.** The hand-upload sent the wheel and not the tarball, so
+  `pip install tesoro` worked while `pip download --no-binary :all: tesoro` did not. Anyone
+  building from source, packaging for a distribution, or auditing what they run needs the sdist.
+  `0.1.1` publishes both, because the workflow builds `dist/*` and uploads the directory rather
+  than a file somebody remembered to name.
+- **The trusted-publishing setup instructions in `release.yml` gave the wrong owner.** They said
+  `Owner: tesoro`; the owner is the *organisation*, `aegoll` (`github.com/aegoll/tesoro`). Anyone
+  following the comment configured a publisher that could never match, and the failure surfaces
+  minutes later as an opaque permissions error at the final step. A setup instruction that is
+  wrong is worse than one that is missing: it produces confident, incorrect configuration.
+- **The `publish` job gated on an input that did not exist.** The condition read
+  `inputs.dry_run == false` while `workflow_dispatch` declared no `dry_run`. An undeclared input
+  compares equal to `false` in a GitHub expression, so the guard that reads as "skip on a dry
+  run" in fact published on **every** manual run. `dry_run` is now declared, typed `boolean`, and
+  defaults to `true` -- a manual run cannot publish unless someone unticks it. A condition that
+  references something undeclared is not a check; it is a comment that evaluates.
+- **The `purity` CI job was red.** `test_not_being_able_to_validate_is_not_the_same_as_invalid`
+  asserted `can_validate()` -- requiring the validator whose *absence* is the state under test,
+  in the one job that deliberately installs the core alone. It skips there now. The test made the
+  mistake it was written to catch.
+
+### Added
+
+- **Documentation site** at <https://aegoll.github.io/tesoro/> -- nine pages behind a left
+  sidebar with per-page section navigation: the AEGL concept and its four types, the shared
+  vocabulary, what Tesoro is, architecture, policies and rules, frameworks and rails, AEGS, and a
+  quickstart. Section links are extracted from the headings by the generator, so a renamed
+  heading cannot leave a dead anchor. No JavaScript, no external requests.
+
+No library code changed. The API, the engines, the schemas and `AEGS_VERSION` are identical to
+`0.1.0`.
+
 ## [0.1.0] — 2026-08-18 · first release as `tesoro`
 
 Identical code to what would have been `aegoll` 0.1.2. A new name gets a clean `0.1.0` rather
