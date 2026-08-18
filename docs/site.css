@@ -1,0 +1,254 @@
+/* Tesoro documentation.
+ *
+ * Self-contained on purpose: no CDN, no webfont, no analytics, nothing that phones out. The
+ * package ships an HTML report with the same rule, tested by grepping the rendered bytes -- a
+ * documentation site that violated it while the product asserted it would be an odd look.
+ *
+ * System fonts only, which also means the page renders before anything has loaded.
+ */
+
+:root {
+  --bg: #fbfbfa;
+  --panel: #ffffff;
+  --ink: #16161a;
+  --dim: #62626b;
+  --faint: #8c8c95;
+  --line: #e3e3df;
+  --accent: #2b4c7e;
+  --accent-soft: #eaf0f8;
+  --ok: #1f7a4d;
+  --warn: #9a6a00;
+  --esc: #a8480c;
+  --bad: #a81c1c;
+  --code-bg: #f5f5f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15151a;
+    --panel: #1d1d23;
+    --ink: #e9e9e6;
+    --dim: #9d9da6;
+    --faint: #75757e;
+    --line: #2e2e36;
+    --accent: #8fb3e0;
+    --accent-soft: #1e2a3a;
+    --ok: #4bbf85;
+    --warn: #d9a534;
+    --esc: #e0834a;
+    --bad: #e8635f;
+    --code-bg: #24242b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- chrome ------------------------------------------------------------- */
+
+header.site {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header.site .inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0.7rem 1.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.brand span { color: var(--faint); font-weight: 400; font-size: 0.82rem; }
+
+nav.site { display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: 0.88rem; }
+nav.site a { color: var(--dim); text-decoration: none; padding-bottom: 2px; }
+nav.site a:hover { color: var(--accent); }
+nav.site a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+}
+
+main { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+footer.site {
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 0.84rem;
+  padding: 2rem 1.25rem 3rem;
+  text-align: center;
+}
+footer.site a { color: var(--dim); }
+
+/* --- type --------------------------------------------------------------- */
+
+h1 {
+  font-size: 2.1rem;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+  margin: 0 0 0.5rem;
+}
+.lede { font-size: 1.12rem; color: var(--dim); margin: 0 0 2.5rem; max-width: 62ch; }
+
+h2 {
+  font-size: 1.38rem;
+  letter-spacing: -0.015em;
+  margin: 3rem 0 0.9rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+h3 { font-size: 1.06rem; margin: 2rem 0 0.6rem; }
+h4 { font-size: 0.94rem; margin: 1.5rem 0 0.4rem; color: var(--dim); }
+
+p, li { max-width: 74ch; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+code, kbd, pre {
+  font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+}
+code { background: var(--code-bg); padding: 0.1em 0.32em; border-radius: 4px; font-size: 0.88em; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.9rem 1.05rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+pre .c { color: var(--faint); }
+pre .k { color: var(--accent); }
+pre .s { color: var(--ok); }
+
+/* --- tables ------------------------------------------------------------- */
+
+.scroll { overflow-x: auto; margin: 1.2rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th {
+  text-align: left;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+  padding: 0 0.75rem 0.45rem 0;
+  white-space: nowrap;
+}
+td { padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td code { white-space: nowrap; }
+
+/* --- callouts ----------------------------------------------------------- */
+
+.note, .warn-box, .key {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 0.85rem 1.05rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.4rem 0;
+  font-size: 0.94rem;
+}
+.note p:last-child, .warn-box p:last-child, .key p:last-child { margin-bottom: 0; }
+.note p:first-child, .warn-box p:first-child, .key p:first-child { margin-top: 0; }
+
+.warn-box {
+  border-left-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 9%, transparent);
+}
+.key {
+  border-left-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+}
+
+.cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); margin: 1.5rem 0; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1.05rem 1.15rem;
+}
+.card h3 { margin: 0 0 0.35rem; font-size: 1rem; }
+.card p { margin: 0; font-size: 0.9rem; color: var(--dim); max-width: none; }
+.card a { font-size: 0.88rem; }
+
+/* --- verdicts ----------------------------------------------------------- */
+
+.v {
+  display: inline-block;
+  padding: 0.1rem 0.44rem;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: ui-monospace, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+.v.approve { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.v.review { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.v.escalate { color: var(--esc); background: color-mix(in srgb, var(--esc) 16%, transparent); }
+.v.reject { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+
+/* --- diagrams ----------------------------------------------------------- */
+
+figure { margin: 1.8rem 0; }
+figure svg { max-width: 100%; height: auto; display: block; }
+figcaption {
+  font-size: 0.86rem;
+  color: var(--dim);
+  margin-top: 0.7rem;
+  max-width: 74ch;
+}
+
+/* SVG theming: strokes and fills follow the palette so diagrams work in both themes. */
+svg .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+svg .box-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .label { fill: var(--ink); font: 12px ui-sans-serif, system-ui, sans-serif; }
+svg .label-sm { fill: var(--dim); font: 10.5px ui-sans-serif, system-ui, sans-serif; }
+svg .label-mono { fill: var(--ink); font: 11px ui-monospace, Consolas, monospace; }
+svg .flow { stroke: var(--dim); stroke-width: 1.5; fill: none; }
+svg .flow-strong { stroke: var(--accent); stroke-width: 2; fill: none; }
+svg .flow-bad { stroke: var(--bad); stroke-width: 1.5; fill: none; }
+svg .fill-ok { fill: var(--ok); }
+svg .fill-bad { fill: var(--bad); }
+svg .fill-warn { fill: var(--warn); }
+svg .fill-dim { fill: var(--dim); }
+
+/* --- misc --------------------------------------------------------------- */
+
+.gap-list li { margin-bottom: 0.55rem; }
+hr { border: none; border-top: 1px solid var(--line); margin: 3rem 0; }
+.small { font-size: 0.87rem; color: var(--dim); }
+.pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}

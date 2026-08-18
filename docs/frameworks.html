@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Frameworks &amp; rails — Tesoro</title>
+<meta name="description" content="Claude Agent SDK, Google ADK, LangGraph, CrewAI, and the three-call contract that needs none of them.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html">Overview</a>
+    <a href="architecture.html">Architecture</a>
+    <a href="policies.html">Policies &amp; rules</a>
+    <a href="frameworks.html" aria-current="page">Frameworks</a>
+    <a href="aegs.html">AEGS</a>
+    <a href="start.html">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>Frameworks &amp; rails</h1>
+<p class="lede">
+  Two boundaries, deliberately separate. A <strong>framework</strong> adapter governs the tokens an
+  agent burns thinking; a <strong>rail</strong> adapter governs what it pays out. Merging them would
+  hurt the moment a second payment rail arrives.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>Governs</th><th>Direction of control</th><th>Contract</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Framework</strong></td>
+      <td>the <strong>internal</strong> channel — tokens</td>
+      <td>the <em>framework</em> calls the adapter</td>
+      <td><code>RunGuard</code></td>
+    </tr>
+    <tr>
+      <td><strong>Rail</strong></td>
+      <td>the <strong>external</strong> channel — payouts</td>
+      <td>the <em>agent</em> calls the adapter</td>
+      <td><code>PaymentClient</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  They differ in currency, in counterparty, in failure mode, and in that last column — which is the
+  one people miss. When AP2 or a card rail arrives it needs the second contract and none of the
+  first, and a merged interface would make that a rewrite rather than an addition.
+</p>
+
+<h2>The dependency arrow points one way</h2>
+
+<figure>
+<svg viewBox="0 0 700 176" role="img" aria-label="Diagram: the governor wraps the agent; the agent never imports the governor">
+  <rect class="box" x="20" y="52" width="150" height="66" rx="7"/>
+  <text class="label" x="95" y="80" text-anchor="middle">Your agent</text>
+  <text class="label-sm" x="95" y="98" text-anchor="middle">imports nothing of ours</text>
+
+  <rect class="box-accent" x="262" y="40" width="176" height="90" rx="7"/>
+  <text class="label" x="350" y="66" text-anchor="middle" style="font-weight:700">RunGuard</text>
+  <text class="label-mono" x="350" y="86" text-anchor="middle">start()</text>
+  <text class="label-mono" x="350" y="102" text-anchor="middle">should_stop()</text>
+  <text class="label-mono" x="350" y="118" text-anchor="middle">finish()</text>
+
+  <rect class="box" x="530" y="52" width="150" height="66" rx="7"/>
+  <text class="label" x="605" y="80" text-anchor="middle">Tesoro</text>
+  <text class="label-sm" x="605" y="98" text-anchor="middle">decides</text>
+
+  <path class="flow-strong" d="M170 85 H256" marker-end="url(#af)"/>
+  <path class="flow" d="M438 85 H524" marker-end="url(#af)"/>
+
+  <text class="label-sm fill-dim" x="213" y="76" text-anchor="middle">calls</text>
+  <text class="label-sm fill-dim" x="481" y="76" text-anchor="middle">asks</text>
+
+  <text class="label-sm fill-bad" x="350" y="158" text-anchor="middle">a test fails if the agent ever imports the governor</text>
+
+  <defs>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  <strong>An agent does not import the governor; the governor wraps the agent.</strong> Duck-typed —
+  nothing to subclass, nothing to register. If that arrow ever reverses, “plugin” and “dependency”
+  become indistinguishable, so a test fails when it does.
+</figcaption>
+</figure>
+
+<h2>Three calls, and that is the whole surface</h2>
+
+<pre><code><span class="k">from</span> tesoro <span class="k">import</span> Governor
+<span class="k">from</span> tesoro.adapters.base <span class="k">import</span> RunGuard
+
+guard = RunGuard(Governor.load(), budget_usd=<span class="s">"0.40"</span>)
+
+allowed, why = guard.start(model=<span class="s">"claude-sonnet-4"</span>, provider=<span class="s">"anthropic"</span>)
+<span class="k">if not</span> allowed:
+    <span class="k">raise</span> SystemExit(why)          <span class="c"># refused before a single token is spent</span>
+
+<span class="k">for</span> step <span class="k">in</span> agent_loop():
+    <span class="k">if</span> guard.should_stop(spent_so_far):
+        <span class="k">break</span>                      <span class="c"># once per step</span>
+
+guard.finish(actual_cost_usd)      <span class="c"># envelopes consume here</span></code></pre>
+
+<p>
+  <strong>A framework adapter is nothing more than the code that arranges for a particular framework
+  to make these three calls.</strong> Which is why an agent on a framework with no adapter here can
+  still be fully governed by using <code>RunGuard</code> directly — it imports nothing, so it needs no
+  extra at all.
+</p>
+
+<h3>Four properties worth knowing</h3>
+
+<ul class="gap-list">
+  <li>
+    <strong>A governor of <code>None</code> is valid and means ungoverned.</strong> Every call allows,
+    so an agent written against the guard behaves exactly as it did before governance existed. That is
+    what keeps this a <em>layer</em>; the alternative is <code>if governor:</code> scattered through an
+    agent loop, and the branch that gets forgotten is always the one that mattered.
+  </li>
+  <li>
+    <strong>A governor with no <code>budget_usd</code> invents no ceiling.</strong> Silence is not
+    zero. A run with no declared budget is ungoverned on that axis, and refusing work nobody said was
+    too expensive would be the layer overreaching.
+  </li>
+  <li>
+    <strong>Two ceilings, and the tighter wins.</strong> The <code>budget_usd</code> you declared
+    <em>and</em> whatever the policy pack says — including limits the guard knows nothing about, like a
+    daily envelope crossed partway through a long run. <code>stop_reason</code> distinguishes
+    <code>run-budget</code> from a control name, because the two are adjusted in different places.
+  </li>
+  <li>
+    <strong>A refused run neither stops nor settles.</strong> The refusal is recorded as evidence, so
+    both later calls check that authorisation actually <em>approved</em> — otherwise a refused run
+    reports itself as stopped, and those are different facts with different remedies.
+  </li>
+</ul>
+
+<h2>The four framework adapters</h2>
+
+<p>
+  Each is an optional extra. Nobody pays for a dependency they do not use, and
+  <strong>the core imports no framework</strong> — checked by an AST walk, and
+  <code>import tesoro</code> pulls in no adapter at all, checked in a subprocess because an in-process
+  check would pass regardless once a test file had run its own imports.
+</p>
+
+<h3><code>tesoro[claude]</code> — Claude Agent SDK</h3>
+
+<p>
+  The one framework here that <strong>already ships a cost ceiling</strong>:
+  <code>max_budget_usd</code> stops a run when estimated LLM cost reaches it. So this adapter's job is
+  not to add a ceiling the SDK lacks — it is to make two ceilings agree, and to supply what a single
+  per-run number cannot express:
+</p>
+
+<ul>
+  <li>a <strong>cumulative</strong> budget, so ten runs of $0.40 cannot quietly cost $4.00 against a $1.00 day;</li>
+  <li>a decision <strong>recorded as evidence</strong>, attributable to the control that made it;</li>
+  <li>a refusal <strong>before the run starts</strong>, rather than a stop partway through with tokens already spent.</li>
+</ul>
+
+<pre><code>adapter = ClaudeAgentAdapter(Governor.load(), budget_usd=<span class="s">"0.40"</span>)
+options = adapter.options_for({<span class="s">"model"</span>: <span class="s">"claude-sonnet-4"</span>})   <span class="c"># carries max_budget_usd</span></code></pre>
+
+<p>
+  <code>options_for()</code> returns <strong>the tighter of the two</strong> and never raises the
+  caller's own limit — a governance layer that widened a limit somebody set would be doing the one
+  thing no control in this system may do. <code>stopped_by_sdk(result)</code> tells the SDK's ceiling
+  apart from the layer's, because they are adjusted in different places and reporting one as the other
+  sends whoever is debugging to the wrong file.
+</p>
+
+<h3><code>tesoro[adk]</code> — Google ADK</h3>
+
+<p>
+  ADK caps <code>max_llm_calls</code>. <strong>A step ceiling is not a spend ceiling:</strong> one
+  long-context call can cost more than fifty short ones, so <code>max_llm_calls=50</code> bounds
+  nothing about money. Here <code>should_stop()</code> is not a second opinion — nothing else in an ADK
+  run is watching money.
+</p>
+
+<p>
+  <code>run_config_for()</code> leaves <code>max_llm_calls</code> alone rather than deriving it from
+  the budget. The two bound different things: a step ceiling catches a runaway loop whose steps are
+  nearly free, which a spend ceiling notices only slowly; a spend ceiling catches one enormous call,
+  which a step ceiling never notices at all.
+</p>
+
+<h3><code>tesoro[langgraph]</code> — LangGraph</h3>
+
+<p>
+  Same situation: <code>recursion_limit</code> bounds a graph's <em>shape</em> and says nothing about
+  money. LangGraph has no “stop politely” return value the way ADK's callback does — a graph ends when
+  a node says so or when something raises — so the ceiling surfaces as
+  <code>GovernedBudgetExceeded</code>, carrying the attributed control. <em>The run stopped</em> is not
+  actionable; <em>the daily envelope stopped it</em> is.
+</p>
+
+<p>
+  Only <code>on_llm_start</code> is implemented, because that is the moment <strong>before</strong>
+  money is spent. A callback that fires after a call has already cost what it cost is a report, not a
+  control. Every other hook is a no-op so a new one in LangChain's moving callback surface cannot
+  break a governed run.
+</p>
+
+<h3><code>tesoro[crewai]</code> — CrewAI</h3>
+
+<div class="warn-box">
+  <p>
+    <strong>This is the one adapter whose framework surface is unverified.</strong> The asymmetry is
+    worth being blunt about:
+  </p>
+</div>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Adapter</th><th>Governance behaviour</th><th>Framework hook names</th></tr></thead>
+  <tbody>
+    <tr><td><code>claude</code> · <code>adk</code> · <code>langgraph</code></td><td>tested</td><td>from SDKs that ran end to end in the proof-of-concept</td></tr>
+    <tr><td><code>crewai</code></td><td>tested identically</td><td><strong>documentation only</strong> — no precedent, SDK not installed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  So <code>step_callback</code>, <code>max_iter</code> and <code>max_rpm</code> are CrewAI's documented
+  names, not names observed in a run. A version that renames one breaks this adapter without breaking
+  a single test. If they are wrong, <code>crew_kwargs()</code> produces a dict CrewAI rejects
+  immediately — the loud kind of wrong, and the kind to prefer.
+</p>
+
+<p>
+  One note on <code>max_rpm</code>, because it looks like a cost control and is not: pacing at a rate
+  limit is unbounded in total. Sixty requests a minute, held all day, is eighty-six thousand requests.
+</p>
+
+<h2>The rail contract</h2>
+
+<p>
+  x402 is the only rail today — HTTP 402, USDC, Base Sepolia. Keeping settlement behind one boundary
+  is what makes the layer rail-agnostic: nothing above <code>adapters/</code> knows what a 402 is.
+</p>
+
+<pre><code>governed = gov.wrap(buyer)   <span class="c"># the ONLY object holding the signer</span></code></pre>
+
+<p>
+  The returned object is the only thing holding the signer, so the agent cannot pay without a
+  decision. A client that cannot pay is refused <strong>by name</strong> —
+  <code>isinstance</code> against a runtime protocol returns a bare <code>False</code>, which tells an
+  integrator nothing, so the error lists the missing members.
+</p>
+
+<h2>What is verified, and what is not</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Verified here</h3>
+    <p>All four adapters against fakes, <strong>with no SDK installed</strong> — the three calls, the
+    tightening rules, channel separation, consumption on finish, refusal before start, attribution on
+    every stop, and that no module imports its framework. 49 tests.</p>
+  </div>
+  <div class="card">
+    <h3>Not verified here</h3>
+    <p>That the hook <em>names and signatures</em> still match the current SDKs. An SDK that moves a
+    hook breaks the integration without breaking these tests. That is what the version pins are for,
+    and why end-to-end runs live in the examples repo.</p>
+  </div>
+</div>
+
+<p class="small">
+  Testing against fakes is deliberate rather than lazy: a contract exercised only with a real SDK
+  present is a contract nobody checks, and all four adapters would then be verified by their absence.
+  But a suite that passes with nothing installed cannot tell you the SDK still looks the way it did.
+</p>
+
+<h2>Writing your own</h2>
+
+<pre><code><span class="k">class</span> MyFrameworkAdapter:
+    channel = <span class="s">"internal"</span>
+
+    <span class="k">def</span> __init__(self, governor=None, *, budget_usd=None):
+        self.guard = RunGuard(governor, budget_usd=budget_usd)
+
+    <span class="k">def</span> before_run(self, *, model=<span class="s">""</span>):
+        <span class="k">return</span> self.guard.start(model=model, provider=<span class="s">"my-provider"</span>)
+
+    <span class="k">def</span> should_stop(self, spent_usd):
+        <span class="k">return</span> self.guard.should_stop(spent_usd)
+
+    <span class="k">def</span> after_run(self, *, actual_cost_usd=None, success=True):
+        self.guard.finish(actual_cost_usd, success=success)</code></pre>
+
+<p>
+  The remaining work in any adapter is always the framework-shaped part: where its hooks live, what
+  they are called, and what a stop must return to end a run. That is the only thing the four shipped
+  adapters do differently from each other.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Adapter reference</h3>
+    <p>Both contracts in full, with the verification table.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/adapters.md">adapters.md →</a>
+  </div>
+  <div class="card">
+    <h3>Working examples</h3>
+    <p>Three framework agents, a mock x402 seller, six use cases.</p>
+    <a href="https://github.com/aegoll/tesoro-integrations">tesoro-integrations →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Architecture — Tesoro</title>
+<meta name="description" content="Ten deterministic engines, the decision path, and why no model sits on it.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html">Overview</a>
+    <a href="architecture.html" aria-current="page">Architecture</a>
+    <a href="policies.html">Policies &amp; rules</a>
+    <a href="frameworks.html">Frameworks</a>
+    <a href="aegs.html">AEGS</a>
+    <a href="start.html">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>Architecture</h1>
+<p class="lede">
+  Ten deterministic engines behind one call. Every one of them may narrow a verdict and none may
+  widen it, so the decision is order-independent — but the <em>attribution</em> is not, which is why
+  evaluation order is part of the specification.
+</p>
+
+<h2>The decision path</h2>
+
+<figure>
+<svg viewBox="0 0 760 430" role="img" aria-label="Diagram: the decision path from request through ten engines to a verdict and an evidence record">
+  <!-- request -->
+  <rect class="box-accent" x="14" y="16" width="150" height="52" rx="7"/>
+  <text class="label" x="89" y="38" text-anchor="middle" style="font-weight:700">authorize()</text>
+  <text class="label-sm" x="89" y="55" text-anchor="middle">amount, vendor, resource</text>
+
+  <!-- refusal before envelopes -->
+  <rect class="box" x="212" y="16" width="176" height="52" rx="7"/>
+  <text class="label" x="300" y="36" text-anchor="middle">Arithmetic gate</text>
+  <text class="label-sm" x="300" y="53" text-anchor="middle">sign, magnitude, precision</text>
+
+  <text class="label-sm fill-bad" x="470" y="34" text-anchor="start">refused here, before</text>
+  <text class="label-sm fill-bad" x="470" y="48" text-anchor="start">any envelope is read</text>
+  <path class="flow-bad" d="M388 42 H462" marker-end="url(#ab)"/>
+
+  <!-- engine groups -->
+  <rect class="box" x="14" y="108" width="228" height="126" rx="7"/>
+  <text class="label" x="128" y="130" text-anchor="middle" style="font-weight:700">economic</text>
+  <text class="label-mono" x="30" y="152">treasury</text>
+  <text class="label-sm" x="130" y="152">envelopes, headroom</text>
+  <text class="label-mono" x="30" y="171">intent</text>
+  <text class="label-sm" x="130" y="171">what it was sent to do</text>
+  <text class="label-mono" x="30" y="190">policy</text>
+  <text class="label-sm" x="130" y="190">your rules</text>
+  <text class="label-mono" x="30" y="209">roi</text>
+  <text class="label-sm" x="130" y="209">is it worth it</text>
+
+  <rect class="box" x="266" y="108" width="212" height="126" rx="7"/>
+  <text class="label" x="372" y="130" text-anchor="middle" style="font-weight:700">risk</text>
+  <text class="label-mono" x="282" y="152">trust</text>
+  <text class="label-sm" x="372" y="152">earned over settlements</text>
+  <text class="label-mono" x="282" y="171">risk</text>
+  <text class="label-sm" x="372" y="171">pattern scoring</text>
+
+  <rect class="box" x="502" y="108" width="244" height="126" rx="7"/>
+  <text class="label" x="624" y="130" text-anchor="middle" style="font-weight:700">evidence</text>
+  <text class="label-mono" x="518" y="152">identity</text>
+  <text class="label-sm" x="620" y="152">who is acting, and whose</text>
+  <text class="label-mono" x="518" y="171">audit</text>
+  <text class="label-sm" x="620" y="171">the hash chain</text>
+  <text class="label-mono" x="518" y="190">escalation</text>
+  <text class="label-sm" x="620" y="190">review queue</text>
+  <text class="label-mono" x="518" y="209">eiap</text>
+  <text class="label-sm" x="620" y="209">the economic gate</text>
+
+  <path class="flow-strong" d="M89 68 V102" marker-end="url(#ab)"/>
+  <path class="flow" d="M242 170 H262" marker-end="url(#ab)"/>
+  <path class="flow" d="M478 170 H498" marker-end="url(#ab)"/>
+
+  <!-- narrowing -->
+  <rect class="box-accent" x="14" y="274" width="336" height="62" rx="7"/>
+  <text class="label" x="182" y="298" text-anchor="middle" style="font-weight:700">narrow only</text>
+  <text class="label-sm" x="182" y="316" text-anchor="middle">APPROVE &lt; REVIEW &lt; ESCALATE &lt; REJECT</text>
+
+  <rect class="box" x="386" y="274" width="360" height="62" rx="7"/>
+  <text class="label" x="566" y="298" text-anchor="middle">Verdict + attributed control</text>
+  <text class="label-sm" x="566" y="316" text-anchor="middle">which control decided, not just what</text>
+
+  <path class="flow-strong" d="M182 234 V268" marker-end="url(#ab)"/>
+  <path class="flow-strong" d="M350 305 H380" marker-end="url(#ab)"/>
+
+  <!-- evidence -->
+  <rect class="box" x="220" y="372" width="320" height="46" rx="7"/>
+  <text class="label" x="380" y="391" text-anchor="middle">Decision Record → hash-chained journal</text>
+  <text class="label-sm" x="380" y="407" text-anchor="middle">append-only; edits and reorderings detected</text>
+  <path class="flow" d="M566 336 V366 H544" marker-end="url(#ab)"/>
+
+  <defs>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  Arithmetic is checked <strong>first</strong>, and that ordering is normative. A negative amount
+  satisfies every <code>amount ≤ headroom</code> comparison ever written, so a <code>-$1000</code>
+  request was once <em>approved</em> by this very layer. It is now refused before an envelope is
+  read, and both that bug and a 30-digit overflow are permanent test vectors.
+</figcaption>
+</figure>
+
+<h2>The ten engines</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Engine</th><th>Group</th><th>Answers</th></tr></thead>
+  <tbody>
+    <tr><td><code>treasury</code></td><td>economic</td><td>Is there headroom in every envelope this action touches?</td></tr>
+    <tr><td><code>intent</code></td><td>economic</td><td>Is this what the agent was <em>sent</em> to do?</td></tr>
+    <tr><td><code>policy</code></td><td>economic</td><td>What do the operator's own rules say?</td></tr>
+    <tr><td><code>roi</code></td><td>economic</td><td>Is the expected value worth the price?</td></tr>
+    <tr><td><code>trust</code></td><td>risk</td><td>Has this counterparty earned anything, over how many settlements?</td></tr>
+    <tr><td><code>risk</code></td><td>risk</td><td>Does this action's shape score as risky?</td></tr>
+    <tr><td><code>identity</code></td><td>evidence</td><td>Who is acting, under whose authority, and is it still valid?</td></tr>
+    <tr><td><code>audit</code></td><td>evidence</td><td>Append the record, and verify the chain.</td></tr>
+    <tr><td><code>escalation</code></td><td>evidence</td><td>What needs a human, and how does it get to one?</td></tr>
+    <tr><td><code>eiap</code></td><td>evidence</td><td>Is consulting an advisory model economically rational here?</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="key">
+  <p>
+    <strong>No engine imports another engine's family, and none imports the runtime.</strong>
+    Enforced by test, not convention. An engine that reached into <code>runtime</code> would be able
+    to see state the decision path is not supposed to depend on, and the determinism guarantee would
+    quietly stop holding.
+  </p>
+</div>
+
+<h2>Narrowing, and why widening is unreachable</h2>
+
+<p>
+  Every engine returns an assessment. The final verdict is the <em>most severe</em> one any engine
+  produced — so a single control can refuse, and no control can rescue an action another control
+  refused.
+</p>
+
+<p>
+  That makes the verdict <strong>order-independent</strong>: run the engines in any sequence and the
+  answer is identical. But the <strong>attributed control is not</strong> order-independent, and that
+  asymmetry is why AEGS makes evaluation order normative and why conformance scores attribution
+  rather than just the verdict.
+</p>
+
+<div class="note">
+  <p>
+    <strong>A worked example of why attribution is hard.</strong> A sanctioned counterparty asks for
+    more than the per-transaction ceiling. Both controls refuse. If attribution is <em>“the last
+    control that narrowed”</em>, the answer depends on which limit happened to trip first — so a
+    sanctions refusal could be reported as a budget problem.
+  </p>
+  <p>
+    The specification fixes this with <strong>dispositive controls</strong>: a finding that decides
+    attribution whether or not it narrowed anything, and which must be <em>declared</em>.
+    <code>sanctions</code> is the only one Tesoro declares.
+  </p>
+</div>
+
+<h2>Two channels, never one budget</h2>
+
+<figure>
+<svg viewBox="0 0 700 236" role="img" aria-label="Diagram: internal and external channels have separate envelopes and different correct responses when exhausted">
+  <rect class="box" x="10" y="14" width="320" height="200" rx="7"/>
+  <text class="label" x="170" y="38" text-anchor="middle" style="font-weight:700">internal</text>
+  <text class="label-sm" x="170" y="56" text-anchor="middle">tokens the agent burns thinking</text>
+  <text class="label-sm" x="170" y="72" text-anchor="middle">real USD, on your provider key</text>
+  <line x1="30" y1="88" x2="310" y2="88" class="flow"/>
+  <text class="label-sm" x="30" y="110">exhausted mid-run →</text>
+  <text class="label-mono fill-bad" x="182" y="110">REJECT</text>
+  <text class="label-sm" x="30" y="132">no human is in the loop of a</text>
+  <text class="label-sm" x="30" y="147">running agent, so “pause and</text>
+  <text class="label-sm" x="30" y="162">ask” becomes “hang” — and the</text>
+  <text class="label-sm" x="30" y="177">tokens already spent are spent</text>
+
+  <rect class="box" x="370" y="14" width="320" height="200" rx="7"/>
+  <text class="label" x="530" y="38" text-anchor="middle" style="font-weight:700">external</text>
+  <text class="label-sm" x="530" y="56" text-anchor="middle">what the agent pays out</text>
+  <text class="label-sm" x="530" y="72" text-anchor="middle">USDC, settled to a counterparty</text>
+  <line x1="390" y1="88" x2="670" y2="88" class="flow"/>
+  <text class="label-sm" x="390" y="110">over the ceiling →</text>
+  <text class="label-mono fill-warn" x="524" y="110">REVIEW</text>
+  <text class="label-sm" x="390" y="132">a payout is pausable. A person</text>
+  <text class="label-sm" x="390" y="147">can look at it, and the agent</text>
+  <text class="label-sm" x="390" y="162">can wait — so the correct answer</text>
+  <text class="label-sm" x="390" y="177">to the same kind of breach differs</text>
+</svg>
+<figcaption>
+  The two channels never share an envelope, and this is the reason: <strong>the same breach has a
+  different correct response depending on which money it was.</strong> It is not tidy bookkeeping.
+  An implementation may share a <em>limit</em> between channels but never an envelope, because an
+  envelope carries consumption.
+</figcaption>
+</figure>
+
+<h2>Why no model sits on the decision path</h2>
+
+<p>
+  Every engine is integer arithmetic over structured values. Nothing in the decision path reads
+  natural language, which has three consequences worth separating:
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Cost</h3>
+    <p>A decision costs microseconds and zero tokens. Ten runs of 3,000 decisions gave a p50 median
+    of ~170&nbsp;µs — and a 2.4× spread, so treat any single figure as a sample.</p>
+  </div>
+  <div class="card">
+    <h3>Determinism</h3>
+    <p>Same inputs, same verdict, replayable from the journal. A model on the path would make the
+    evidence unreproducible.</p>
+  </div>
+  <div class="card">
+    <h3>Prose injection</h3>
+    <p>Structurally absent. There is nothing on the path that interprets language, so there is
+    nothing to talk into anything.</p>
+  </div>
+</div>
+
+<p>
+  That third one is the strongest property the design has, and it is worth being precise about why:
+  <strong>the defence is not a filter.</strong> A filter can be got wrong. The attack surface does
+  not exist. Seven injection payloads through every counterparty-controlled field produce fourteen
+  verdicts <em>identical</em> to the baseline — not because the text was sanitised, but because
+  nothing read it. The text survives verbatim in the journal, which is compatible with being inert
+  only because nothing interprets it.
+</p>
+
+<div class="warn-box">
+  <p>
+    <strong>It reopens the moment a model is put on the path.</strong> Tesoro has an optional
+    <em>advisory</em> model, consulted only behind an economic gate and <strong>clamped</strong> — it
+    may tighten a verdict, never widen one. The clamp is well tested. Advisor injection itself is
+    <em>not</em> tested and is recorded as an open finding.
+  </p>
+</div>
+
+<h2>Money never touches a float</h2>
+
+<p>
+  Integer atomic units internally — USDC has 6 decimals, so <code>2500000</code> is
+  <code>$2.50</code> — with conversion once at the boundary and an explicitly specified rounding mode
+  (half-up). Passing a <code>float</code> raises rather than rounding quietly.
+</p>
+
+<pre><code><span class="c"># both of these are $2.50</span>
+gov.authorize(amount_usd=<span class="s">"2.50"</span>, ...)   <span class="c"># a decimal string</span>
+gov.authorize(amount_usd=2500000, ...)     <span class="c"># atomic units</span>
+
+gov.authorize(amount_usd=2.50, ...)        <span class="c"># TypeError</span></code></pre>
+
+<p>
+  The rounding mode is pinned because every language's default differs and none is wrong in
+  isolation — an implementation inheriting its own has made a decision it did not know it was
+  making.
+</p>
+
+<h2>Evidence, and exactly what it proves</h2>
+
+<figure>
+<svg viewBox="0 0 700 168" role="img" aria-label="Diagram: a hash chain detects edits, middle deletion and reordering, but not truncation of the tail">
+  <g>
+    <rect class="box" x="14" y="30" width="96" height="44" rx="6"/>
+    <text class="label-mono" x="62" y="50" text-anchor="middle">entry 1</text>
+    <text class="label-sm" x="62" y="65" text-anchor="middle">hash₀</text>
+
+    <rect class="box" x="146" y="30" width="96" height="44" rx="6"/>
+    <text class="label-mono" x="194" y="50" text-anchor="middle">entry 2</text>
+    <text class="label-sm" x="194" y="65" text-anchor="middle">hash₁</text>
+
+    <rect class="box" x="278" y="30" width="96" height="44" rx="6"/>
+    <text class="label-mono" x="326" y="50" text-anchor="middle">entry 3</text>
+    <text class="label-sm" x="326" y="65" text-anchor="middle">hash₂</text>
+
+    <rect class="box" x="410" y="30" width="96" height="44" rx="6"/>
+    <text class="label-mono" x="458" y="50" text-anchor="middle">entry 4</text>
+    <text class="label-sm" x="458" y="65" text-anchor="middle">hash₃</text>
+
+    <path class="flow" d="M110 52 H142" marker-end="url(#ac)"/>
+    <path class="flow" d="M242 52 H274" marker-end="url(#ac)"/>
+    <path class="flow" d="M374 52 H406" marker-end="url(#ac)"/>
+  </g>
+
+  <text class="label-sm fill-ok" x="14" y="104">detected: editing an entry · deleting one from the middle · reordering · replay</text>
+  <text class="label-sm fill-bad" x="14" y="126">NOT detected: deleting entries off the end — any prefix of a valid chain is itself valid</text>
+  <text class="label-sm" x="14" y="150">so an agent that was refused could delete the refusal, and verification would still say VALID</text>
+
+  <path class="flow-bad" d="M520 52 H556" stroke-dasharray="4 3"/>
+  <text class="label-sm fill-bad" x="562" y="56">truncated</text>
+
+  <defs>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  Hashes are <strong>128 bits minimum</strong>. Five places in this codebase retained 64 by writing
+  <code>hexdigest()[:16]</code> independently — at 64 bits a second preimage is 2⁶⁴ work, reachable
+  with commodity GPUs in months, which weakens edit detection directly. All hashes now route through
+  one module so the length exists in one place.
+</figcaption>
+</figure>
+
+<p>
+  The truncation gap is <strong>disclosed rather than fixed</strong>, and the fix that looks like one
+  is worth naming: writing the chain head and length to a second file beside the journal is
+  <em>not</em> an anchor, because whoever can truncate the journal can rewrite that file. Shipping it
+  would be worse than shipping the gap, because it would make the system <em>appear</em> anchored.
+</p>
+
+<h2>Four states, never three</h2>
+
+<p>
+  <code>absent</code> ≠ <code>not-run</code> ≠ <code>unknown</code> ≠ <code>zero</code>. These are
+  four different answers and conflating any two of them loses information a reader needs:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>State</th><th>Means</th><th>Confusing it with <code>zero</code> would say</th></tr></thead>
+  <tbody>
+    <tr><td><code>absent</code></td><td>nothing was claimed</td><td>“we measured, and the answer was nothing”</td></tr>
+    <tr><td><code>not-run</code></td><td>the control exists and declined to answer</td><td>same, and worse — it hides a gap</td></tr>
+    <tr><td><code>unknown</code></td><td>it ran and cannot report a value</td><td>the failure this rule exists to prevent</td></tr>
+    <tr><td><code>zero</code></td><td>it ran and the answer really is zero or false</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  From a real defect: an unmeasured vendor history rendered as <code>0</code> made every advisor
+  treat <em>established</em> counterparties as strangers. In the HTML report, an unset limit renders
+  as <strong>absent</strong> and never as <code>$0.00</code> — rendering it as zero would state the
+  tightest possible ceiling where there is none, which is exactly inverted.
+</p>
+
+<h2>Reference</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Public API</h3>
+    <p>Stability tiers, what is deliberately not public, and where the document has been wrong.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/api-surface.md">api-surface.md →</a>
+  </div>
+  <div class="card">
+    <h3>CLI</h3>
+    <p>Every command, every flag, and the five exit codes.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/cli.md">cli.md →</a>
+  </div>
+  <div class="card">
+    <h3>Advisors</h3>
+    <p>Optional models, the economic gate, and why they can only ever tighten.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/advisors.md">advisors.md →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>

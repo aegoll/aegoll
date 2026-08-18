@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Get started — Tesoro</title>
+<meta name="description" content="Install to a first refusal in about five minutes. No wallet, no testnet, no model key.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html">Overview</a>
+    <a href="architecture.html">Architecture</a>
+    <a href="policies.html">Policies &amp; rules</a>
+    <a href="frameworks.html">Frameworks</a>
+    <a href="aegs.html">AEGS</a>
+    <a href="start.html" aria-current="page">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>Get started</h1>
+<p class="lede">
+  Install to a first <em>refusal</em> in about five minutes. No wallet, no testnet, no model key, no
+  account to sign up for. A spend cap that has never refused anything has not been demonstrated, so
+  the goal here is a refusal you can read.
+</p>
+
+<h2>1 · Install</h2>
+
+<pre><code>pip install tesoro</code></pre>
+
+<p>
+  Two packages, on purpose: <code>tesoro</code> and <code>PyYAML</code>. No web framework, no model
+  client, no network library — a layer that decides whether a payment may happen has no business
+  pulling in an HTTP stack. Python 3.11 or newer.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Extra</th><th>Adds</th></tr></thead>
+  <tbody>
+    <tr><td><code>tesoro[schema]</code></td><td>validate emitted records against the AEGS schemas</td></tr>
+    <tr><td><code>tesoro[x402]</code></td><td>the x402 payment rail</td></tr>
+    <tr><td><code>tesoro[claude]</code> <code>[adk]</code> <code>[langgraph]</code> <code>[crewai]</code></td><td>framework adapters</td></tr>
+    <tr><td><code>tesoro[advisors]</code></td><td>optional advisory models — never on the decision path</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>2 · Create a project</h2>
+
+<pre><code>mkdir my-agent &amp;&amp; cd my-agent
+tesoro init</code></pre>
+
+<p>Two files, and the split between them is the one concept worth understanding up front:</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>File</th><th>What it is</th><th>Written by</th></tr></thead>
+  <tbody>
+    <tr><td><code>tesoro.yaml</code></td><td>which profile, which pack, where evidence goes</td><td>you (deployment)</td></tr>
+    <tr><td><code>policies/default.yaml</code></td><td><strong>your rules</strong> — the numbers and the decisions</td><td>you (policy)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>3 · Check it before an agent holds a wallet</h2>
+
+<pre><code>tesoro check</code></pre>
+
+<pre><code>config : /my-agent/tesoro.yaml
+profile: aegs-1  7 required control(s)
+policy : default  a5a64aeb69dbc5f9206b31022064da26  12 rules
+
+ok</code></pre>
+
+<p>
+  Exit <code>0</code> means the config <em>and</em> the pack it points at are both valid. Every fault is
+  reported at once rather than one per run, so this belongs in CI:
+</p>
+
+<pre><code>- run: tesoro check      <span class="c"># fails the build on an invalid policy</span></code></pre>
+
+<p>
+  That hash is the pack's <strong>content</strong> hash, and it goes into every decision this pack
+  produces. A label can be reused across edited rules; a hash cannot.
+</p>
+
+<h2>4 · Ask it a question</h2>
+
+<pre><code>tesoro decide --amount 0.01 --vendor acme --resource /market/snapshot</code></pre>
+
+<pre><code><span class="s">APPROVE</span>  /market/snapshot  $0.010000
+  rule     : auto-approve-micro
+  trust    : 0.2500  ['new_vendor']
+  budget   : ok=True binding=None</code></pre>
+
+<p>Now one it should refuse:</p>
+
+<pre><code>tesoro decide --amount 500 --vendor acme --resource /market/snapshot</code></pre>
+
+<pre><code><span class="k">REJECT</span>  /market/snapshot  $500.000000
+  rule     : deny-over-balance</code></pre>
+
+<h3>Check the exit code — this is what makes it scriptable</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Exit</th><th>Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>0</code></td><td>approved</td></tr>
+    <tr><td><code>2</code></td><td><strong>refused.</strong> The layer worked and said no — not an error</td></tr>
+    <tr><td><code>1</code></td><td>invalid config or policy</td></tr>
+    <tr><td><code>3</code></td><td>the evidence chain does not verify</td></tr>
+    <tr><td><code>4</code></td><td>usage error</td></tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code><span class="k">if</span> tesoro decide --amount 500 --vendor acme --resource /r; <span class="k">then</span>
+  echo <span class="s">"cleared"</span>
+<span class="k">else</span>
+  echo <span class="s">"refused: $?"</span>     <span class="c"># 2</span>
+<span class="k">fi</span></code></pre>
+
+<p>
+  <code>2</code> is a refusal rather than a failure because <strong>a governance layer that returns an
+  error when it governs cannot be told apart from one that is broken.</strong> <code>4</code> exists
+  because argparse exits <code>2</code> by default, which would collide.
+</p>
+
+<div class="warn-box">
+  <p>
+    <strong>Windows, Git Bash only.</strong> MSYS rewrites a leading <code>/</code> before Python sees
+    it, so <code>/market/snapshot</code> arrives as
+    <code>C:/Program Files/Git/market/snapshot</code> — and it is recorded in your evidence that way
+    with no error. Use PowerShell, <code>cmd</code>, or <code>MSYS_NO_PATHCONV=1</code>. Not a Tesoro
+    behaviour, but it silently corrupts a resource identifier, which is worse than an error.
+  </p>
+</div>
+
+<h2>5 · Govern the actual agent</h2>
+
+<pre><code><span class="k">from</span> tesoro <span class="k">import</span> Governor
+
+gov = Governor.load()                  <span class="c"># reads ./tesoro.yaml</span>
+agent = gov.wrap(my_agent)             <span class="c"># duck-typed; any framework, or none</span></code></pre>
+
+<p>Or hold the payment yourself:</p>
+
+<pre><code>decision = gov.authorize(
+    amount_usd=<span class="s">"2.50"</span>,                 <span class="c"># a string. A float raises</span>
+    vendor=<span class="s">"acme"</span>,
+    resource=<span class="s">"/market/snapshot"</span>,
+)
+
+<span class="k">if</span> decision.approved:
+    pay(...)                           <span class="c"># your payment call, on any rail</span>
+    gov.settle(decision, success=<span class="k">True</span>)  <span class="c"># envelopes consume HERE</span>
+<span class="k">else</span>:
+    print(decision.verdict, decision.attributed_control, decision.reason)</code></pre>
+
+<div class="key">
+  <p>
+    <strong><code>settle()</code> is where envelopes consume, not <code>authorize()</code>.</strong> A
+    decision is made before money moves; a settlement records what actually happened. So an abandoned
+    decision does not eat budget — and if the amount paid differs from the amount quoted, pass
+    <code>actual_amount_usd=</code> and <em>that</em> is what counts against your limits.
+  </p>
+  <p>
+    Skipping <code>settle()</code> means the layer knows what it authorised and never learns what
+    happened: nothing is consumed, and counterparty trust never accumulates.
+  </p>
+</div>
+
+<p>Two more things in that snippet are load-bearing:</p>
+
+<ul class="gap-list">
+  <li>
+    <strong><code>amount_usd</code> is a string.</strong> Money is integer atomic units internally,
+    converted once at the boundary. A <code>float</code> raises rather than rounding quietly —
+    <code>0.1 + 0.2</code> is not <code>0.3</code>, and there is no rounding this layer could pick that
+    you would know about. An <code>int</code> is accepted and means <strong>atomic units</strong>, so
+    <code>2500000</code> is <code>"2.50"</code>.
+  </li>
+  <li>
+    <strong><code>decision.attributed_control</code> is the field worth logging.</strong> Not <em>what</em>
+    was decided — <em>which control decided it</em>. That is the question you will actually have at 2am,
+    and the one a verdict alone cannot answer.
+  </li>
+</ul>
+
+<h2>6 · See what happened</h2>
+
+<pre><code>tesoro report
+tesoro report --html -o spend.html    <span class="c"># one self-contained file</span></code></pre>
+
+<p>
+  Four panels, one question each: <strong>Policy</strong> (what will this do?),
+  <strong>Envelopes</strong> (how much is left?), <strong>Decisions</strong> (why did my agent stop?),
+  <strong>Evidence</strong> (can I trust this record?).
+</p>
+
+<p>
+  No server, no port, no listener, and <strong>no outbound request of any kind</strong> — no CDN, no
+  webfont, no analytics. It is a file you can attach to a ticket. That property is asserted by a test
+  that greps the rendered bytes, because a page describing what your agent spends should not phone
+  anywhere. (This documentation site follows the same rule.)
+</p>
+
+<p>The part worth reading is <strong>by attributed control</strong>:</p>
+
+<pre><code>by attributed control  -- what actually governed this agent
+  policy                 2
+  treasury               1</code></pre>
+
+<p>
+  Counts by verdict tell you what happened. Counts by attributed control tell you what is
+  <em>actually</em> governing this agent — frequently not what whoever wrote the policy expected.
+</p>
+
+<h2>7 · Verify the record</h2>
+
+<pre><code>tesoro audit</code></pre>
+
+<p>
+  Every decision is journalled in an append-only, hash-chained record. <code>audit</code> re-verifies
+  the chain and exits <code>3</code> if it does not hold.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Detected</th><th>Not detected</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>editing an entry · deleting one from the middle · reordering · replay</td>
+      <td>deleting entries off the <strong>end</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Any prefix of a valid chain is itself a valid chain, so an agent that was refused could delete the
+  refusal and verification would still report success. Closing that needs an external anchor. Tesoro
+  prints the caveat next to every <code>VALID</code> rather than shipping a <code>head.json</code>
+  beside the journal — which would <em>look</em> like a fix while defending against nothing, since
+  whoever can truncate the journal can rewrite the file next to it.
+</p>
+
+<h2>Run the whole thing against a mock seller</h2>
+
+<p>
+  The examples repository ships a <strong>stdlib x402 mock seller</strong> — no wallet, no testnet, no
+  chain — that speaks the real protocol: its 402 carries a genuine <code>PAYMENT-REQUIRED</code> header
+  built with the SDK's own encoder, so the buyer's decoder parses it exactly as it parses a live
+  seller's.
+</p>
+
+<pre><code>git clone https://github.com/aegoll/tesoro-integrations
+cd tesoro-integrations
+pip install -r quickstarts/no-framework/requirements.txt
+python quickstarts/no-framework/run_mock.py</code></pre>
+
+<pre><code>bought   /market/snapshot       $ 0.010000
+bought   /market/depth          $ 0.050000
+<span class="k">REFUSED</span>  /premium/feed          $ 2.500000
+         control : policy
+<span class="k">REFUSED</span>  /expensive/report      $25.000000
+         control : treasury, envelope per_transaction
+         because : per_transaction admits $10.000000 but the request is $25.000000
+
+OK: 2 refusal(s), 1 of them from an envelope (per_transaction).</code></pre>
+
+<div class="note">
+  <p>
+    <strong>What a green run there proves, and what it does not.</strong> It proves the loop works,
+    governance is wired in, a budget is authorised before the run, a ceiling stops it, envelopes consume
+    on settlement, and the chain records all of it.
+  </p>
+  <p>
+    It proves <em>nothing</em> about signatures or settlement: the mock accepts any payment header
+    without checking it, its receipt's transaction id is literally
+    <code>0xMOCK-NO-CHAIN-INVOLVED</code>, and <code>/health</code> reports
+    <code>settles: false</code> so a caller can always ask what it is talking to.
+  </p>
+</div>
+
+<h2>Six use cases, each checking its own claim</h2>
+
+<pre><code>python usecases/run_all.py</code></pre>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Case</th><th>The claim</th></tr></thead>
+  <tbody>
+    <tr><td><code>data-marketplace</code></td><td>the baseline — an agent shops, the expensive thing does not go through</td></tr>
+    <tr><td><code>intent-drift</code></td><td><strong>treasury, trust, risk and policy all say yes. Only intent knows what the agent was sent to do</strong></td></tr>
+    <tr><td><code>delegation</code></td><td>a sub-agent can never claim more than its parent — including one that declares <em>nothing</em></td></tr>
+    <tr><td><code>budget-exhaustion</code></td><td>an exhausted token budget must <span class="v reject">REJECT</span>; the same breach on a payout is <span class="v review">REVIEW</span></td></tr>
+    <tr><td><code>prompt-injection</code></td><td>counterparty text cannot move a verdict, because nothing on the path reads prose</td></tr>
+    <tr><td><code>aml-structuring</code></td><td><strong>nothing is refused.</strong> An open gap, shipped as a runnable artifact</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Each exits non-zero if it stops demonstrating its point — including a case refused by the
+  <em>wrong</em> control, which is CONF-2 applied to an example: a right ending for the wrong reason
+  teaches the reader something false. The structuring case inverts it and fails if a refusal ever
+  <em>appears</em>, because that would mean the gap had closed.
+</p>
+
+<h2>Real settlement</h2>
+
+<pre><code>export X402_SELLER_URL=http://localhost:4021   <span class="c"># any x402 resource server</span>
+export X402_PRIVATE_KEY=0x...                 <span class="c"># Base Sepolia. Testnet only.</span></code></pre>
+
+<div class="warn-box">
+  <p>
+    <strong>Testnet only. Never a mainnet key in an example script.</strong> Tesoro's job is to make an
+    agent's spending bounded and explicable; it is not a substitute for keeping a funded key out of a
+    quickstart. BYOK keys are never stored, logged or journalled by the layer — a masked display path is
+    the only way a key is ever shown.
+  </p>
+</div>
+
+<h2>Before you rely on this</h2>
+
+<p>
+  <strong>0.x.</strong> The API may change before 1.0, and this is here rather than at the bottom of a
+  changelog because you are about to point it at a wallet.
+</p>
+
+<p>
+  Specifically: <a href="index.html">structuring and velocity evasion are open</a>, AML screening is a
+  schema with no engine behind it, no regulatory compliance is claimed or sought, journal truncation
+  needs an external anchor, and no independent implementation has been scored.
+</p>
+
+<h2>Reference</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Quickstart</h3>
+    <p>The same seven steps, in the repository.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/quickstart.md">quickstart.md →</a>
+  </div>
+  <div class="card">
+    <h3>CLI</h3>
+    <p>Every command and flag.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/cli.md">cli.md →</a>
+  </div>
+  <div class="card">
+    <h3>Public API</h3>
+    <p>Stability tiers and what is deliberately not public.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/api-surface.md">api-surface.md →</a>
+  </div>
+  <div class="card">
+    <h3>Examples</h3>
+    <p>Agents, the mock seller, use cases, the measurement harness.</p>
+    <a href="https://github.com/aegoll/tesoro-integrations">tesoro-integrations →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Tesoro — an Autonomous Economic Governance Layer</title>
+<meta name="description" content="Know what your autonomous agent spends, cap it across time, and prove why anything was refused.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html" aria-current="page">Overview</a>
+    <a href="architecture.html">Architecture</a>
+    <a href="policies.html">Policies &amp; rules</a>
+    <a href="frameworks.html">Frameworks</a>
+    <a href="aegs.html">AEGS</a>
+    <a href="start.html">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>Autonomous payment should not mean unrestricted payment</h1>
+<p class="lede">
+  Tesoro sits between an agent and every dollar it spends — the tokens it burns thinking and the
+  money it pays out — and decides, <em>before</em> the payment, whether it should happen. Ten
+  deterministic engines, no model in the decision path, and an append-only record of every decision
+  and the control that made it.
+</p>
+
+<pre><code><span class="c"># the whole thing</span>
+pip install tesoro
+tesoro init
+tesoro decide --amount 2.50 --vendor acme --resource /market/snapshot</code></pre>
+
+<h2>What is an Autonomous Economic Governance Layer?</h2>
+
+<p>
+  An <strong>AEGL</strong> is any layer that decides whether an autonomous agent may spend,
+  <em>before</em> it spends. That is the whole category definition, and the word doing the work is
+  <em>before</em>.
+</p>
+
+<p>
+  It matters because an agent is not a person with a card. It acts thousands of times an hour, it
+  has no intuition about money, and it cannot be asked mid-run whether a purchase seems sensible.
+  Every traditional control assumes a human somewhere in the loop — a monthly statement, an
+  approval workflow, a fraud alert after the fact. None of those work at machine speed, and all of
+  them are <em>reports</em> rather than controls.
+</p>
+
+<figure>
+<svg viewBox="0 0 720 200" role="img" aria-label="Diagram: an AEGL sits between the agent and the payment rail, deciding before money moves">
+  <rect class="box" x="8" y="62" width="118" height="62" rx="7"/>
+  <text class="label" x="67" y="88" text-anchor="middle">Agent</text>
+  <text class="label-sm" x="67" y="105" text-anchor="middle">wants to spend</text>
+
+  <rect class="box-accent" x="212" y="40" width="176" height="106" rx="7"/>
+  <text class="label" x="300" y="66" text-anchor="middle" style="font-weight:700">AEGL</text>
+  <text class="label-sm" x="300" y="86" text-anchor="middle">decides, before</text>
+  <text class="label-sm" x="300" y="101" text-anchor="middle">money moves</text>
+  <text class="label-mono" x="300" y="124" text-anchor="middle">tesoro</text>
+
+  <rect class="box" x="474" y="20" width="150" height="52" rx="7"/>
+  <text class="label" x="549" y="42" text-anchor="middle">Payment rail</text>
+  <text class="label-sm" x="549" y="58" text-anchor="middle">x402 · card · AP2</text>
+
+  <rect class="box" x="474" y="118" width="150" height="52" rx="7"/>
+  <text class="label" x="549" y="140" text-anchor="middle">Model provider</text>
+  <text class="label-sm" x="549" y="156" text-anchor="middle">tokens, real money</text>
+
+  <path class="flow-strong" d="M126 93 H206" marker-end="url(#a1)"/>
+  <path class="flow" d="M388 78 H468" marker-end="url(#a1)"/>
+  <path class="flow" d="M388 110 H468" marker-end="url(#a1)"/>
+
+  <text class="label-sm fill-dim" x="166" y="86" text-anchor="middle">asks</text>
+  <text class="label-sm fill-ok" x="428" y="72" text-anchor="middle">external</text>
+  <text class="label-sm fill-ok" x="428" y="128" text-anchor="middle">internal</text>
+
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  The agent never touches the rail directly. It asks; the layer decides; only an approved decision
+  reaches a payment. <strong>Two channels</strong> — the tokens an agent burns thinking, and what it
+  pays out — are governed separately, because they are different money with different failure modes.
+</figcaption>
+</figure>
+
+<h3>Four kinds of AEGL, and what each can express</h3>
+
+<p>
+  Not every layer that says no is the same thing. These are ordered by what they can <em>express</em>,
+  and each row can do everything above it:
+</p>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Type</th><th>Decides on</th><th>Catches</th><th>Cannot catch</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1 · Per-payment cap</strong></td>
+      <td>one amount, in isolation</td>
+      <td>a single payment that is too large</td>
+      <td>ten payments that are each fine</td>
+    </tr>
+    <tr>
+      <td><strong>2 · Cumulative envelope</strong></td>
+      <td>amount + history</td>
+      <td>a budget exhausted over a day, a month, a window</td>
+      <td>a perfectly affordable purchase of the wrong thing</td>
+    </tr>
+    <tr>
+      <td><strong>3 · Governed budget</strong> <span class="pill">tesoro</span></td>
+      <td>amount, history, counterparty, purpose, identity</td>
+      <td>drift from what the agent was <em>sent</em> to do; an untrusted counterparty; a delegate exceeding its parent</td>
+      <td>the <em>shape</em> of a sequence</td>
+    </tr>
+    <tr>
+      <td><strong>4 · Behavioural</strong> <span class="pill">not built</span></td>
+      <td>all of the above + sequence shape</td>
+      <td>structuring — forty payments below every limit</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p>
+    <strong>Type 1 is now table stakes.</strong> The x402 SDKs ship a per-payment cap, and so do
+    several others. If a spend cap is all you need, you may already have one.
+  </p>
+  <p>
+    Tesoro is type 3, and the gap between 2 and 3 is the interesting one: <em>“within budget”</em>
+    and <em>“doing the job”</em> are different questions, and a budget cannot answer the second.
+  </p>
+</div>
+
+<h2>Why a cap on one payment is not a budget</h2>
+
+<p>
+  Forty payments of one cent pass every per-payment cap ever written. So do five identical purchases
+  when only the sixth exhausts the day. Here is the same one-cent purchase, six times, against a
+  <strong>ten dollar</strong> per-payment ceiling that none of them comes near:
+</p>
+
+<pre><code>purchase 1: $0.01  <span class="s">APPROVE</span>
+purchase 2: $0.01  <span class="s">APPROVE</span>
+purchase 3: $0.01  <span class="s">APPROVE</span>
+purchase 4: $0.01  <span class="s">APPROVE</span>
+purchase 5: $0.01  <span class="s">APPROVE</span>
+purchase 6: $0.01  <span class="k">REVIEW</span>  <span class="c">← treasury / binding=daily</span></code></pre>
+
+<p>
+  The refused payment is byte-for-byte identical to the five that were approved. A cap with no
+  memory cannot express that, and no amount of <em>tightening</em> a per-payment ceiling produces
+  it — tightening only makes legitimate use harder.
+</p>
+
+<h2>The three things Tesoro produces</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>A decision</h3>
+    <p>One of four verdicts, made before money moves. Deterministic integer arithmetic — the same
+    inputs always give the same answer.</p>
+  </div>
+  <div class="card">
+    <h3>An attribution</h3>
+    <p><strong>Which control decided</strong>, not just what was decided. The field you actually
+    need at 2am, and the one a single cap cannot produce.</p>
+  </div>
+  <div class="card">
+    <h3>Evidence</h3>
+    <p>An append-only, hash-chained record. Editing, middle-deletion and reordering are all
+    detected.</p>
+  </div>
+</div>
+
+<h3>The four verdicts, ordered by severity</h3>
+
+<p>
+  <span class="v approve">APPROVE</span> &lt;
+  <span class="v review">REVIEW</span> &lt;
+  <span class="v escalate">ESCALATE</span> &lt;
+  <span class="v reject">REJECT</span>
+</p>
+
+<p>
+  The ordering is normative, and the middle pair is the one that invites disagreement:
+  <strong>REVIEW is pausable</strong> — a human can look at it and the agent can wait.
+  <strong>ESCALATE is blocking.</strong> Controls combine by <em>narrowing only</em>: any control
+  may tighten a verdict another set, and none may widen one. Widening is not refused — it is
+  <em>unreachable</em>, which is a stronger property than a rule nobody enforces.
+</p>
+
+<h2>What Tesoro does not do</h2>
+
+<p>
+  Stated here rather than in a footnote, because the rest of this site is only worth reading if this
+  section is honest. Every item is also in the
+  <a href="https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md">CHANGELOG</a> and the
+  <a href="https://github.com/aegoll/aegs/blob/main/spec/12-security-considerations.md">specification's
+  security section</a>.
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Structuring is undefended.</strong> Forty payments of a tenth of a cent, paced apart,
+    breach no value envelope and no rate limit — 0.08% of a daily budget, nothing refused. It ships
+    as a <em>runnable demonstration</em> rather than a paragraph:
+    <a href="https://github.com/aegoll/tesoro-integrations/tree/main/usecases/aml-structuring">usecases/aml-structuring</a>.
+    Catching it needs a control that reads the shape of a sequence, and no envelope does.
+  </li>
+  <li>
+    <strong>Velocity evasion is undefended.</strong> Pacing exactly at a rate limit is unbounded in
+    total: ten per minute permits fourteen thousand a day.
+  </li>
+  <li>
+    <strong>Journal truncation is undetectable</strong> without an external anchor. Any prefix of a
+    valid chain is itself valid, so an agent that was refused could delete the refusal and
+    verification would still report success. Tesoro prints that caveat next to every
+    <code>VALID</code> rather than shipping a <code>head.json</code> beside the journal — which would
+    look like a fix and defend against nothing, since whoever can truncate the journal can rewrite
+    the file next to it.
+  </li>
+  <li>
+    <strong>AML screening is a schema with no engine behind it.</strong> No list, no matching, no
+    jurisdiction model. No regulatory compliance is claimed or sought.
+  </li>
+  <li>
+    <strong>No independent implementation has been scored.</strong> Every conformance case and
+    threat was written by the author of the system under test. That is the
+    <a href="aegs.html#open">largest open question</a> in the project.
+  </li>
+  <li>
+    <strong>The CrewAI adapter's hooks are unverified</strong> against a real run — documentation
+    only. Its governance behaviour is tested as thoroughly as the others; the hook names are not.
+  </li>
+</ul>
+
+<div class="warn-box">
+  <p>
+    <strong>0.x.</strong> The API may change before 1.0. This is stated here, on the README, in the
+    CHANGELOG header and at the end of the quickstart, because you are about to point it at a wallet.
+  </p>
+</div>
+
+<p class="small">
+  The red-team suite's own one-line summary of this layer, kept because it is the fairest available:
+  <em>it resists prose; it did not resist a minus sign, and it does not yet resist patience.</em> The
+  minus sign is fixed and permanently covered by a test vector. Patience is still open.
+</p>
+
+<h2>Where to go next</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Get started</h3>
+    <p>Install to a first refusal, with no wallet and no model key.</p>
+    <a href="start.html">start →</a>
+  </div>
+  <div class="card">
+    <h3>Architecture</h3>
+    <p>Ten engines, the decision path, and why no model sits on it.</p>
+    <a href="architecture.html">architecture →</a>
+  </div>
+  <div class="card">
+    <h3>Policies &amp; rules</h3>
+    <p>What you write, the fixed vocabulary you write it in, and why it cannot execute.</p>
+    <a href="policies.html">policies →</a>
+  </div>
+  <div class="card">
+    <h3>Frameworks</h3>
+    <p>Claude Agent SDK, Google ADK, LangGraph, CrewAI — and the contract that needs none of them.</p>
+    <a href="frameworks.html">frameworks →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Policies &amp; rules — Tesoro</title>
+<meta name="description" content="Policy packs are data, never code. The fixed vocabulary, the rule shape, envelopes, and profiles.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html">Overview</a>
+    <a href="architecture.html">Architecture</a>
+    <a href="policies.html" aria-current="page">Policies &amp; rules</a>
+    <a href="frameworks.html">Frameworks</a>
+    <a href="aegs.html">AEGS</a>
+    <a href="start.html">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>Policies &amp; rules</h1>
+<p class="lede">
+  A <strong>policy pack</strong> is what the rules are — you write it. A <strong>profile</strong> is
+  which controls must exist and what must be recorded — the standard writes it. Getting these two
+  confused makes every later sentence wrong, so they are never the same file.
+</p>
+
+<h2>The one rule about rules: they are data, never code</h2>
+
+<div class="key">
+  <p>
+    Declarative rules, a <strong>fixed</strong> comparator vocabulary, no expression language,
+    nothing to <code>eval</code>. This is a security boundary rather than a style preference: an
+    executable policy pack downloaded from a registry is <strong>remote code execution wearing a
+    governance hat</strong>, and the risk arrives the moment packs are shared between deployments —
+    which is where any successful policy format goes.
+  </p>
+  <p>
+    Anything a pack cannot express is a <strong>missing engine</strong>, and the answer is a new
+    engine — code, reviewed as code, on a gated path — not an escape hatch.
+  </p>
+</div>
+
+<p>
+  The pressure on this will be constant. Every sufficiently expressive policy format is eventually
+  asked for a way to run a small snippet, and each individual request is reasonable. The answer that
+  holds is the one above.
+</p>
+
+<h2>What a pack looks like</h2>
+
+<p>
+  <code>tesoro init</code> writes <code>tesoro.yaml</code> (which profile, which pack, where evidence
+  goes) and <code>policies/default.yaml</code> — the rules, which are yours to edit. JSON is accepted
+  everywhere YAML is.
+</p>
+
+<pre><code><span class="k">version</span>: 1
+<span class="k">name</span>: default
+
+<span class="k">config</span>:
+  <span class="k">treasury</span>:                        <span class="c"># the external channel</span>
+    balance_usd: <span class="s">"500"</span>
+    per_transaction_usd: <span class="s">"10"</span>       <span class="c"># a ceiling, never accumulates</span>
+    daily_usd: <span class="s">"50"</span>                 <span class="c"># cumulative</span>
+    monthly_usd: <span class="s">"300"</span>
+    per_vendor_30d_usd: <span class="s">"100"</span>
+    per_resource_30d_usd: <span class="s">"50"</span>
+    emergency_reserve_usd: <span class="s">"10"</span>
+    velocity_60s: 10                <span class="c"># a rate, not a total</span>
+    velocity_1h: 100
+
+  <span class="k">treasury_internal</span>:               <span class="c"># tokens; overrides only what it names</span>
+    per_transaction_usd: <span class="s">"0.04"</span>     <span class="c"># one run's token budget</span>
+    daily_usd: <span class="s">"0.15"</span>
+
+<span class="k">rules</span>:
+  - <span class="k">id</span>: deny-sanctioned
+    <span class="k">priority</span>: 0                    <span class="c"># lowest number decides first</span>
+    <span class="k">when</span>:
+      vendor.sanctioned: true
+    <span class="k">then</span>: REJECT
+    <span class="k">reason</span>: sanctioned counterparty
+
+  - <span class="k">id</span>: review-budget-exhausted
+    <span class="k">priority</span>: 10
+    <span class="k">when</span>:
+      budget.ok: false
+    <span class="k">then</span>: REVIEW
+    <span class="k">reason</span>: outside a budget envelope</code></pre>
+
+<p>
+  Every amount is a <strong>string</strong>. A YAML number would have lost precision before anything
+  read it, and the test vectors check exactly this.
+</p>
+
+<div class="note">
+  <p>
+    <strong>The pack has a content hash, and it goes into every decision.</strong>
+    <code>tesoro check</code> prints it. A <em>label</em> can be reused across edited rules; a hash
+    cannot — which is why the Decision Record schema records the hash rather than the name, and why
+    every measurement stamps it.
+  </p>
+</div>
+
+<h2>The fixed vocabulary</h2>
+
+<h3>Ten comparators</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Comparator</th><th>Means</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>eq</code> · <code>ne</code></td><td>equals, does not equal</td><td><code>vendor.id: {ne: acme}</code></td></tr>
+    <tr><td><code>lt</code> · <code>lte</code></td><td>under, at most</td><td><code>amount_usd: {lte: "1.00"}</code></td></tr>
+    <tr><td><code>gt</code> · <code>gte</code></td><td>over, at least</td><td><code>trust.score: {gte: 0.7}</code></td></tr>
+    <tr><td><code>in</code> · <code>not_in</code></td><td>is / is not one of</td><td><code>budget.binding: {in: [balance, emergency_reserve]}</code></td></tr>
+    <tr><td><code>between</code></td><td>inclusive range</td><td><code>amount_usd: {between: ["1.00", "5.00"]}</code></td></tr>
+    <tr><td><code>contains</code></td><td>membership in a list value</td><td><code>vendor.tags: {contains: verified}</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="small">
+  <code>eq</code>, <code>ne</code>, <code>in</code> and <code>not_in</code> are null-safe; the
+  ordering comparators are not, because <em>“is an unknown score greater than 0.7”</em> has no honest
+  answer and inventing one is how the four-state rule gets broken.
+</p>
+
+<h3>Twenty facts a rule may read</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Group</th><th>Facts</th></tr></thead>
+  <tbody>
+    <tr><td>the action</td><td><code>amount_usd</code> <code>resource</code> <code>purpose</code> <code>channel</code> <code>agent_id</code></td></tr>
+    <tr><td>counterparty</td><td><code>vendor.id</code> <code>vendor.sanctioned</code> <code>vendor.tags</code> <code>vendor.is_new</code> <code>vendor.settled_count</code></td></tr>
+    <tr><td>trust &amp; risk</td><td><code>trust.score</code> <code>trust.flags</code> <code>risk.score</code> <code>risk.flags</code></td></tr>
+    <tr><td>value</td><td><code>roi.known</code> <code>roi.ratio</code> <code>roi.justified</code></td></tr>
+    <tr><td>budget</td><td><code>budget.ok</code> <code>budget.binding</code> <code>budget.headroom_usd</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The pack is <strong>validated at load</strong>, in full, or it is not loaded. An unknown fact name,
+  an unknown comparator or a verdict that is not one of the four is a startup error rather than a
+  surprise at run time — because a rule that never matches never validates, and a pack could
+  otherwise carry a verdict of <code>MAYBE</code> and look fine until the one request that touched it
+  arrived.
+</p>
+
+<h3>Derived facts: composition without execution</h3>
+
+<p>
+  <em>“amount over $100 <strong>and</strong> the vendor is new”</em> needs no new measurement, only
+  composition. That is a derived fact — still data, built from the same fixed comparators with three
+  fixed connectives:
+</p>
+
+<pre><code><span class="k">derived</span>:
+  - <span class="k">name</span>: risky_newcomer
+    <span class="k">all</span>:                          <span class="c"># all | any | not</span>
+      - amount_usd: {gt: <span class="s">"100"</span>}
+      - vendor.is_new: true
+
+<span class="k">rules</span>:
+  - <span class="k">id</span>: review-risky-newcomer
+    <span class="k">priority</span>: 20
+    <span class="k">when</span>:
+      risky_newcomer: true
+    <span class="k">then</span>: REVIEW</code></pre>
+
+<p>
+  What makes this safe is the <strong>closure</strong>: a pack that could introduce a fourth
+  connective could introduce logic.
+</p>
+
+<h2>Envelopes: the part a per-payment cap cannot express</h2>
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-label="Diagram: a per-call ceiling versus cumulative envelopes, and which one binds">
+  <text class="label" x="14" y="24" style="font-weight:700">per_transaction</text>
+  <text class="label-sm" x="150" y="24">a ceiling. Never accumulates — there is no “used”.</text>
+  <rect class="box" x="14" y="34" width="480" height="22" rx="4"/>
+  <text class="label-sm" x="504" y="50">$10.00 max, per call</text>
+
+  <text class="label" x="14" y="88" style="font-weight:700">daily</text>
+  <text class="label-sm" x="150" y="88">cumulative. Consumes on settle.</text>
+  <rect class="box" x="14" y="98" width="480" height="22" rx="4"/>
+  <rect x="15" y="99" width="58" height="20" rx="3" class="fill-warn" opacity="0.55"/>
+  <text class="label-sm" x="504" y="114">$6.02 of $50.00</text>
+
+  <text class="label" x="14" y="152" style="font-weight:700">monthly</text>
+  <rect class="box" x="14" y="162" width="480" height="22" rx="4"/>
+  <rect x="15" y="163" width="106" height="20" rx="3" class="fill-warn" opacity="0.35"/>
+  <text class="label-sm" x="504" y="178">$66.10 of $300.00</text>
+
+  <text class="label" x="14" y="216" style="font-weight:700">per_vendor_30d</text>
+  <rect class="box" x="14" y="226" width="480" height="22" rx="4"/>
+  <rect x="15" y="227" width="404" height="20" rx="3" class="fill-bad" opacity="0.5"/>
+  <text class="label-sm fill-bad" x="504" y="242">$84.90 of $100.00 ← tightest</text>
+</svg>
+<figcaption>
+  Four envelopes, one action, and the useful question is <em>which one is closest to biting</em>.
+  Tesoro reports two different fields for two different questions:
+  <strong><code>binding</code></strong> answers <em>why was this refused</em> and exists only on a
+  refusal; <strong><code>tightest</code></strong> answers <em>what bites next</em> and always exists.
+  An earlier version had only the first, under a heading meaning the second — so an approved decision
+  showed no envelope at all, blank precisely when somebody was checking headroom.
+</figcaption>
+</figure>
+
+<div class="warn-box">
+  <p>
+    <strong>A count envelope constrains <em>rate</em>, not total.</strong>
+    <code>velocity_60s: 10</code> permits fourteen thousand actions a day. It is not a spend control
+    and should not be read as one — see <a href="index.html#">the open findings</a>.
+  </p>
+</div>
+
+<h2>Rules are evaluated in order, and the first match decides</h2>
+
+<p>
+  By <code>priority</code>, lowest number first, with the rule id as the tiebreaker so two rules at
+  the same priority resolve the same way every time. <code>tesoro report --html</code> prints the
+  rules <em>in evaluation order</em> with each condition in plain terms, because the question anybody
+  actually has before a run is <em>which rule is going to stop me</em> — and a count of rules cannot
+  answer it.
+</p>
+
+<pre><code>Pri  Rule                        When                              Then      Because
+0    deny-sanctioned             vendor.sanctioned                 REJECT    sanctioned counterparty
+5    deny-over-balance           not budget.ok and budget.binding  REJECT    insufficient balance
+                                 is one of balance, emergency_re…
+10   review-budget-exhausted     not budget.ok                     REVIEW    outside a budget envelope</code></pre>
+
+<h2>Profiles: what the standard requires, not what you want</h2>
+
+<p>
+  A profile is a <strong>conformance contract</strong>. It says which controls must exist and what
+  evidence must be emitted — and it <strong>never touches a verdict</strong>, which is asserted four
+  different ways in the test suite. Switching profile changes what is <em>scored</em>, never what is
+  <em>decided</em>.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Level</th><th>Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>OPTIONAL</code></td><td>the control may be absent entirely</td></tr>
+    <tr><td><code>MUST_RECORD</code></td><td>the record must carry the field — a stated <code>null</code> satisfies it</td></tr>
+    <tr><td><code>MUST_EXERCISE</code></td><td>the control must actually have run</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The distinction between the last two is load-bearing, and getting it wrong <em>punished honesty</em>:
+  an earlier scorer treated <code>intentId: null</code> as a failure. But a stated null is an
+  implementation saying <em>“no intent was declared”</em>, which is true, useful, and exactly what the
+  four-state rule asks for. <code>MUST_RECORD</code> needs the key <em>present</em>, not non-null.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Profile</th><th>Requires</th><th>For</th></tr></thead>
+  <tbody>
+    <tr><td><code>none</code></td><td>nothing — but lists all 13 controls explicitly</td><td>an opt-out, not an empty contract</td></tr>
+    <tr><td><code>aegs-1</code></td><td>5 exercised, 2 recorded, 6 optional</td><td>the baseline claim</td></tr>
+    <tr><td><code>aegs-2</code></td><td>8 exercised, 1 recorded, 4 optional</td><td>the stricter claim</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="small">
+  <code>none</code> lists every control rather than being an empty file, so the shipped manifest is
+  the implementation's own answer to <em>“which controls are defined”</em> — and a profile that
+  extends another may only <strong>tighten</strong>, checked by a tool.
+</p>
+
+<h2>Two extension points, and why there are exactly two</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Derived facts <span class="pill">data</span></h3>
+    <p>Composition of existing facts, in the pack. No gate needed, because nothing new is measured
+    and nothing can execute.</p>
+  </div>
+  <div class="card">
+    <h3>Registered engines <span class="pill">code</span></h3>
+    <p>A genuinely new measurement. Code, reviewed as code, and <strong>gated at registration</strong>:
+    reserved control names are refused, and a purity check rejects an engine that reads the
+    filesystem, the network or the clock.</p>
+  </div>
+</div>
+
+<p>
+  A registered engine can only <em>narrow</em>. That is not a rule it is asked to respect — the
+  combination step takes the most severe verdict, so widening is <strong>unreachable</strong> rather
+  than refused. A hostile engine can refuse things; it cannot approve anything.
+</p>
+
+<h2>Reference</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Writing your own rules</h3>
+    <p>The full pack format, both extension points, worked examples.</p>
+    <a href="https://github.com/aegoll/tesoro/blob/main/docs/custom-policies.md">custom-policies.md →</a>
+  </div>
+  <div class="card">
+    <h3>Profile manifests</h3>
+    <p>The three shipped profiles as machine-readable contracts.</p>
+    <a href="https://github.com/aegoll/aegs/tree/main/profiles">aegs/profiles →</a>
+  </div>
+  <div class="card">
+    <h3>The specification</h3>
+    <p>What a profile may and may not do, normatively.</p>
+    <a href="aegs.html">AEGS →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>

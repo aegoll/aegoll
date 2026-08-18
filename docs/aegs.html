@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>AEGS — the standard Tesoro implements</title>
+<meta name="description" content="Twelve sections, 90 clauses, 151 test vectors, and a conformance suite that scores anything emitting Decision Records.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="site"><div class="inner">
+  <a class="brand" href="index.html">tesoro <span>0.1.0</span></a>
+  <nav class="site">
+    <a href="index.html">Overview</a>
+    <a href="architecture.html">Architecture</a>
+    <a href="policies.html">Policies &amp; rules</a>
+    <a href="frameworks.html">Frameworks</a>
+    <a href="aegs.html" aria-current="page">AEGS</a>
+    <a href="start.html">Get started</a>
+  </nav>
+</div></header>
+
+<main>
+
+<h1>AEGS — the standard</h1>
+<p class="lede">
+  The <strong>Autonomous Economic Governance Standard</strong> is the open specification an AEGL can
+  conform to. Tesoro is the reference implementation — but AEGS is one <em>profile</em> Tesoro can
+  enforce, not Tesoro's identity, and the standard is deliberately protocol-neutral.
+</p>
+
+<h2>Three names, and why the distinction matters</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Name</th><th>Is</th><th>Is not</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>AEGL</strong></td>
+      <td>Autonomous Economic Governance <em>Layer</em> — the <strong>category</strong>. Any layer
+      deciding whether an agent may spend, before it spends</td>
+      <td>a package</td>
+    </tr>
+    <tr>
+      <td><strong>AEGS</strong></td>
+      <td>Autonomous Economic Governance <em>Standard</em> — the open <strong>specification</strong>
+      an AEGL conforms to</td>
+      <td>an implementation</td>
+    </tr>
+    <tr>
+      <td><strong>Tesoro</strong></td>
+      <td>a Python package; a policy-engine <strong>host</strong>. AEGS is one profile it enforces</td>
+      <td>the standard</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  In prose, a layer <em>is an</em> AEGL. The adoption mechanism follows from the third row: nobody
+  installs a standard. They install a spend cap, pick the default profile, and emit AEGS-conformant
+  evidence without ever reading the specification. <strong>Utility leads, standard follows.</strong>
+</p>
+
+<h2>Twelve sections, 90 clauses</h2>
+
+<p>
+  Every clause has an identifier of the form <code>AEGS-0.1-&lt;SECTION&gt;-&lt;n&gt;</code> and uses RFC
+  2119 keywords. The numbers are worth stating precisely, because they measure different things and
+  get quoted interchangeably:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Count</th><th>Is</th></tr></thead>
+  <tbody>
+    <tr><td><strong>90</strong></td><td>clauses defined by their own heading</td></tr>
+    <tr><td><strong>71</strong></td><td>of those that contain a normative <strong>MUST</strong> or <strong>MUST NOT</strong></td></tr>
+    <tr><td><strong>56</strong></td><td>clauses cited by at least one <a href="https://github.com/aegoll/aegs/tree/main/vectors">test vector</a></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>Every MUST has at least one test</strong>, and that is enforced by a CI linter rather than
+  promised — a MUST with no test fails the build. Not every test is a vector: some requirements are
+  structural and no input/output pair can demonstrate them (there is no input that shows <em>“the scorer
+  imports no implementation”</em>), so those are covered by conformance cases or by the suite's own
+  tests, declared in a file the linter verifies. A mapping nobody checks is a list of promises.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Section</th><th>Prefix</th><th>Clauses</th><th>What it settles</th></tr></thead>
+  <tbody>
+    <tr><td>Introduction</td><td><code>INTRO</code></td><td>6</td><td>scope, non-goals, and what is <em>not</em> established — stated in the spec itself rather than a footnote</td></tr>
+    <tr><td>Model</td><td><code>MODEL</code></td><td>5</td><td>agent, controller, operator, counterparty, channel</td></tr>
+    <tr><td>Controls</td><td><code>CTRL</code></td><td>8</td><td>the 13 controls; the name set is <strong>closed</strong> and matching is exact</td></tr>
+    <tr><td>Envelopes</td><td><code>ENV</code></td><td>9</td><td>headroom, binding vs tightest, and that channels never share an envelope</td></tr>
+    <tr><td>Verdicts</td><td><code>VERD</code></td><td>10</td><td>the four verdicts, severity ordering, narrowing, attribution</td></tr>
+    <tr><td>Arithmetic</td><td><code>ARITH</code></td><td>9</td><td>integer atomic units, half-up rounding, and refusal <em>before</em> envelopes</td></tr>
+    <tr><td>Four states</td><td><code>STATE</code></td><td>4</td><td><code>absent</code> ≠ <code>not-run</code> ≠ <code>unknown</code> ≠ <code>zero</code></td></tr>
+    <tr><td>Evidence</td><td><code>EVID</code></td><td>9</td><td>canonical form, hash chaining, 128-bit minimum, and the truncation disclosure</td></tr>
+    <tr><td>Identity</td><td><code>ID</code></td><td>5</td><td>pseudonymous default, selective disclosure, the delegation <em>clamp</em></td></tr>
+    <tr><td>Profiles</td><td><code>PROF</code></td><td>6</td><td>requirement levels, and that a profile never changes a verdict</td></tr>
+    <tr><td>Decision path</td><td><code>PATH</code></td><td>5</td><td>determinism, no model on the path, the clock as an input, policy as data</td></tr>
+    <tr><td>Conformance</td><td><code>CONF</code></td><td>7</td><td>levels, how they are claimed, and the right-reason rule</td></tr>
+    <tr><td>Security</td><td><code>SEC</code></td><td>7</td><td>the threat catalogue, including what is <strong>open</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The clause that does the most work</h2>
+
+<div class="key">
+  <p>
+    <strong>AEGS-0.1-CONF-2 — a right answer for the wrong reason is not a pass.</strong>
+  </p>
+  <p>
+    An implementation that refuses the sanctions case because an <em>amount</em> limit tripped has not
+    screened anything. It was right by accident, and the same case with a smaller amount would sail
+    through. Counting it as a pass would let an implementation certify a control it does not have.
+  </p>
+  <p>
+    So conformance scores <strong>which control decided</strong>, not just the verdict — and
+    <code>WRONG_REASON</code> is its own outcome, reported separately from both a pass and a failure,
+    because the implementation <em>did</em> refuse.
+  </p>
+</div>
+
+<h2>151 test vectors, and they execute</h2>
+
+<p>
+  Language-neutral JSON: an input, an expected output, and the clause in dispute. When one fails, the
+  failure is <em>attributable</em> — either the specification is wrong or the implementation is, and
+  the vector says which clause the argument is about.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Family</th><th>Vectors</th><th>Covers</th></tr></thead>
+  <tbody>
+    <tr><td><code>arithmetic</code></td><td>33</td><td>rounding, precision, the negative-amount and overflow bugs</td></tr>
+    <tr><td><code>verdicts</code></td><td>32</td><td>narrowing, attribution, order-forward vs order-reversed</td></tr>
+    <tr><td><code>envelopes</code></td><td>27</td><td>headroom, exact-equality boundaries, channel separation</td></tr>
+    <tr><td><code>evidence</code></td><td>21</td><td>canonical form byte-for-byte, and four tamper scenarios</td></tr>
+    <tr><td><code>controls</code></td><td>11</td><td>the closed name set, exact matching</td></tr>
+    <tr><td><code>profiles</code></td><td>10</td><td>requirement levels, extends-only-tightens</td></tr>
+    <tr><td><code>fourstates</code> · <code>identity</code> · <code>path</code></td><td>17</td><td>state classification, disclosure, the delegation clamp</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p>
+    <strong>The vectors are mutation-checked</strong>, which is the part that makes them worth having.
+    It is not enough that an implementation passes them; the vectors must <em>discriminate</em>. A
+    half-even rounding implementation fails 1 arithmetic vector. Treating equality as narrowing fails
+    1 verdict vector. Swapping <code>REVIEW</code> and <code>ESCALATE</code> fails 6. Allowing widening
+    fails 14.
+  </p>
+  <p>
+    They also all <strong>execute</strong>, which was not always true: 38 were added with clauses the
+    linter happily counted while nothing ran them. A coverage count is not a coverage claim unless
+    something executes.
+  </p>
+</div>
+
+<h2>Conformance: scoring an implementation</h2>
+
+<pre><code>pip install aegs-conformance
+
+aegs-conformance --adapter tesoro
+aegs-conformance --against my_layer.conformance:MyAdapter   <span class="c"># your own</span></code></pre>
+
+<figure>
+<svg viewBox="0 0 700 230" role="img" aria-label="Diagram: the conformance suite scores an adapter's Decision Records without importing any implementation">
+  <rect class="box" x="16" y="86" width="150" height="58" rx="7"/>
+  <text class="label" x="91" y="110" text-anchor="middle">Your layer</text>
+  <text class="label-sm" x="91" y="127" text-anchor="middle">any language, any design</text>
+
+  <rect class="box" x="212" y="86" width="140" height="58" rx="7"/>
+  <text class="label" x="282" y="108" text-anchor="middle">Your adapter</text>
+  <text class="label-sm" x="282" y="125" text-anchor="middle">2 attributes</text>
+
+  <rect class="box-accent" x="398" y="60" width="150" height="110" rx="7"/>
+  <text class="label" x="473" y="84" text-anchor="middle" style="font-weight:700">AEGS-CONF</text>
+  <text class="label-sm" x="473" y="103" text-anchor="middle">7 cases</text>
+  <text class="label-sm" x="473" y="119" text-anchor="middle">validates the record</text>
+  <text class="label-sm" x="473" y="135" text-anchor="middle">scores the attribution</text>
+  <text class="label-sm fill-bad" x="473" y="158" text-anchor="middle">imports no implementation</text>
+
+  <rect class="box" x="586" y="86" width="98" height="58" rx="7"/>
+  <text class="label" x="635" y="108" text-anchor="middle">Report</text>
+  <text class="label-sm" x="635" y="125" text-anchor="middle">+ exit code</text>
+
+  <path class="flow" d="M166 115 H206" marker-end="url(#ag)"/>
+  <path class="flow-strong" d="M352 115 H392" marker-end="url(#ag)"/>
+  <path class="flow" d="M548 115 H580" marker-end="url(#ag)"/>
+
+  <text class="label-sm fill-dim" x="282" y="60" text-anchor="middle">Decision Record</text>
+  <text class="label-sm" x="16" y="205">A suite that only scored adapters listed inside itself would be a self-assessment: everyone else</text>
+  <text class="label-sm" x="16" y="220">would have to fork it, and a forked instrument produces numbers nobody can compare.</text>
+
+  <defs>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" class="fill-dim"/>
+    </marker>
+  </defs>
+</svg>
+<figcaption>
+  The adapter lives in <em>your</em> package, where your imports resolve. Two attributes, nothing to
+  subclass, no import from the suite — so it cannot break when the suite changes.
+</figcaption>
+</figure>
+
+<h3>Six outcomes, not two</h3>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Outcome</th><th>Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>PASS</code></td><td>right verdict, right attributed control</td></tr>
+    <tr><td><code>FAIL</code></td><td>wrong verdict</td></tr>
+    <tr><td><code>WRONG_REASON</code></td><td><strong>right verdict, wrong control.</strong> Right by accident</td></tr>
+    <tr><td><code>NOT_IMPLEMENTED</code></td><td>the adapter returned <code>None</code>. Honest, and <em>not</em> a failure</td></tr>
+    <tr><td><code>INVALID_RECORD</code></td><td>the record fails the schema — a conformant verdict in a malformed record is not a pass</td></tr>
+    <tr><td><code>ERROR</code></td><td>the adapter raised; only that case fails</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Exit codes are by <strong>level achieved</strong>: <code>0</code> everything passed, <code>1</code>
+  AEGS-1 only, <code>2</code> nothing claimable, <code>3</code> <em>could not run</em>. That last one
+  is deliberately distinct — an uninstalled layer would otherwise produce a plausible-looking
+  <code>0/7 passed</code> report, a document somebody could publish in good faith about a system
+  nobody ran.
+</p>
+
+<h3>The suite is kept honest by a stub that fails</h3>
+
+<p>
+  A deliberately incomplete implementation — an amount ceiling and nothing else — ships with the suite
+  permanently and scores <strong>2/7</strong>. A conformance suite that has never scored anything below
+  full marks has not been shown to discriminate. Tesoro scores 7/7 with both levels claimable; the
+  stub scores 2 and fails the four controls it lacks, individually named so a change that silently
+  starts passing them is caught.
+</p>
+
+<h2 id="open">The largest open question</h2>
+
+<div class="warn-box">
+  <p>
+    <strong>No independent implementation has been scored.</strong> Every conformance case, every test
+    vector and every threat in the catalogue was written by the author of the system under test. That
+    is a conflict of interest, and it is stated in the specification's own security section rather than
+    hidden.
+  </p>
+  <p>
+    Until somebody else's layer runs through AEGS-CONF, “standard” is a document with one conformant
+    implementation. Three ways to close it, in preference order:
+  </p>
+  <ol>
+    <li><strong>A third party takes it up</strong> — the only genuinely independent evidence.</li>
+    <li><strong>A deliberately independent reimplementation</strong>, written from the spec and vectors
+    only, by somebody who has not read Tesoro.</li>
+    <li><strong>Say so plainly and keep the question open</strong> — which is what the spec, this page
+    and the PyPI listing all currently do.</li>
+  </ol>
+  <p>
+    <strong>If your layer is right and one of our cases is wrong, that is the most useful bug report
+    this project can receive.</strong>
+    <a href="https://github.com/aegoll/aegs/issues">Open an issue</a> with the case id and the record
+    you produced.
+  </p>
+</div>
+
+<h2>What is closed, and how</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Closed</th><th>By</th></tr></thead>
+  <tbody>
+    <tr><td>Negative amounts</td><td><code>ARITH-4</code> — refused <em>before</em> any envelope check</td></tr>
+    <tr><td>Unrepresentable magnitudes</td><td><code>ARITH-5</code> — refused rather than <em>raised</em></td></tr>
+    <tr><td>Prose injection into the decision path</td><td><code>PATH-2</code> — no model on the path</td></tr>
+    <tr><td>Entry editing, middle deletion, reordering</td><td><code>EVID-2</code>, <code>EVID-3</code></td></tr>
+    <tr><td>Weak hashes</td><td><code>EVID-5</code> — 128-bit minimum</td></tr>
+    <tr><td>Delegation escalation</td><td><code>ID-4</code> — clamp to the narrowest step</td></tr>
+    <tr><td>Expired intent read as no intent</td><td><code>CTRL-3</code></td></tr>
+    <tr><td>Fail-open on an unreachable assessor</td><td><code>PATH-3</code> — <em>not-run</em>, never <em>pass</em></td></tr>
+    <tr><td>Executable policy</td><td><code>PATH-5</code> — a closed comparator vocabulary</td></tr>
+    <tr><td>A right answer for the wrong reason</td><td><code>CONF-2</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="small">
+  Two of those were <em>live vulnerabilities</em> in this implementation. A <code>-$1000</code> request
+  was <strong>approved</strong>, because <code>amount ≤ headroom</code> is satisfied by every negative;
+  a 30-digit amount <strong>crashed</strong> the layer rather than being refused by it. The crash is
+  the more interesting one — a layer that fails on malformed input can be <em>removed from the path</em>
+  by sending it malformed input, and if the surrounding system fails open, removing the governance
+  layer <em>is</em> the attack.
+</p>
+
+<h2>What is open</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Open</th><th>Since</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Journal truncation</strong> undetectable without an external anchor</td><td>by construction; disclosed, not fixed</td></tr>
+    <tr><td><strong>Structuring</strong> — many small payments below every limit</td><td>no control examines sequence shape</td></tr>
+    <tr><td><strong>Velocity evasion</strong> — pacing at the limit is unbounded in total</td><td>same</td></tr>
+    <tr><td><strong>Advisor injection</strong> untested</td><td>not in any threat catalogue; defended by a clamp</td></tr>
+    <tr><td><strong>Sanctions screening</strong> is a flag, not a screening</td><td>no list, no matching, no jurisdiction model</td></tr>
+    <tr><td><strong>No independent implementation scored</strong></td><td>see above</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Protocol neutrality</h2>
+
+<p>
+  AEGS specifies the <strong>buyer side</strong>. x402 is the first binding; AP2, MCP and card rails are
+  intended as later ones. A binding supplies the unit of account, the atomic precision, settlement
+  finality semantics, the counterparty identity shape, and what “vendor” means on that rail.
+</p>
+
+<p>
+  Worth naming: x402 has a seller-side veto (<code>onBeforeSettle</code>) and no standardised
+  buyer-side pre-payment hook. That asymmetry is the binding's central claim, and it composes with
+  x402's own SDK spend controls rather than replacing them — their per-payment cap becomes
+  <strong>one envelope among several</strong>.
+</p>
+
+<h2>Reference</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>The specification</h3>
+    <p>Twelve sections, every clause, every MUST with a test.</p>
+    <a href="https://github.com/aegoll/aegs/tree/main/spec">aegs/spec →</a>
+  </div>
+  <div class="card">
+    <h3>Test vectors</h3>
+    <p>151 language-neutral vectors across nine families.</p>
+    <a href="https://github.com/aegoll/aegs/tree/main/vectors">aegs/vectors →</a>
+  </div>
+  <div class="card">
+    <h3>Writing an adapter</h3>
+    <p>For a third party with no access to this codebase.</p>
+    <a href="https://github.com/aegoll/aegs/blob/main/conformance/adapters/README.md">adapters/README →</a>
+  </div>
+  <div class="card">
+    <h3>Schemas</h3>
+    <p>13 JSON Schemas, dereferenceable, versioned with the spec.</p>
+    <a href="https://aegoll.github.io/aegs/schemas/decision-record-0.1.json">decision-record-0.1 →</a>
+  </div>
+</div>
+
+</main>
+
+<footer class="site">
+  <p>
+    <a href="https://github.com/aegoll/tesoro">tesoro</a> ·
+    <a href="https://github.com/aegoll/aegs">AEGS</a> ·
+    <a href="https://github.com/aegoll/tesoro-integrations">examples</a> ·
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+  </p>
+  <p>Apache-2.0. Specification text CC-BY-4.0. No trackers, no external requests — by design.</p>
+</footer>
+
+</body>
+</html>
