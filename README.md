@@ -36,12 +36,12 @@ echo $?                                         # 0 approved · 2 refused · 1 i
 aegoll report --html -o spend.html              # one self-contained page, no server
 ```
 
-Start with [`docs/quickstart.md`](docs/quickstart.md).
+Start with [`docs/quickstart.md`](https://github.com/aegoll/aegoll/blob/main/docs/quickstart.md).
 
 > **Status: pre-release.** Nothing is published yet. Ported from a working prototype and now
 > at **597 tests**, a 7/7 [AEGS](https://github.com/aegoll/aegs) conformance score with both
 > levels claimable, and **151 specification test vectors executing** against 56 normative
-> clauses. See [`PLAN.md`](PLAN.md) and [`CHANGELOG.md`](CHANGELOG.md).
+> clauses. See [`PLAN.md`](https://github.com/aegoll/aegoll/blob/main/PLAN.md) and [`CHANGELOG.md`](https://github.com/aegoll/aegoll/blob/main/CHANGELOG.md).
 
 ---
 
@@ -119,11 +119,11 @@ by you.
 
 ## Documentation
 
-- [`docs/quickstart.md`](docs/quickstart.md) — governing an agent from nothing, in about five minutes
-- [`docs/api-surface.md`](docs/api-surface.md) — the public API, and what is deliberately not public
-- [`docs/adapters.md`](docs/adapters.md) — framework and rail adapters, and what is verified about each
-- [`PLAN.md`](PLAN.md) — the build plan, as tracked checkboxes
-- [`PROVENANCE.md`](PROVENANCE.md) — what was ported from the prototype, and from which commit
+- [`docs/quickstart.md`](https://github.com/aegoll/aegoll/blob/main/docs/quickstart.md) — governing an agent from nothing, in about five minutes
+- [`docs/api-surface.md`](https://github.com/aegoll/aegoll/blob/main/docs/api-surface.md) — the public API, and what is deliberately not public
+- [`docs/adapters.md`](https://github.com/aegoll/aegoll/blob/main/docs/adapters.md) — framework and rail adapters, and what is verified about each
+- [`PLAN.md`](https://github.com/aegoll/aegoll/blob/main/PLAN.md) — the build plan, as tracked checkboxes
+- [`PROVENANCE.md`](https://github.com/aegoll/aegoll/blob/main/PROVENANCE.md) — what was ported from the prototype, and from which commit
 
 ## What is not established
 
