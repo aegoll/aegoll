@@ -310,7 +310,7 @@ against a spec rather than against itself.
 
 ---
 
-## A9 — Publish 0.1.0 ✅
+## A9 — Publish 0.1.0 ✅ · 0.1.1 ✅
 
 - [x] A9.1 `pyproject.toml` complete — classifiers, urls, readme, licence, keywords, and six extras. Each extra must be **documented**: the guard that used to compare against a hardcoded set now fails an extra no document mentions, because the edit that keeps a hardcoded list passing is not the edit that explains a dependency to whoever is installing it
 - [ ] A9.2 GitHub Actions: test matrix on 3.11/3.12/3.13, Windows and Linux (the prototype was developed on Windows; do not discover a path bug at install time)
@@ -322,7 +322,7 @@ against a spec rather than against itself.
 - [x] A9.6 [`docs/quickstart.md`](docs/quickstart.md) — install to verified evidence in seven steps, every command **run from the installed wheel** rather than from the source tree. That is how both config bugs were found, and it is also where the Git Bash `MSYS_NO_PATHCONV` trap is documented: a resource starting with `/` is silently rewritten into the evidence record, which is worse than an error
 - [x] A9.7 [`CHANGELOG.md`](CHANGELOG.md), with a **Fixed** section that names each defect and a **Known limitations** section stated up front rather than buried. A changelog that lists features and hides fixes tells a reader what was added and not what was wrong
 - [x] A9.8 Stated in the README, the CHANGELOG header and the quickstart's closing section — the last one deliberately placed where a reader is about to point this at a wallet
-- [~] A9.9 Trusted publishing (OIDC) — **still open, and now the priority for 0.1.1**. `0.1.0` went out on a long-lived token, which is the thing this task exists to remove. Configure `pypi.org` → the project → Publishing → GitHub Actions, then the release workflow needs no secret at all
+- [x] A9.9 **Trusted publishing (OIDC)** — [`release.yml`](.github/workflows/release.yml). No `password:` anywhere, and it is a gate rather than a button: the full suite on six OS/Python combinations, a tag-versus-`pyproject` version check, a refusal to republish an existing version, and a **clean-venv install that must refuse a payment** before anything uploads. One-time browser setup documented at the top of the file; until the publisher exists the publish step fails with a permissions error, which is correct because there is no token to fall back to
 - [x] A9.10 **[`aegoll 0.1.0` published](https://pypi.org/project/aegoll/0.1.0/)** 2026-08-18. `pip install aegoll` pulls three packages into a clean venv and all seven quickstart steps run against the published artifact
 - [ ] A9.11 Sealed experiment record for the packaged overhead, since packaging changed the import graph and the prototype's numbers were measured pre-split
 
