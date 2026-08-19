@@ -1,7 +1,25 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+  <img src="assets/logo.svg" alt="tesoro" width="96" height="96">
+</picture>
+
 # tesoro
 
 **Know what your autonomous agent spends, cap it across time, and be able to prove why
 anything was refused.**
+
+[![PyPI](https://img.shields.io/pypi/v/tesoro?color=2b4c7e&label=pypi)](https://pypi.org/project/tesoro/)
+[![Python](https://img.shields.io/pypi/pyversions/tesoro?color=2b4c7e)](https://pypi.org/project/tesoro/)
+[![CI](https://github.com/aegoll/tesoro/actions/workflows/ci.yml/badge.svg)](https://github.com/aegoll/tesoro/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/badge/licence-Apache--2.0-2b4c7e)](LICENSE)
+[![Red team](https://img.shields.io/badge/red%20team-15%2F18%20defended%2C%202%20open-9a6a00)](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010)
+
+*Three payments approved. The fourth stopped at the ceiling — and the record says which
+control stopped it.*
+
+</div>
 
 `tesoro` is an *Autonomous Economic Governance Layer* (AEGL): it sits between an agent and
 every dollar it spends — the tokens it burns thinking and the money it pays out — and

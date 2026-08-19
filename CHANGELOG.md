@@ -39,6 +39,60 @@ which stability tier.
 Entries name the defect a change fixes, not only the change. A changelog that lists features
 and hides fixes tells a reader what was added and not what was wrong.
 
+## [Unreleased]
+
+### Added
+
+- **Count envelopes over a long window: `actions_per_day` and `actions_per_month`.** The rate
+  counters `velocity_60s` and `velocity_1h` bound how *fast* an agent acts. Nothing bounded how
+  *many* times it acts over a window longer than an hour, and an hourly ceiling of 100 does not
+  imply a daily ceiling of 2,400 -- no product of a rate limit and a duration was ever compared
+  against anything.
+
+  Measured consequence, now closed: an agent pacing at **97 actions an hour -- three per cent
+  under the ceiling -- was compliant indefinitely**, at 2,328 actions a day for $2.33 against a
+  $50 daily budget. Every value envelope was out of reach because each action was trivial; every
+  rate limit was out of reach because the pacing sat under it. The red-team suite's paced-evasion
+  attack moved from **undefended to defended** and is refused at action 500, attributed to
+  `treasury` citing `actions_per_day`. See
+  [EXP-010](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010).
+
+  **This needed no new control and no new clause.** `AEGS-0.1-ENV-7` has permitted count
+  envelopes since 0.1 and fixes their semantics; tesoro already implemented two of them. The
+  entire gap was the window. An AEGS 0.2 clause family was drafted on the mistaken belief that the
+  standard could not express this, and thrown away.
+
+  The shipped `default` pack declares `actions_per_day: 500` (five hours of continuous work at the
+  hourly ceiling) and `actions_per_month: 10000`, with `60` / `500` on the internal channel --
+  declared rather than inherited, because channels must not share an envelope and the external
+  figure was chosen for payouts. **An omitted key means no limit; `0` forbids every action.** The
+  loader returns `None` for an absent key rather than defaulting to a number, so an existing policy
+  pack behaves exactly as before, and a negative limit is refused at load.
+
+  The default pack's content hash changes: `a5a64aeb69dbc5f9206b31022064da26` ->
+  `46abca353ed56adc703aa555ca1e12d6`, 12 rules either way.
+
+### Changed
+
+- **`structuring` is now bounded but still not refused, and every document says so.** A count
+  envelope bounds the mechanism, not the instance: 40 payments in an afternoon is nowhere near 500,
+  and refusing it would refuse legitimate work. 2,328 actions a day is impossible; 40 is still
+  permitted. A test asserts this so the result cannot be rounded up to "structuring is handled".
+- **The specification's own description of count envelopes was wrong and is corrected.** `ENV-7`'s
+  note and `SEC-6` both said a count envelope "constrains rate, not total". A count envelope
+  constrains the total over its window; the claim generalised from the short windows anyone had
+  used, and it pointed away from the answer ENV-7 already contained. `SEC-6` now records paced
+  evasion as *defensible within 0.1 and not required by it* -- ENV-7 is a `MAY`, so a conforming
+  implementation may still be wide open, and a conformance result does not tell an adopter
+  otherwise.
+
+### Fixed
+
+- **The red-team CI job had been green against nothing since it was added.** It tested for a
+  directory the suite was never in and printed a note when absent -- and the false branch of that
+  condition is a passing job. The 18-attack suite now runs unconditionally against a recorded
+  baseline that fails in both directions.
+
 ## [0.1.1] — 2026-08-18
 
 The release *pipeline* release. `0.1.0` reached PyPI by hand, and a manual upload is a step that

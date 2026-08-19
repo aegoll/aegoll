@@ -117,16 +117,39 @@ def test_defended_by_accident_is_never_counted_as_a_pass(live):
         )
 
 
-def test_the_three_open_findings_are_still_the_three_we_publish(live):
+def test_the_open_findings_are_still_the_ones_we_publish(live):
     """The README, the CHANGELOG, the docs site and the specification's security section all
-    name these three. If the suite's list and those documents diverge, one of them is lying,
-    and the suite is the one that gets to be right.
+    name these. If the suite's list and those documents diverge, one of them is lying, and the
+    suite is the one that gets to be right.
+
+    It was three. `RT-ECON-004` closed when `actions_per_day` landed -- a count envelope over a
+    window longer than an hour, which AEGS-0.1-ENV-7 already permitted and nothing had
+    implemented. Two remain.
     """
     assert set(live["undefended"]) == {
-        "RT-ECON-001",  # microtransaction structuring
-        "RT-ECON-004",  # velocity evasion
+        "RT-ECON-001",  # microtransaction structuring -- bounded now, still not refused
         "RT-EVID-002",  # journal truncation
     }, live["undefended"]
+
+
+def test_closing_velocity_evasion_did_not_close_structuring(live):
+    """The distinction the count envelope does *not* erase.
+
+    A count envelope bounds the mechanism, not the instance. Forty actions in an afternoon is
+    nowhere near 500, so structuring is still admitted -- and every document that says so is
+    still accurate. Asserted because "we added a count envelope" is exactly the kind of change
+    that invites rounding up to "structuring is handled".
+    """
+    outcomes = {r["id"]: r["outcome"] for r in live["results"]}
+    assert outcomes["RT-ECON-004"] == Outcome.DEFENDED.value, outcomes["RT-ECON-004"]
+    assert outcomes["RT-ECON-001"] == Outcome.UNDEFENDED.value, (
+        "structuring now scores "
+        f"{outcomes['RT-ECON-001']}. If a control genuinely catches it, update the four "
+        "documents that describe it as open -- do not relax this assertion."
+    )
+
+    velocity = next(r for r in live["results"] if r["id"] == "RT-ECON-004")
+    assert velocity["refusedBy"] == "treasury", velocity["refusedBy"]
 
 
 def test_no_attack_result_contradicts_its_stated_expectation(live):
@@ -268,3 +291,34 @@ def test_the_hourly_rate_limit_works_and_the_paced_attack_probes_past_it():
         "new count envelope, RT-ECON-004 has been closed -- regenerate the baseline and update "
         "the four documents that describe velocity evasion as open."
     )
+
+
+def test_the_readme_badge_matches_the_baseline():
+    """A hardcoded score in a badge is a claim, and claims go stale silently.
+
+    The README shows `15/18 defended, 2 open`. Nothing about a shields.io URL updates itself, so
+    the badge is checked against `redteam/baseline.json` here. This project has already shipped a
+    README asserting a documented API that did not exist (F-A12) and a `128 µs` figure below its
+    own measured minimum; a red-team score on the front page is the same shape of risk.
+    """
+    import re
+
+    baseline = load_baseline()
+    counts = baseline["counts"]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    badge = re.search(r"red%20team-(\d+)%2F(\d+)%20defended%2C%20(\d+)%20open", readme)
+    assert badge, "the red-team badge is gone from README.md, or its URL shape changed"
+
+    defended, total, open_ = (int(g) for g in badge.groups())
+    assert defended == counts["DEFENDED"], (
+        f"badge says {defended} defended, baseline says {counts['DEFENDED']}"
+    )
+    assert total == len(CATALOGUE), f"badge says {total} attacks, catalogue has {len(CATALOGUE)}"
+    assert open_ == counts["UNDEFENDED"], (
+        f"badge says {open_} open, baseline says {counts['UNDEFENDED']}"
+    )
+
+    # `defended` deliberately excludes the accidental defence. A badge counting it would
+    # advertise protection behind an attack the targeted control does not cover.
+    assert defended + open_ + counts["DEFENDED_BY_ACCIDENT"] + counts["ERROR"] == total

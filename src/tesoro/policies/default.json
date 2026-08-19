@@ -12,6 +12,8 @@
       "emergency_reserve_usd": "10",
       "velocity_60s": 10,
       "velocity_1h": 100,
+      "actions_per_day": 500,
+      "actions_per_month": 10000,
       "earned_authority": [
         {
           "settled_at_least": 10,
@@ -37,6 +39,8 @@
       "emergency_reserve_usd": "0.01",
       "velocity_60s": 3,
       "velocity_1h": 30,
+      "actions_per_day": 60,
+      "actions_per_month": 500,
       "earned_authority": []
     },
     "trust": {

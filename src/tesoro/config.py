@@ -82,6 +82,16 @@ class TreasuryConfig:
     emergency_reserve_atomic: int
     velocity_60s: int
     velocity_1h: int
+    # Count envelopes over a long window. AEGS-0.1-ENV-7 already permits these and fixes
+    # their semantics; what was missing was any window longer than an hour.
+    #
+    # `None` means ABSENT, not zero -- ENV-8. A pack that omits the key is unconstrained;
+    # a pack that says `0` forbids every action. Conflating them would turn adding a key
+    # to a policy file into an outage, and defaulting these to a number in code would
+    # change behaviour for every existing pack on upgrade. The shipped packs declare
+    # values; the loader declines to invent one.
+    actions_per_day: int | None = None
+    actions_per_month: int | None = None
     # Earned authority (research question 12): settled transactions -> multiplier
     # on the per-transaction limit. Deterministic, table-driven, reversible.
     tiers: tuple[tuple[int, float], ...] = ()
@@ -223,6 +233,27 @@ def _atomic(node: Any, key: str, default: str) -> int:
     return usd_to_atomic(str((node or {}).get(key, default)))
 
 
+def _optional_int(node: Any, key: str) -> int | None:
+    """An integer limit, or `None` when the key is absent.
+
+    Deliberately not `int(node.get(key, 0))`. Absent and zero are opposite instructions --
+    AEGS-0.1-ENV-8 and the four-states rule -- and a count limit of zero forbids every action
+    while an absent one forbids none. Collapsing them here would make omitting a key from a
+    policy pack indistinguishable from declaring a total freeze, and the pack that triggers it
+    would look correct.
+    """
+    raw = (node or {}).get(key)
+    if raw is None:
+        return None
+    value = int(raw)
+    if value < 0:
+        raise PolicyError(
+            f"{key} is {value}; a count limit cannot be negative. Omit the key for no limit -- "
+            "absent and zero are different, and a negative is neither."
+        )
+    return value
+
+
 def parse_pack_text(text: str, *, source: str) -> Any:
     """Parse a policy pack from YAML **or** JSON. One schema, two syntaxes.
 
@@ -283,6 +314,8 @@ def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> Pol
         emergency_reserve_atomic=_atomic(t, "emergency_reserve_usd", "10"),
         velocity_60s=int(t.get("velocity_60s", 10)),
         velocity_1h=int(t.get("velocity_1h", 100)),
+        actions_per_day=_optional_int(t, "actions_per_day"),
+        actions_per_month=_optional_int(t, "actions_per_month"),
         tiers=tuple(
             (int(row["settled_at_least"]), float(row["per_tx_multiplier"]))
             for row in (t.get("earned_authority") or [])
@@ -300,6 +333,8 @@ def load_bundle(path: str | Path | None = None, *, validate: bool = True) -> Pol
             emergency_reserve_atomic=_atomic(node, "emergency_reserve_usd", "10"),
             velocity_60s=int(node.get("velocity_60s", 10)),
             velocity_1h=int(node.get("velocity_1h", 100)),
+            actions_per_day=_optional_int(node, "actions_per_day"),
+            actions_per_month=_optional_int(node, "actions_per_month"),
             tiers=tuple(
                 (int(row["settled_at_least"]), float(row["per_tx_multiplier"]))
                 for row in (node.get("earned_authority") or [])

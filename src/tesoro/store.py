@@ -112,6 +112,13 @@ class HistorySnapshot:
     spent_resource_30d_atomic: int
     count_last_60s: int
     count_last_1h: int
+    #: Actions today and this month. The rate counters above bound the *rate*; these bound the
+    #: *total*, which nothing did. No product of a rate limit and a duration is ever compared
+    #: against anything, so an hourly ceiling of 100 implies no daily ceiling of 2,400 -- it
+    #: implies none at all. Measured: 97 actions an hour sustained is 2,328 a day for $2.33,
+    #: inside every value envelope and under every rate limit. See EXP-009.
+    count_today: int
+    count_month: int
     agent_amounts: tuple[int, ...]
     vendor: VendorStats
 
@@ -433,6 +440,8 @@ class Store:
             ),
             count_last_60s=count("agent_id=? AND at>=?", (agent_id, m60s.isoformat())),
             count_last_1h=count("agent_id=? AND at>=?", (agent_id, h1.isoformat())),
+            count_today=count("agent_id=? AND at>=?", (agent_id, day_start.isoformat())),
+            count_month=count("agent_id=? AND at>=?", (agent_id, month_start.isoformat())),
             agent_amounts=tuple(amounts),
             vendor=self.vendor_stats(vendor_id, now),
         )

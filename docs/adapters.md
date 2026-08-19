@@ -174,10 +174,15 @@ which is the loud kind of wrong, and the kind to prefer.
 `crew_kwargs()` **chains** an existing `step_callback` rather than replacing it: silently
 dropping a caller's callback would remove their telemetry to install ours.
 
-One note on `max_rpm`, because it looks like a cost control and is not. Pacing at a rate limit
-is unbounded in total — sixty requests a minute, held all day, is eighty-six thousand requests.
-That is the velocity evasion [AEGS-0.1-SEC-6](https://github.com/aegoll/aegs/blob/main/spec/12-security-considerations.md)
-records as **open**, and no rate limit closes it.
+One note on `max_rpm`, because it looks like a cost control and is not. A rate limit bounds the
+rate and nothing else — sixty requests a minute, held all day, is eighty-six thousand requests,
+and no product of a rate limit and a duration is ever compared against anything.
+
+**No rate limit closes that, and `max_rpm` is a framework's rate limit, not a governance
+control.** What closes it is a count envelope over a long window: tesoro's `actions_per_day` and
+`actions_per_month`, permitted by
+[AEGS-0.1-ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md). Setting
+`max_rpm` low is not a substitute, and a governed run does not need it to be.
 
 ## What is verified, and what is not
 

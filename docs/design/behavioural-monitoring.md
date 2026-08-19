@@ -1,12 +1,29 @@
 # Behavioural monitoring — design
 
-> **Status: design only. Nothing described here is implemented.** A11.3. No code, no policy keys,
-> no facts. If you are looking for what tesoro does today, this is not that document —
-> [`architecture.html`](../architecture.html) is.
+> **Status: Layer 1 shipped. Layer 2 deliberately not built. The premise below was wrong in one
+> important way and is corrected in place.** A11.3.
 >
-> Written before the engine because the last three attempts to reason about these findings from
-> their descriptions rather than their measurements produced three wrong descriptions. See
-> [EXP-009](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-009).
+> **What this document got right:** the two open economic findings share one cause — nothing
+> bounded *count* over a window longer than an hour; the fix is a count envelope rather than a
+> heuristic; and it would close paced evasion while only *bounding* structuring. All three held.
+> `actions_per_day: 500` and `actions_per_month: 10000` now ship in the default pack, paced
+> evasion moved from undefended to defended, and structuring did not
+> ([EXP-010](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010)).
+>
+> **What it got wrong:** it treated the count envelope as something the standard could not
+> express, and recommended an AEGS 0.2 clause family on that basis. **AEGS 0.1 already specifies
+> count envelopes — [ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md) — and
+> tesoro already implemented two of them, `velocity_60s` and `velocity_1h`.** The gap was a
+> *window*, not a control and not a clause. A 0.2 section was drafted and thrown away.
+>
+> The cause is worth recording because it is the fourth instance in this project: the conclusion
+> came from grepping clause *families*, seeing `ENV`, and never reading ENV-7. ENV-7's own note
+> then said *"a count limit constrains rate, not total"* — true of the short windows anyone had
+> used, false of the mechanism — which pointed away from the answer it contained. That sentence is
+> now corrected in the specification.
+>
+> The design reasoning below is left as written, because it was sound and reaching the wrong
+> destination from sound reasoning is the part worth being able to re-read.
 
 ## What this has to close
 

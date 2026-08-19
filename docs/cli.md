@@ -60,7 +60,7 @@ tesoro check --controls     # also list what the active profile requires
 ```
 config : /srv/agent/tesoro.yaml
 profile: aegs-1  7 required control(s)
-policy : default  a5a64aeb69dbc5f9  12 rules
+policy : default  46abca353ed56adc  12 rules
 
 ok
 ```
@@ -106,7 +106,7 @@ for "what would happen if" without polluting the evidence.
 The four questions an agent developer asks at 2am, in that order.
 
 ```
-policy   : default  a5a64aeb69dbc5f9  12 rules
+policy   : default  46abca353ed56adc  12 rules
 profile  : aegs-1
 decisions: 3  settled 0  spent $0.000000
 

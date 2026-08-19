@@ -57,10 +57,24 @@ def evaluate(
         ),
     )
 
-    counters = (
+    # Rate counters, then count envelopes over a long window. An absent long-window limit
+    # contributes no envelope at all rather than one with a limit of zero -- ENV-8, and the
+    # difference between "unconstrained" and "frozen".
+    counters = [
         CountEnvelope("velocity_60s", cfg.velocity_60s, snapshot.count_last_60s, "last 60s"),
         CountEnvelope("velocity_1h", cfg.velocity_1h, snapshot.count_last_1h, "last hour"),
-    )
+    ]
+    if cfg.actions_per_day is not None:
+        counters.append(
+            CountEnvelope("actions_per_day", cfg.actions_per_day, snapshot.count_today, "today")
+        )
+    if cfg.actions_per_month is not None:
+        counters.append(
+            CountEnvelope(
+                "actions_per_month", cfg.actions_per_month, snapshot.count_month, "this month"
+            )
+        )
+    counters = tuple(counters)
 
     reasons: list[Reason] = []
     failing: list[Envelope] = []

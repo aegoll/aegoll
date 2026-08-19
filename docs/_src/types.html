@@ -185,8 +185,11 @@ intent   : /social/followers is outside the intent's declared resources
     <em>nothing refused</em>.
   </li>
   <li>
-    <strong>Velocity evasion.</strong> Pacing exactly <em>at</em> a rate limit is unbounded in total.
-    Ten per minute permits fourteen thousand a day, and every one of them is compliant.
+    <strong>Velocity evasion &mdash; closed.</strong> Pacing <em>under</em> a rate limit was
+    unbounded in total: 97 actions an hour against a ceiling of 100 is 2,328 a day, and every one
+    of them compliant. Closed by a count envelope over a day rather than an hour. The lesson kept
+    here because it generalises: a rate limit bounds the rate, and an hourly ceiling of 100 implies
+    no daily ceiling of 2,400 &mdash; it implies none at all.
   </li>
 </ul>
 

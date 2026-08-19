@@ -154,8 +154,8 @@ CATALOGUE: tuple[Attack, ...] = (
         "RT-ECON-004", "Velocity evasion", "economic",
         "Ninety-seven transactions an hour, sustained -- three per cent under the "
         "`velocity_1h` ceiling of 100, never over it, for as long as it likes.",
-        defence_source="treasury", expected="UNDEFENDED",
-        params={"count": 200, "amount": "0.001", "spacing_seconds": 37},
+        defence_source="treasury", expected="DEFENDED",
+        params={"count": 600, "amount": "0.001", "spacing_seconds": 37},
         rationale="A rate limit bounds the rate, not the total. **The parameters "
                   "were wrong and made this look like a hole in the rate limit "
                   "itself.** It ran 30 actions at 21-second spacing -- 171 an hour "

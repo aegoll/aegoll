@@ -21,6 +21,18 @@ config:
     velocity_60s: 10
     velocity_1h: 100
 
+    # Count envelopes over a long window (AEGS-0.1-ENV-7). The rate limits above bound how
+    # fast; these bound how many, which nothing did.
+    #
+    # An agent pacing at 97 actions an hour is compliant with `velocity_1h: 100` forever and
+    # produces 2,328 actions a day for $2.33 -- inside every value envelope here and under
+    # every rate limit. An hourly ceiling does not imply a daily one; it implies none.
+    #
+    # 500 a day is five hours of continuous work at the hourly ceiling. Omit either key for no
+    # limit; `0` is not "no limit", it forbids everything.
+    actions_per_day: 500
+    actions_per_month: 10000
+
     # Earned authority (research question 12): a clean settlement record raises
     # the per-transaction ceiling. Any dispute revokes it immediately.
     earned_authority:
@@ -47,6 +59,13 @@ config:
     emergency_reserve_usd: "0.01"
     velocity_60s: 3               # three runs a minute is already suspicious
     velocity_1h: 30
+    # Declared rather than inherited. Omitting these would take the external channel's 500 a
+    # day, which is an unrelated number chosen for payouts -- and channels must not share an
+    # envelope (ENV-8). The value envelope is the binding control on this channel anyway:
+    # $0.15 a day at $0.04 a run is about three runs, long before any count limit. Stated so
+    # that is a decision rather than a coincidence.
+    actions_per_day: 60
+    actions_per_month: 500
     earned_authority: []          # a run's budget never self-raises
 
   trust:

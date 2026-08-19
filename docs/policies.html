@@ -100,6 +100,8 @@
     emergency_reserve_usd: <span class="s">"10"</span>
     velocity_60s: 10                <span class="c"># a rate, not a total</span>
     velocity_1h: 100
+    actions_per_day: 500            <span class="c"># a total. omit for no limit; 0 forbids everything</span>
+    actions_per_month: 10000
 
   <span class="k">treasury_internal</span>:               <span class="c"># tokens; overrides only what it names</span>
     per_transaction_usd: <span class="s">"0.04"</span>     <span class="c"># one run's token budget</span>
@@ -244,9 +246,22 @@
 
 <div class="warn-box">
   <p>
-    <strong>A count envelope constrains <em>rate</em>, not total.</strong>
-    <code>velocity_60s: 10</code> permits fourteen thousand actions a day. It is not a spend control
-    and should not be read as one — see <a href="index.html#">the open findings</a>.
+    <strong>A rate counter is not a count envelope, and this box used to conflate them.</strong>
+    <code>velocity_60s: 10</code> and <code>velocity_1h: 100</code> bound the <em>rate</em>. They
+    permit 2,400 actions a day, and an agent pacing at 97 an hour is compliant with them forever.
+    <code>actions_per_day</code> and <code>actions_per_month</code> bound the <em>total</em>.
+  </p>
+  <p>
+    No product of a rate limit and a duration is ever compared against anything, so an hourly
+    ceiling of 100 does not imply a daily ceiling of 2,400 — it implies none at all. Both kinds are
+    count envelopes under
+    <a href="https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md">AEGS-0.1-ENV-7</a>,
+    which has permitted them since 0.1; the only thing missing was a window longer than an hour.
+  </p>
+  <p>
+    Omit either key for <strong>no limit</strong>. <code>0</code> is not "no limit" — it forbids
+    every action. See <a href="tesoro.html#what-tesoro-does-not">what Tesoro does not do</a> for
+    what a count envelope still does <em>not</em> catch.
   </p>
 </div>
 

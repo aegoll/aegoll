@@ -49,7 +49,7 @@ tesoro check
 ```
 config : /my-agent/tesoro.yaml
 profile: aegs-1  7 required control(s)
-policy : default  a5a64aeb69dbc5f9206b31022064da26  12 rules
+policy : default  46abca353ed56adc703aa555ca1e12d6  12 rules
 
 ok
 ```
@@ -229,10 +229,17 @@ defending against nothing — whoever can truncate the journal can rewrite the f
 of a `CHANGELOG` because you are about to point it at a wallet.
 
 More specifically: AML screening is a schema with no engine behind it, no regulatory
-compliance is claimed or sought, and two attacks are open by design — **structuring** (many
-payments below every limit) and **velocity evasion** (pacing exactly at a rate limit). Both
-need a control that examines the *shape of a sequence*, and no amount of tightening an
-envelope produces one.
+compliance is claimed or sought, and **structuring** is open by design — many payments below
+every limit. `actions_per_day` bounds how many such payments are possible in a day; it does not
+refuse forty of them in an afternoon, because forty is also what a legitimate agent does.
+Refusing *that* needs a control examining the *shape of a sequence*, and no amount of tightening
+an envelope produces one.
+
+**Velocity evasion used to be the second one, and is closed.** Pacing *under* a rate limit — 97
+actions an hour against a ceiling of 100 — was unbounded in total, at 2,328 a day for $2.33. It
+closed with a count envelope over a day rather than an hour, which
+[AEGS-0.1-ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md) had permitted
+since 0.1 and nothing had implemented.
 
 The fairest available summary of this layer, from its own red-team suite: *it resists prose;
 it did not resist a minus sign, and it does not yet resist patience.* The minus sign is

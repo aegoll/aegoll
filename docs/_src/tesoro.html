@@ -55,7 +55,7 @@ tesoro decide --amount 2.50 --vendor acme --resource /market/snapshot</code></pr
 
 <pre><code>$ tesoro report
 
-policy   : default  a5a64aeb69dbc5f9  12 rules
+policy   : default  46abca353ed56adc  12 rules
 profile  : aegs-1
 decisions: 3  settled 1  spent $0.060000
 
@@ -211,8 +211,13 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
     sequence, and no envelope does.
   </li>
   <li>
-    <strong>Velocity evasion is undefended.</strong> Pacing exactly at a rate limit is unbounded in
-    total: ten per minute permits fourteen thousand a day.
+    <strong>Velocity evasion is closed, and the fix was already in the standard.</strong> Pacing
+    <em>under</em> a rate limit used to be unbounded in total &mdash; 97 actions an hour against a
+    ceiling of 100 is 2,328 a day for $2.33, inside every value envelope. A rate limit bounds the
+    rate; no product of a rate limit and a duration was ever compared against anything.
+    <code>actions_per_day</code> and <code>actions_per_month</code> now bound the total.
+    <a href="https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md">AEGS-0.1-ENV-7</a> had
+    permitted count envelopes since 0.1; what was missing was any window longer than an hour.
   </li>
   <li>
     <strong>Journal truncation is undetectable</strong> without an external anchor.

@@ -323,3 +323,11 @@ hr { border: none; border-top: 1px solid var(--line); margin: 2.8rem 0; }
 .next a { text-decoration: none; }
 .next .lbl { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint); }
 footer.page { margin-top: 3rem; color: var(--faint); font-size: 0.82rem; }
+
+/* The mark on the landing page. Inlined SVG rather than an <img>, so the page still makes no
+   outbound request; `currentColor` and the palette variables make it follow the theme. */
+svg.mark {
+  display: block;
+  margin: 0 0 1.1rem;
+  color: var(--ink);
+}
