@@ -423,7 +423,9 @@ fixable by tightening a limit.
 - [ ] A11.6 **Evidence anchoring**, design doc first. Closes finding 1: **journal truncation is undetectable**, because any prefix of a hash chain is a valid chain, so an agent that gets refused can delete the refusal. Editing and middle-deletion *are* caught
 - [ ] A11.7 Do **not** ship a `head.json` beside the journal. It would look like a fix and defend against nothing. The fix is an external anchor
 - [ ] A11.8 Each new engine gets vectors in `aegs/vectors/` before it gets an implementation
-- [~] A11.9 **The "before" half is sealed** — [EXP-008](../aegs/research/experiments/EXP-008), one run because the suite is deterministic, with the same policy hashes as EXP-007 so the two records describe the same rules. The "after" half waits on A11.3–A11.6. `report.md` states the movement each engine must produce, including that `RT-ECON-001` and `RT-ECON-004` must be attributed to the behavioural engine and **not** to `treasury` — an envelope catching them would mean the parameters drifted rather than the control arrived
+- [x] A11.9 **Both halves sealed.** Before: [EXP-009](../aegs/research/experiments/EXP-009) at 14/1/3/0, which supersedes EXP-008 because its `RT-ECON-004` measurement was wrong. After: [EXP-010](../aegs/research/experiments/EXP-010) at **15/1/2/0**. Same suite, same clock, and the policy hash changed between them (`a5a64aeb…` → `46abca35…`) because the change *was* a policy change — recorded in EXP-010 rather than left for a reader to notice.
+
+  EXP-009 predicted that the two economic findings, sharing one cause, "must close with one control — if they close with two, one was misdiagnosed." **One cause, one control, and only one closed.** The prediction was too strong: sharing a cause does not imply sharing a remedy, because bounding a total is free and refusing forty ordinary-looking actions is not. EXP-010 records the correction.
 
 **Exit:** 18+ attacks in CI, three findings closed by controls rather than by thresholds.
 **Half done:** the attacks are in CI and the baseline is sealed. The three findings are open,
