@@ -112,6 +112,20 @@ Two consequences for this design:
    engine and neither belongs to it — recorded here so they are not lost, but they should ship
    separately.
 
+> **Both shipped separately, as A11.3a and A11.3b.** The baseline is bounded by time first (30
+> days, matching every other aggregate) with the row cap kept as a memory guard and **raised to
+> 1,000 — and hitting it now sets `baseline_truncated`**, because a statistic over the most recent
+> N actions is not the statistic it appears to be. The 40-varied-plus-200-trivial case now retains
+> all 240 amounts and the z-score measures again.
+>
+> `amount_zscore` returns `None` whenever there is no dispersion to divide by, and
+> `dispersion_state()` distinguishes the three reasons it can have nothing to say:
+> `no_baseline`, `no_spread`, `measured`. The information the fabricated `6.0` was carrying moved
+> to `differs_from_flat_baseline()`, and `risk` still scores that case at **exactly 1.0** — the
+> same contribution `min(1.0, 6.0 / 4.0)` produced. **No verdict changed.** Collapsing the
+> zero-dispersion case into the `no baseline` branch would have dropped the term to 0.0 and
+> *relaxed* the verdict, which is the wrong direction and is now a test.
+
 ## Two layers, and only the first is load-bearing
 
 ### Layer 1 — count envelopes. Deterministic, and the actual fix

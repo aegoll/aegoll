@@ -72,6 +72,34 @@ and hides fixes tells a reader what was added and not what was wrong.
   The default pack's content hash changes: `a5a64aeb69dbc5f9206b31022064da26` ->
   `46abca353ed56adc703aa555ca1e12d6`, 12 rules either way.
 
+### Fixed
+
+- **200 trivial actions erased an agent's real spending history from the risk baseline.**
+  `agent_amounts` was `ORDER BY at DESC LIMIT 200` and nothing else -- a *count* window, so
+  history was evicted by volume rather than by age. An agent with 40 varied purchases, given 200
+  of $0.001, kept 200 rows all of $0.001; standard deviation collapsed to zero. Bounded by 30 days
+  first now (matching every other aggregate in the snapshot), with the row cap kept as a memory
+  guard and raised to 1,000. Hitting it sets `baseline_truncated`, which `risk` reports as a flag
+  and in the term detail -- a statistic over the most recent N actions is not the statistic it
+  appears to be.
+
+- **`amount_zscore` returned a hardcoded `6.0` when it had no dispersion to report**, so against a
+  flat history $0.01 and $100,000 scored identically. The function had stopped measuring, and the
+  fabricated sigma reached `risk.score`, the journal and every report as though it had been
+  computed. It returns `None` now, with `dispersion_state()` naming which of three reasons applies
+  -- `no_baseline`, `no_spread`, `measured`. "Nothing is known about this agent" and "every amount
+  ever seen was identical" are opposite statements and used to be the same return value.
+
+  **No verdict changes.** The signal the magnitude carried moved to
+  `differs_from_flat_baseline()`, and `risk` scores that case at exactly 1.0 -- the same
+  contribution `min(1.0, 6.0 / 4.0)` produced. Collapsing the zero-dispersion case into the
+  no-baseline branch would have dropped the term to 0.0 and *relaxed* the verdict; that is now a
+  test of its own.
+
+  Both defects were invisible because neither moved a verdict: 6.0 saturates against
+  `zscore_saturation: 4.0`, so the term pinned at maximum -- the conservative direction. An input
+  weighted `weight_zscore: 0.20` had silently become a constant, and nothing said so.
+
 ### Changed
 
 - **`structuring` is now bounded but still not refused, and every document says so.** A count

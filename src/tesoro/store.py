@@ -100,6 +100,18 @@ class VendorStats:
         return self.settled_count == 0
 
 
+#: How many recent amounts the agent's spending baseline may hold.
+#:
+#: A memory guard, not a statistical choice. The baseline is bounded by time first -- 30 days,
+#: like every other aggregate -- and this only caps how many rows that window may contribute.
+#: When it bites, `HistorySnapshot.baseline_truncated` says so, because a statistic over the
+#: most recent 1,000 actions is not the same statistic as one over the whole window.
+#:
+#: It was 200, and it was the *only* bound. 200 trivial actions therefore evicted an agent's
+#: entire real history, which is the defect this constant's existence documents.
+BASELINE_ROW_CAP = 1000
+
+
 @dataclass(frozen=True)
 class HistorySnapshot:
     """An immutable view of history at one instant, for one agent+vendor pair."""
@@ -121,6 +133,11 @@ class HistorySnapshot:
     count_month: int
     agent_amounts: tuple[int, ...]
     vendor: VendorStats
+    #: True when the baseline hit its row cap, so it describes the most recent
+    #: `BASELINE_ROW_CAP` actions rather than the whole 30-day window. Reported rather than
+    #: hidden: a statistic computed over a volume-limited sample is not the statistic it
+    #: appears to be, and the caller is entitled to know which one it got.
+    baseline_truncated: bool = False
 
     # --- derived stats the risk engine uses -------------------------------
     @property
@@ -131,14 +148,57 @@ class HistorySnapshot:
     def agent_stdev_atomic(self) -> float:
         return pstdev(self.agent_amounts) if len(self.agent_amounts) > 1 else 0.0
 
-    def amount_zscore(self, amount_atomic: int) -> float | None:
-        """How unusual this amount is for this agent. None when there's no baseline."""
+    #: Why `amount_zscore` has no number to give. Three distinct reasons, and they are not
+    #: interchangeable -- the four-states rule applied to a statistic.
+    #:
+    #: `"measured"`   a z-score was computed.
+    #: `"no_baseline"` fewer than 3 settled amounts. Nothing is known about this agent yet.
+    #: `"no_spread"`  3 or more amounts, all identical. Dispersion is *zero*, so "how many
+    #:                standard deviations out" has no answer -- not a large one.
+    def dispersion_state(self) -> str:
         if len(self.agent_amounts) < 3:
+            return "no_baseline"
+        if self.agent_stdev_atomic <= 0:
+            return "no_spread"
+        return "measured"
+
+    def amount_zscore(self, amount_atomic: int) -> float | None:
+        """How unusual this amount is for this agent, in standard deviations.
+
+        `None` whenever there is no dispersion to divide by. Read `dispersion_state()` to find
+        out which kind of nothing, and `differs_from_flat_baseline()` for the one case where
+        that nothing still carries information.
+
+        **This used to return a hardcoded `6.0` when the standard deviation was zero**, which
+        made the function stop measuring: $0.01 and $100,000 both scored 6.0 against a
+        history of identical amounts. A fabricated sigma is worse than an absent one, because
+        it survives into `risk.score`, into the journal and into a report as though it had been
+        computed. The condition is reachable cheaply -- 200 identical trivial actions produce
+        it -- and it was, in this codebase.
+
+        Nothing about the *verdict* changes: see `differs_from_flat_baseline`.
+        """
+        if self.dispersion_state() != "measured":
             return None
-        sd = self.agent_stdev_atomic
-        if sd <= 0:
-            return 0.0 if amount_atomic == self.agent_mean_atomic else 6.0
-        return (amount_atomic - self.agent_mean_atomic) / sd
+        return (amount_atomic - self.agent_mean_atomic) / self.agent_stdev_atomic
+
+    def differs_from_flat_baseline(self, amount_atomic: int) -> bool:
+        """Is this amount outside a history in which every amount was the same?
+
+        The information the fabricated `6.0` was carrying, separated from the invented
+        magnitude. When every observed amount is identical, an amount that differs from it is
+        outside the entire observed set -- which is genuinely anomalous, and unquantifiable.
+        `risk` treats it as maximally anomalous, exactly as before; what changed is that the
+        record now says *why* rather than reporting a standard-deviation count that no standard
+        deviation produced.
+
+        False when there is no flat baseline to be outside of, so a caller can use this without
+        first checking `dispersion_state()`.
+        """
+        return (
+            self.dispersion_state() == "no_spread"
+            and amount_atomic != self.agent_mean_atomic
+        )
 
     def vendor_resource_median(self, resource: str) -> int | None:
         """The vendor's own historical price for this resource.
@@ -413,15 +473,26 @@ class Store:
             sql = f"SELECT COUNT(*) AS c FROM transactions WHERE channel=? AND {where}"
             return int(self._rows(sql, (channel, *params))[0]["c"])
 
-        amounts = [
-            int(r["amount_atomic"])
-            for r in self._rows(
-                "SELECT amount_atomic FROM transactions "
-                "WHERE agent_id=? AND channel=? AND settled=1 AND success=1 "
-                "ORDER BY at DESC LIMIT 200",
-                (agent_id, channel),
-            )
-        ]
+        # The agent's own spending baseline, for `amount_zscore`.
+        #
+        # Two bounds, and the second one used to be the only one. `LIMIT 200` alone is a
+        # **count** window, so history is evicted by volume rather than by age: an agent with 40
+        # varied purchases, given 200 trivial ones, kept 200 rows all of the same amount and its
+        # real history was gone. Standard deviation collapsed to zero and the z-score stopped
+        # discriminating -- $0.01 and $100,000 scored identically.
+        #
+        # The time bound matches every other aggregate here (30 days). The row cap stays as a
+        # memory guard, raised, and **fetching one extra row is how truncation becomes
+        # observable**: a baseline limited by volume is a different thing from a baseline
+        # limited by age, and a reader must be able to tell.
+        rows = self._rows(
+            "SELECT amount_atomic FROM transactions "
+            "WHERE agent_id=? AND channel=? AND settled=1 AND success=1 AND at>=? "
+            f"ORDER BY at DESC LIMIT {BASELINE_ROW_CAP + 1}",
+            (agent_id, channel, d30.isoformat()),
+        )
+        baseline_truncated = len(rows) > BASELINE_ROW_CAP
+        amounts = [int(r["amount_atomic"]) for r in rows[:BASELINE_ROW_CAP]]
 
         return HistorySnapshot(
             now=now,
@@ -444,4 +515,5 @@ class Store:
             count_month=count("agent_id=? AND at>=?", (agent_id, month_start.isoformat())),
             agent_amounts=tuple(amounts),
             vendor=self.vendor_stats(vendor_id, now),
+            baseline_truncated=baseline_truncated,
         )
