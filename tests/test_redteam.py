@@ -209,3 +209,62 @@ def test_the_sdist_ships_the_suite_alongside_its_test():
         "without the suite it imports, and collection will fail for anyone building from "
         "source. Directives found: " + "; ".join(directives)
     )
+
+
+def test_the_hourly_rate_limit_works_and_the_paced_attack_probes_past_it():
+    """The assertion that would have caught RT-ECON-004's parameters.
+
+    `UNDEFENDED` only means something if the attack ran far enough to be refused. RT-ECON-004
+    paced 30 actions at 21-second spacing -- 171 an hour on paper, but 30 actions over ten
+    minutes, so the hourly counter never reached its ceiling of 100. It read as a hole in the
+    rate limit. Run to 120 actions at that same spacing and action 100 **is** refused by
+    `velocity_1h`.
+
+    So this pins both halves: the rate limit works at the rate it claims, and the attack is
+    probing the thing one step past it -- that no envelope counts *actions* over a window
+    longer than an hour. Pacing 3% under the hourly ceiling is unbounded in total.
+
+    Three attacks in this catalogue have now had parameters that could not reach the control
+    they named. A count of undefended attacks is not a finding unless each one ran.
+    """
+    from datetime import timedelta
+
+    from tesoro.domain import Verdict
+
+    from redteam.runner import BASE, SELLER, _decide, _gov
+
+    def run(count: int, spacing: int) -> tuple[int | None, str | None, list[str]]:
+        gov = _gov()
+        try:
+            for i in range(count):
+                at = BASE + timedelta(seconds=i * spacing)
+                d = _decide(gov, "0.001", now=at)
+                if d.verdict is not Verdict.APPROVE:
+                    codes = [
+                        f"{r.source}/{r.code}" for r in d.reasons
+                        if r.verdict and r.verdict is not Verdict.APPROVE
+                    ]
+                    return i, d.attributed_control, codes
+                gov.store.record(
+                    tx_id=f"probe-{i}", at=at, agent_id=gov.agent_id, vendor_id=SELLER,
+                    resource="/market/snapshot", amount_atomic=1_000,
+                    verdict=Verdict.APPROVE, settled=True, success=True,
+                )
+            return None, None, []
+        finally:
+            gov.close()
+
+    # Over the ceiling: refused, by the control that owns the ceiling.
+    stopped_at, control, codes = run(count=120, spacing=21)
+    assert stopped_at is not None, "velocity_1h did not fire at 171 actions/hour"
+    assert stopped_at == 100, f"velocity_1h fired at {stopped_at}, not its declared 100"
+    assert control == "treasury", f"the rate limit was attributed to {control!r}"
+    assert any("velocity" in c for c in codes), codes
+
+    # Just under it: two hours, 200 actions, nothing refused. This is the open finding.
+    stopped_at, control, _ = run(count=200, spacing=37)
+    assert stopped_at is None, (
+        f"pacing at ~97/hour was refused at action {stopped_at} by {control!r}. If that is a "
+        "new count envelope, RT-ECON-004 has been closed -- regenerate the baseline and update "
+        "the four documents that describe velocity evasion as open."
+    )

@@ -152,11 +152,25 @@ CATALOGUE: tuple[Attack, ...] = (
     ),
     Attack(
         "RT-ECON-004", "Velocity evasion", "economic",
-        "Three transactions per minute forever -- exactly at the limit, never over.",
+        "Ninety-seven transactions an hour, sustained -- three per cent under the "
+        "`velocity_1h` ceiling of 100, never over it, for as long as it likes.",
         defence_source="treasury", expected="UNDEFENDED",
-        params={"count": 30, "amount": "0.001", "spacing_seconds": 21},
-        rationale="A rate limit bounds the rate, not the total. Worth knowing "
-                  "whether anything else does.",
+        params={"count": 200, "amount": "0.001", "spacing_seconds": 37},
+        rationale="A rate limit bounds the rate, not the total. **The parameters "
+                  "were wrong and made this look like a hole in the rate limit "
+                  "itself.** It ran 30 actions at 21-second spacing -- 171 an hour "
+                  "on paper, but only 30 actions over ten minutes, so it stopped "
+                  "before the hourly counter reached anything. Run to 120 actions at "
+                  "that same spacing, action 100 **is** refused, by "
+                  "`treasury/velocity_exceeded:velocity_1h`. The rate limit works.\n"
+                  "The real gap is one step narrower: pacing *just under* the "
+                  "ceiling is unbounded in total. At 37-second spacing this runs two "
+                  "hours and 200 actions with nothing refused, and 97 an hour "
+                  "sustained is 2,328 actions a day. Every value envelope stays out "
+                  "of reach too -- 2,328 x $0.001 is $2.33 against a $50 daily "
+                  "budget. Nothing counts actions over a window longer than an hour, "
+                  "which is the thing that does not exist. Third attack in this "
+                  "catalogue whose parameters could not reach the control it named.",
     ),
 
     # --- evidence -------------------------------------------------------
