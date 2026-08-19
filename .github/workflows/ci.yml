@@ -95,8 +95,17 @@ jobs:
         run: pytest tests/test_vectors.py -q -k vendored_copy_exists --no-header -rN
 
   redteam:
-    # 18 attacks from the prototype. 13 defended, 3 open by design.
-    # The job asserts the score has not regressed, not that it is perfect.
+    # 18 attacks, ported from the prototype (PLAN A11.1). Recorded score:
+    # 14 defended, 1 defended by accident, 3 undefended, 0 error.
+    #
+    # The job asserts the score has not *changed*, not that it is perfect. Both directions
+    # fail: a defence that regressed is a vulnerability, and a gap that closed is a claim the
+    # CHANGELOG, the docs site and the specification's security section all still make.
+    #
+    # This job used to test `-d tests/redteam` and print a note when it was absent -- which it
+    # always was, since the suite lives at `redteam/`. The condition was honest about not being
+    # ported and still passed green for every commit in between. A conditional whose false
+    # branch is a green job is a job that reports nothing; the suite is unconditional now.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,14 +115,12 @@ jobs:
       - run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+      - name: The suite is where the tests think it is
+        run: test -f redteam/runner.py && test -f redteam/baseline.json
       - name: Red team
-        # Not ported yet (PLAN A11.1). Skipped explicitly rather than run with
-        # `continue-on-error`: a job permanently amber against a path that does
-        # not exist is one people learn to ignore, and it would go on being
-        # ignored on the day it started meaning something.
-        run: |
-          if [ -d tests/redteam ]; then
-            pytest tests/redteam -q
-          else
-            echo "tests/redteam/ not ported yet -- see PLAN.md A11.1"
-          fi
+        run: pytest tests/test_redteam.py -q
+      - name: The score, for a human reading this log
+        # Costs three seconds and no tokens, because no model sits in the decision path. The
+        # readable form is worth having in the log next to the pass: `DEFENDED_BY_ACCIDENT` is
+        # a finding, and a green check is a bad place to record one.
+        run: python -m redteam.runner

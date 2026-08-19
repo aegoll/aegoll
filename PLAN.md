@@ -392,7 +392,15 @@ The same template, fed live. Same renderer, second transport.
 Carried from the prototype. **Each needs a control that does not exist** — none is
 fixable by tightening a limit.
 
-- [ ] A11.1 Port the 18-attack red-team suite from `../x402/security/redteam/` into this repo's CI
+- [x] A11.1 **18-attack red-team suite ported and running in CI** — `redteam/` plus `tests/test_redteam.py`, scored against `redteam/baseline.json`. **14 defended, 1 defended by accident, 3 undefended, 0 error**, against the package installed from PyPI rather than `src/`. Sealed as [EXP-008](../aegs/research/experiments/EXP-008).
+
+  The `redteam` CI job already existed and had never run anything: it tested `-d tests/redteam`, a path the suite was never at, and printed a note when absent. **The false branch of that condition was a green job**, so every commit since it was added reported a passing red-team check against nothing. Now unconditional, with a step that asserts the suite files are where the tests expect them.
+
+  Porting found three defects in the *harness*, each of which had made the score wrong in a plausible direction:
+  - **the runner reimplemented attribution and disagreed with the layer.** It walked `reversed(decision.reasons)` and took the last refusing one; on budget fragmentation the daily envelope binds as `treasury/envelope_exceeded:daily` and a policy rule then *observes* the same fact, so the observation won and the runner credited `policy` where `attributed_control` says `treasury`. **Two of three apparent surprises were that artefact.** `attributed_control`'s own docstring names the hazard — three components disagreeing about which control refused would be three answers to a question with one — and the runner had become the fourth. It delegates now, and a test parses the function to prove it
+  - **RT-ECON-002 could not reach the control it names, for the second time.** $0.50 x 12 vendors was $6 against a $50 envelope; the "fix" of $5.00 x 12 is refused on the *first* call, because $1.00+ to an unknown counterparty is REVIEW by `review-untrusted-vendor-nontrivial` — so the loop broke at `i=0` having moved $0.00 and reported a defence. Now 101 x $0.50, with the resource varying per counterparty so the per-resource envelope cannot bind at the same instant and steal the attribution
+  - **RT-ECON-003 farmed trust outside the window it was farming.** 200 settlements placed 60–52 days back, against a 30-day aggregation window. Fixed; the outcome did not change, and knowing the fix changed nothing is worth more than a passing run that never measured the thing
+- [x] A11.1a Two stale `expected` values corrected — truncation was believed defended (it is not; open finding 1) and trust farming believed open (it is refused, by the wrong control). Surprise count is now zero **by intent**: a suite that reports known gaps as surprises every run buries the surprises that matter
 - [ ] A11.2 Add advisor prompt-injection attacks — vendor-supplied text reaching the advisor. The one open build item from the prototype, and the single place `promptmap`/`garak` genuinely fit
 - [ ] A11.3 **Behavioural-monitoring engine**, design doc first — it must examine the *shape* of a sequence, not the size of a transaction
 - [ ] A11.4 Closes finding 2: **microtransaction structuring** — 40 × $0.001 paced five minutes apart moved money with nothing refused
@@ -400,9 +408,12 @@ fixable by tightening a limit.
 - [ ] A11.6 **Evidence anchoring**, design doc first. Closes finding 1: **journal truncation is undetectable**, because any prefix of a hash chain is a valid chain, so an agent that gets refused can delete the refusal. Editing and middle-deletion *are* caught
 - [ ] A11.7 Do **not** ship a `head.json` beside the journal. It would look like a fix and defend against nothing. The fix is an external anchor
 - [ ] A11.8 Each new engine gets vectors in `aegs/vectors/` before it gets an implementation
-- [ ] A11.9 Sealed experiment recording the red-team score before and after
+- [~] A11.9 **The "before" half is sealed** — [EXP-008](../aegs/research/experiments/EXP-008), one run because the suite is deterministic, with the same policy hashes as EXP-007 so the two records describe the same rules. The "after" half waits on A11.3–A11.6. `report.md` states the movement each engine must produce, including that `RT-ECON-001` and `RT-ECON-004` must be attributed to the behavioural engine and **not** to `treasury` — an envelope catching them would mean the parameters drifted rather than the control arrived
 
 **Exit:** 18+ attacks in CI, three findings closed by controls rather than by thresholds.
+**Half done:** the attacks are in CI and the baseline is sealed. The three findings are open,
+and `redteam/baseline.json` now fails the build if any of them closes without the four
+documents that describe them as open being revisited in the same commit.
 
 ---
 

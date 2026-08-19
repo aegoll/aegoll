@@ -11,4 +11,11 @@ include LICENSE
 recursive-include src/tesoro/policies *.yaml *.json
 recursive-include src/tesoro/_schemas *.json *.txt
 recursive-include src/tesoro/_profiles *.json *.txt
+# The adversarial suite ships with the tarball because its *test* already did. An sdist that
+# carries `tests/test_redteam.py` and not `redteam/` fails at collection: the test asserts the
+# suite directory exists rather than skipping, deliberately, so a missing suite cannot pass as
+# a green run. Shipping the test without the code it exercises is the packaging version of the
+# same mistake.
+recursive-include redteam *.py *.json
+
 prune tests/_vectors
