@@ -359,8 +359,36 @@ class Governor:
         tail — any prefix of a valid chain is itself valid, so an agent that was refused could
         delete the refusal and this would still report success. Closing that needs an external
         anchor; `Report.chain.caveat` carries the disclosure that AEGS-0.1-EVID-6 requires.
+
+        Unchanged by the arrival of `verify_anchored`, deliberately. A caller that never
+        configured an anchor must not silently begin receiving a different claim than the one it
+        asked for.
         """
         return self._layer.audit.verify()
+
+    def verify_anchored(self, anchor: Any) -> Any:
+        """Compare the journal against what an external anchor attests. AEGS-0.1-EVID-6a.
+
+        Returns an `AnchorResult` with one of four outcomes — `consistent`, `truncated`,
+        `diverged`, `unknown` — and **`unknown` is never a pass**. A sink that cannot be read
+        leaves the anchored claim unavailable, which is a third thing; reporting it as consistent
+        would mean anyone able to partition this process from the sink could also make a
+        truncated journal verify.
+
+        Separate from `verify()` because the two answer different questions and one can hold
+        while the other fails: a chain can be internally valid and shorter than what was
+        attested, which is precisely the case a hash chain cannot see.
+
+        **What this does not close.** Everything appended since the anchor's last publication is
+        unattested and remains truncatable. Anchoring makes truncation detectable *beyond a
+        bound you chose*, not detectable. `anchor` is duck-typed — see
+        `tesoro.engines.evidence.anchor.Anchor`; nothing ships as a default, because an
+        append-only file beside the journal is within the writer's authority in most deployments
+        and would make the gap look closed.
+        """
+        from .engines.evidence.anchor import verify_against_anchor  # noqa: PLC0415
+
+        return verify_against_anchor(self._layer.audit.entries(), anchor)
 
     # --- lifecycle --------------------------------------------------------
 

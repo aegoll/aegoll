@@ -1,0 +1,39 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/anchor-consistent",
+  "clause": "AEGS-0.1-EVID-6a",
+  "operation": "verify_anchored",
+  "description": "A chain matching its anchor in length and head is consistent.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "anchor": {
+      "attestsLength": 3
+    }
+  },
+  "expect": {
+    "anchorOutcome": "consistent"
+  },
+  "note": "The baseline case. Everything attested is present and unaltered."
+}

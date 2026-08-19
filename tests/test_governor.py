@@ -389,3 +389,42 @@ def test_the_rules_evaluator_is_no_longer_called_governor():
     import tesoro
 
     assert tesoro.Governor is not RuleEngine
+
+
+def test_every_method_the_api_surface_documents_actually_exists():
+    """F-A12, as a test rather than a lesson.
+
+    `docs/api-surface.md` §3 carries a `class Governor:` block listing the Tier 1 surface. The
+    README once documented an API that did not exist and its opening snippet raised
+    `AttributeError` on line 3; nothing compared the page to the class. This does.
+
+    It also runs the other way: a public method on `Governor` that the page omits is an
+    undocumented part of the stable surface, and `verify()` was exactly that until
+    `verify_anchored()` was added and the omission became visible.
+    """
+    import re
+    from pathlib import Path
+
+    page = (Path(__file__).resolve().parents[1] / "docs" / "api-surface.md").read_text(
+        encoding="utf-8"
+    )
+    block = re.search(r"```python\nclass Governor:\n(.*?)```", page, re.S)
+    assert block, "the `class Governor:` block is gone from docs/api-surface.md §3"
+
+    documented = set(re.findall(r"^\s+def (\w+)\(", block.group(1), re.M))
+    assert documented, "the block lists no methods"
+
+    missing = sorted(n for n in documented if not hasattr(Governor, n))
+    assert not missing, (
+        f"documented but absent from Governor: {missing}. A documented method that does not "
+        "exist is worse than an undocumented one -- a reader follows it."
+    )
+
+    public = {
+        n for n in vars(Governor)
+        if not n.startswith("_") and callable(getattr(Governor, n, None))
+    }
+    undocumented = sorted(public - documented)
+    assert not undocumented, (
+        f"public on Governor but absent from docs/api-surface.md §3: {undocumented}"
+    )

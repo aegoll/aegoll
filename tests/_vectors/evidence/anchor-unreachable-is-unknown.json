@@ -1,0 +1,39 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/anchor-unreachable-is-unknown",
+  "clause": "AEGS-0.1-EVID-6a",
+  "operation": "verify_anchored",
+  "description": "An anchor that cannot be read yields unknown, never consistent.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "anchor": {
+      "unreachable": true
+    }
+  },
+  "expect": {
+    "anchorOutcome": "unknown"
+  },
+  "note": "The fail-open case, and the one that would make anchoring worse than its absence. If an unreachable sink read as consistent, anyone able to partition the verifier from the sink could also make a truncated journal verify. The chain's own internal result still stands separately; it is the anchored claim that is unavailable."
+}

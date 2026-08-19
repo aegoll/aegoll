@@ -84,6 +84,18 @@ class Governor:
     def settle(self, decision: "Decision", *, success: bool = True,
                actual_amount_usd: str | int | None = None) -> None: ...
 
+    def decide(
+        self,
+        *,
+        amount_usd: str | int,
+        vendor: str,
+        resource: str,
+        channel: str = "external",
+        purpose: str | None = None,
+        sanctioned: bool = False,
+        now: datetime | None = None,
+    ) -> "Decision": ...
+
     # --- declarations, before acting ---
     def declare_intent(self, *, purpose: str, budget_usd: str | int,
                        expires_in_s: int, resources: list[str] | None = None) -> str: ...
@@ -98,6 +110,10 @@ class Governor:
     def budget(self, channel: str = "external") -> "Envelope": ...
     def report(self) -> "Report": ...
     def decisions(self, limit: int | None = None) -> list["Decision"]: ...
+
+    # --- verifying the evidence ---
+    def verify(self) -> tuple[bool, list[str]]: ...
+    def verify_anchored(self, anchor: "Anchor") -> "AnchorResult": ...
 
     # --- lifecycle ---
     def close(self) -> None: ...
@@ -122,6 +138,11 @@ class Governor:
   settle, not on authorize, so an abandoned decision does not consume budget.
 - **`settle()` takes the `Decision`, not an id.** It cannot be called for a decision that
   was never made, and the type system says so.
+- **`decide()` is `authorize()` without the consequences.** Same verdict, same attribution,
+  nothing journalled and nothing consumed — for a dry run, a playground, or asking what a
+  policy change would have done. It was public and undocumented on this page until a test
+  started comparing the two; the omission mattered because a reader could reasonably assume
+  `authorize()` was the only way to get a verdict and journal one they did not want.
 - **`channel` is a plain string, `"internal"` or `"external"`.** An enum here buys nothing
   a validated string does not, and costs an import in every caller.
 - **No `precheck` and no `record_override`.** Both were prototype conveniences that leaked
@@ -129,6 +150,28 @@ class Governor:
 - **`wrap()` returns the same duck type it was given.** It never requires a framework
   import, and the core never imports a framework — invariant 8. An agent does not import
   the governor; the governor wraps the agent.
+- **`verify()` and `verify_anchored()` are two calls because they answer two questions.**
+  `verify()` walks the chain and catches edits, middle-deletions and reordering. It cannot
+  catch truncation of the tail — any prefix of a valid chain is itself valid — so a chain can
+  be internally valid *and* shorter than the history that happened.
+  `verify_anchored()` compares the journal against an external anchor and is the only one of
+  the two that can see that. Merging them would silently change the claim a caller receives
+  based on whether an anchor happens to be configured, and `verify()` was here first.
+- **`verify_anchored()` returns four outcomes, not a boolean.** `consistent`, `truncated`,
+  `diverged`, `unknown` — and **`unknown` is never a pass.** A sink that cannot be read leaves
+  the anchored claim unavailable, which is a third thing; reporting it as consistent would mean
+  anyone able to partition the process from the sink could also make a truncated journal
+  verify. AEGS-0.1-EVID-6a.
+- **`anchor` is duck-typed and no implementation ships.** Two methods, `publish` and `latest`,
+  and implementing them requires importing nothing from tesoro. Nothing is bundled on purpose:
+  an append-only file beside the journal is rewritable by the agent's own user in most
+  deployments, so shipping one as a default would make the gap look closed while defending
+  nothing. `docs/design/evidence-anchoring.md` lists five candidate sinks and what each
+  actually guarantees.
+- **An anchor bounds truncation rather than eliminating it.** Everything appended since the
+  last publication is unattested and remains truncatable, so the honest claim is *detectable
+  beyond a bound you chose*. The report's chain caveat says so whether or not an anchor is
+  configured.
 
 ### `Decision`
 

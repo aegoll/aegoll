@@ -1,0 +1,47 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/anchor-detects-divergence",
+  "clause": "AEGS-0.1-EVID-6a",
+  "operation": "verify_anchored",
+  "description": "An edited entry at a length matching the anchor is diverged, not truncated.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "tamper": {
+      "kind": "edit",
+      "seq": 1,
+      "payload": {
+        "d": "APPROVE",
+        "tampered": true
+      }
+    },
+    "anchor": {
+      "attestsLength": 3
+    }
+  },
+  "expect": {
+    "anchorOutcome": "diverged"
+  },
+  "note": "Length alone would call this consistent and head alone could not tell it from truncation. EVID-6a requires both values so these two failures stay distinguishable: one says records were removed, the other says they were altered, and they call for different responses."
+}

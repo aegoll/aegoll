@@ -1,0 +1,39 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/anchor-empty-sink-attests-nothing",
+  "clause": "AEGS-0.1-EVID-6a",
+  "operation": "verify_anchored",
+  "description": "A reachable but empty sink attests nothing, so the outcome is unknown.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "anchor": {
+      "empty": true
+    }
+  },
+  "expect": {
+    "anchorOutcome": "unknown"
+  },
+  "note": "Distinct from unreachable and from consistent. Nothing was published, so nothing is confirmed -- absent is not the same as agreeing, which is section 06 applied to a sink."
+}

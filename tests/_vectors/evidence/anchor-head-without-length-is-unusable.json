@@ -1,0 +1,39 @@
+{
+  "aegsVersion": "0.1",
+  "id": "evidence/anchor-head-without-length-is-unusable",
+  "clause": "AEGS-0.1-EVID-6a",
+  "operation": "verify_anchored",
+  "description": "An anchor holding a head but no length cannot be verified against.",
+  "input": {
+    "entries": [
+      {
+        "seq": 0,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 1,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "APPROVE"
+        }
+      },
+      {
+        "seq": 2,
+        "at": "2026-08-17T12:00:00+00:00",
+        "payload": {
+          "d": "REJECT"
+        }
+      }
+    ],
+    "anchor": {
+      "attestsHeadOnly": true
+    }
+  },
+  "expect": {
+    "anchorOutcome": "unknown"
+  },
+  "note": "EVID-6a requires the commitment to carry both. With only a head, a mismatch proves the history changed but cannot say whether entries were removed or altered, and a match proves only that this particular head was once published. Reporting that as consistent would overstate it."
+}

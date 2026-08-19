@@ -32,7 +32,12 @@ ENGINES = PACKAGE / "engines"
 FAMILIES = {
     "economic": {"treasury", "policy", "roi", "intent"},
     "risk": {"trust", "risk"},
-    "evidence": {"audit", "eiap", "identity", "escalation"},
+    # `anchor` is verification, not a decision engine: it reads the journal after the fact
+    # and never contributes to a verdict. It sits in this family because it is evidence
+    # machinery and shares `audit`'s hashing -- deliberately the same hashing, since an
+    # anchor comparing against a second implementation of the chain hash would be
+    # comparing two answers to one question.
+    "evidence": {"audit", "eiap", "identity", "escalation", "anchor"},
 }
 
 #: Value types the engines may depend on. Not behaviour -- these carry data and

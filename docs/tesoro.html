@@ -267,7 +267,13 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
     permitted count envelopes since 0.1; what was missing was any window longer than an hour.
   </li>
   <li>
-    <strong>Journal truncation is undetectable</strong> without an external anchor.
+    <strong>Journal truncation is undetectable</strong> without an external anchor, and no anchor
+    is configured by default. <code>Governor.verify_anchored()</code> exists and takes one — four
+    outcomes, <code>consistent</code> / <code>truncated</code> / <code>diverged</code> /
+    <code>unknown</code>, and an unreadable sink is never a pass. **An anchor bounds truncation
+    rather than eliminating it:** everything appended since its last publication is unattested and
+    still removable, so the honest claim is <em>detectable beyond a bound you chose</em>. No sink
+    ships, deliberately — see below.
   </li>
   <li>
     <strong>AML screening is a schema with no engine behind it.</strong> No list, no matching, no

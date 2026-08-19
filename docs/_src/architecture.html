@@ -297,7 +297,12 @@ gov.authorize(amount_usd=2.50, ...)        <span class="c"># TypeError</span></c
 </figure>
 
 <p>
-  The truncation gap is <strong>disclosed rather than fixed</strong>, and the fix that looks like one
+  <code>Governor.verify_anchored()</code> closes this against an <em>external</em> anchor, and
+  bounds rather than eliminates it: anything appended since the anchor's last publication is
+  unattested. Four outcomes, and an anchor that cannot be read reports <code>unknown</code> —
+  never <code>consistent</code>, because otherwise anyone who can cut the verifier off from the
+  sink can also make a truncated journal verify.
+  The gap remains <strong>disclosed rather than fixed by default</strong>, and the fix that looks like one
   is worth naming: writing the chain head and length to a second file beside the journal is
   <em>not</em> an anchor, because whoever can truncate the journal can rewrite that file. Shipping it
   would be worse than shipping the gap, because it would make the system <em>appear</em> anchored.

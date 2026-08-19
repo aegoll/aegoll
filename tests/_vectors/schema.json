@@ -43,7 +43,8 @@
         "classify_control",
         "clamp_delegation",
         "disclose",
-        "evaluate_profile"
+        "evaluate_profile",
+        "verify_anchored"
       ],
       "description": "A closed set. A vector naming an operation no implementation is required to expose cannot be run, and an unrunnable vector is worse than an absent one because it looks like coverage."
     },
@@ -424,6 +425,30 @@
           "items": {
             "type": "string"
           }
+        },
+        "anchor": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "What an external anchor attests, described against the chain BEFORE `tamper` is applied -- which is the real sequence: the anchor was published, then the journal was altered. The runner computes the attested head itself, so a vector never contains a literal hash and stays independent of how an implementation hashes. See EVID-6a.",
+          "properties": {
+            "attestsLength": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The chain length the sink attests, counted on the untampered chain."
+            },
+            "unreachable": {
+              "type": "boolean",
+              "description": "The sink could not be read. The anchored claim is UNAVAILABLE, which is a third thing -- reporting it as consistent lets anyone who can partition the verifier from the sink also make the journal verify."
+            },
+            "empty": {
+              "type": "boolean",
+              "description": "The sink was read and holds nothing. Nothing is attested."
+            },
+            "attestsHeadOnly": {
+              "type": "boolean",
+              "description": "The sink holds a head with no length. EVID-6a requires both, because a head alone cannot separate truncation from divergence."
+            }
+          }
         }
       }
     },
@@ -763,6 +788,24 @@
             },
             "everyRequiredNamesAPath": {
               "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "anchorOutcome"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "anchorOutcome": {
+              "enum": [
+                "consistent",
+                "truncated",
+                "diverged",
+                "unknown"
+              ],
+              "description": "EVID-6a's four outcomes. `unknown` is never a pass."
             }
           }
         }

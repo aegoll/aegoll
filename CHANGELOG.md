@@ -72,6 +72,39 @@ and hides fixes tells a reader what was added and not what was wrong.
   The default pack's content hash changes: `a5a64aeb69dbc5f9206b31022064da26` ->
   `46abca353ed56adc703aa555ca1e12d6`, 12 rules either way.
 
+- **`Governor.verify_anchored(anchor)` — verification against an external anchor.**
+  AEGS-0.1-EVID-6a. A hash chain cannot detect truncation of its own tail, because any prefix of a
+  valid chain is itself valid; the missing information is *that there was more*, and an anchor
+  supplies it as a `(length, head)` pair published where the journal's writer cannot reach.
+
+  **Four outcomes, and `unknown` is never a pass:** `consistent`, `truncated`, `diverged`,
+  `unknown`. A sink that cannot be read leaves the anchored claim unavailable, which is a third
+  thing -- reporting it as consistent would mean anyone able to partition the process from the
+  sink could also make a truncated journal verify.
+
+  **It bounds truncation rather than eliminating it.** Everything appended since the anchor's last
+  publication is unattested and remains removable, so the honest claim is *detectable beyond a
+  bound you chose*. A vector and a test both assert that limit rather than describing it.
+  Publishing on every refusal is the cheap way to narrow the window where it matters: a refusal is
+  rare, and it is the entry an adversary most wants inside it.
+
+  **`verify()` is unchanged.** Two calls, because they answer different questions and one can hold
+  while the other fails -- a chain can be internally valid *and* shorter than the history that
+  happened.
+
+  **No sink ships, deliberately.** `Anchor` is a two-method duck type needing no tesoro import. An
+  append-only file beside the journal is rewritable by the agent's own user in most deployments, so
+  bundling one with a config key would make the gap look closed while defending nothing -- the
+  `head.json` trap at one remove. `docs/design/evidence-anchoring.md` lists five candidate sinks
+  and what each actually guarantees, including the x402-rail option, which is nearly free and
+  structurally blind to refusals.
+
+- **`Governor.decide()` was public and undocumented**, and `verify()` was too. Both are on
+  `docs/api-surface.md` §3 now, and a test compares that page against the class in both directions
+  -- documented-but-absent, and public-but-undocumented. The README once carried an API that did
+  not exist and whose opening snippet raised `AttributeError` on line 3; nothing compared the page
+  to the code. Now something does.
+
 ### Fixed
 
 - **200 trivial actions erased an agent's real spending history from the risk baseline.**

@@ -27,10 +27,12 @@ that user nothing.
 Source
 ------
   repo:    aegoll/aegs
-  commit:  24c12e0a43011e6789b1335fc97ea546aff9094c
+  commit:  f44a81b77f2aca2f2057b5afc8cc236beca08ab7
   path:    vectors/
-  copied:  2026-08-17
-  count:   151 vectors across 9 families, covering 56 clauses
+  copied:  2026-08-18
+  count:   158 vectors across 9 families, covering 57 clauses
+  raised:  for AEGS-0.1-EVID-6a and its seven anchor vectors. The pin is raised
+           deliberately, which is the whole point of it -- the drift check failed first.
 
 Drift
 -----

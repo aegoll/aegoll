@@ -204,7 +204,9 @@ class ChainView:
     #: middle-deletion **are** caught. The fix is an external anchor, not a note.
     caveat: str = (
         "a hash chain detects edits and middle-deletions, not truncation: any prefix of a "
-        "valid chain is itself valid. Closing that needs an external anchor."
+        "valid chain is itself valid. Closing that needs an external anchor -- see "
+        "Governor.verify_anchored(), which is not configured here. An anchor would make "
+        "truncation detectable beyond its last publication, not detectable."
     )
 
     def as_dict(self) -> dict[str, Any]:

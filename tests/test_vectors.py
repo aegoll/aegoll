@@ -265,6 +265,39 @@ def _tamper(chain: list[dict], spec: dict) -> list[dict]:
     raise AssertionError(f"unknown tamper kind {kind!r}")
 
 
+def _recomputed_head(chain: list[dict], length: int) -> str:
+    """The head of a built chain at `length`, as this implementation hashes it."""
+    from tesoro.engines.evidence.audit import GENESIS
+
+    return GENESIS if length == 0 else chain[length - 1]["entry_hash"]
+
+
+class _VectorAnchor:
+    """A sink standing in for a real one, driven by a vector's `anchor` block.
+
+    The three ways of having nothing to say are kept distinct, because EVID-6a turns on them:
+    `unreachable` raises, `empty` returns None, and `attestsHeadOnly` returns a head with no
+    length. Collapsing any of them into another would make the vectors agree with an
+    implementation that fails open.
+    """
+
+    def __init__(self, spec: dict, attested_head: str | None) -> None:
+        self._spec = spec
+        self._head = attested_head
+
+    def publish(self, length: int, head: str) -> str | None:  # pragma: no cover - unused here
+        raise NotImplementedError("vectors verify against an anchor, they do not publish")
+
+    def latest(self):
+        if self._spec.get("unreachable"):
+            raise OSError("the sink is unreachable")
+        if self._spec.get("empty"):
+            return None
+        if self._spec.get("attestsHeadOnly"):
+            return (None, self._head or "unknown-head")
+        return (self._spec["attestsLength"], self._head)
+
+
 def _verify_chain(chain: list[dict]) -> tuple[bool, list[str], list[str]]:
     """Walk a chain the way `AuditLog.verify()` does, reporting every problem. EVID-7."""
     from tesoro.engines.evidence.audit import GENESIS, _hash_entry
@@ -316,6 +349,26 @@ def _evidence(operation: str, data: dict) -> dict:
             "valid": valid, "problems": problems, "problemKinds": kinds,
             "entryCount": len(chain),
         }
+
+    if operation == "verify_anchored":
+        # Calls tesoro's own `verify_against_anchor`. Deliberately not a reimplementation of
+        # the comparison here: the red-team runner reimplemented attribution, disagreed with
+        # the layer it was scoring, and two of three apparent findings were that artefact. A
+        # vector runner with its own copy of the logic measures the copy.
+        from tesoro.engines.evidence.anchor import verify_against_anchor
+
+        chain = _build_chain(data.get("entries") or [])
+        spec = data.get("anchor") or {}
+        # The anchor attests the chain BEFORE tampering -- published, then altered.
+        attested_length = spec.get("attestsLength")
+        attested_head = (
+            None if attested_length is None else _recomputed_head(chain, attested_length)
+        )
+        if data.get("tamper"):
+            chain = _tamper(chain, data["tamper"])
+
+        result = verify_against_anchor(chain, _VectorAnchor(spec, attested_head))
+        return {"anchorOutcome": result.outcome.value, "detail": result.detail}
 
     if operation == "hash_strength":
         # Read the length from the hash function itself rather than from a constant, so
@@ -478,6 +531,7 @@ def _run(vector: dict):
 
     if operation in {
         "canonical_serialise", "chain_hash", "verify_chain", "hash_strength",
+        "verify_anchored",
     }:
         return _evidence(operation, data)
 
