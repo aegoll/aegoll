@@ -30,6 +30,7 @@ NAV: list[tuple[str, list[tuple[str, str]]]] = [
         ("types.html", "Four kinds of AEGL"),
         ("vocabulary.html", "The shared vocabulary"),
         ("stablecoins.html", "Stablecoins &amp; irreversibility"),
+        ("ecosystem.html", "What governs what"),
     ]),
     ("Tesoro", [
         ("tesoro.html", "What Tesoro is"),

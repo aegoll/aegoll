@@ -1,0 +1,227 @@
+<!-- title: What governs what — where a spend control sits among agent governance tools -->
+<!-- description: Agent governance splits into layers: what an agent may do, and what an agent may pay. How Tesoro relates to Microsoft's Agent Governance Toolkit, OPA, guardrails and observability tools, and what each is actually for. -->
+
+<h1>What governs what</h1>
+<p class="lede">
+  "Agent governance" covers at least four different jobs, and a tool that does one of them well is
+  usually not doing the others at all. This page says which job Tesoro does, which tools do the
+  rest, and how to tell quickly whether you need one, two or all of them.
+</p>
+
+<div class="key">
+  <p>
+    <strong>The short answer.</strong> Most agent governance tools decide <em>what an agent may
+    do</em> — which tools it may call, what it may read, whether an action is permitted. Tesoro
+    decides <em>what an agent may pay</em>: irreversible outbound value, on a settlement rail,
+    to a third party. They are different questions and a team running agents that spend money
+    generally needs both.
+  </p>
+</div>
+
+<h2 id="four-jobs">Four jobs that all get called governance</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Job</th><th>The question it answers</th><th>Typical tools</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Action governance</strong></td>
+      <td>May this agent call this tool, reach this host, read this record?</td>
+      <td>Microsoft Agent Governance Toolkit, OPA/Rego, Cedar, MCP gateways</td>
+    </tr>
+    <tr>
+      <td><strong>Content guardrails</strong></td>
+      <td>Is this input or output harmful, off-policy, or an injection attempt?</td>
+      <td>Guardrails libraries, moderation endpoints, prompt-injection filters</td>
+    </tr>
+    <tr>
+      <td><strong>Observability</strong></td>
+      <td>What did this agent do, how long did it take, what did it cost?</td>
+      <td>LangSmith, Langfuse, OpenTelemetry, tracing platforms</td>
+    </tr>
+    <tr>
+      <td><strong>Economic governance</strong> — an <a href="index.html">AEGL</a></td>
+      <td>May this agent spend <em>this</em>, given everything it has already spent?</td>
+      <td>Tesoro</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The fourth is the one this project is about, and the reason it is separate is on the
+  <a href="stablecoins.html">stablecoins page</a>: a payment on an irreversible rail cannot be
+  charged back, so the only useful control point is <em>before</em> it happens. Observability
+  tells you what an agent spent. A guardrail tells you whether text was safe. Neither refuses a
+  payment.
+</p>
+
+<h2 id="microsoft-agt">Microsoft's Agent Governance Toolkit</h2>
+
+<p>
+  Worth addressing directly, because it is the most substantial project in the adjacent space and
+  because the two overlap enough that the difference is a fair question.
+  <a href="https://github.com/microsoft/agent-governance-toolkit">Agent Governance Toolkit</a>
+  (MIT) is action governance done thoroughly: policy enforcement, zero-trust identity via
+  SPIFFE and DIDs, execution sandboxing, an MCP security gateway, an SRE surface with kill
+  switches, and mappings onto OWASP's Agentic Top 10, NIST AI RMF and the EU AI Act. Five language
+  implementations, its own specification, and a machine-readable conformance suite.
+</p>
+
+<p>
+  <strong>It also has budget controls, and they are not the same kind.</strong> Its policy library
+  bounds four host-tracked counters — tool calls, tokens, elapsed seconds, and a cost figure —
+  per run. That is the right model for <em>operational consumption</em>: a resource you are billed
+  for later, by a provider you hold a contract with, on an invoice you can dispute.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>Operational cost<br><span class="small">tokens, tool calls, seconds</span></th><th>Irreversible payment<br><span class="small">stablecoin to a third party</span></th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Money as a float</td>
+      <td>Fine — an approximate bill reconciles against an invoice</td>
+      <td><strong>Not fine.</strong> <code>0.1 + 0.2 != 0.3</code>, and there is no invoice to reconcile against</td>
+    </tr>
+    <tr>
+      <td>Per-run counters</td>
+      <td>Fine — "did this run cost too much" is the question</td>
+      <td><strong>Insufficient.</strong> The question is what this agent has spent this month, per counterparty, across every run</td>
+    </tr>
+    <tr>
+      <td>One decision point</td>
+      <td>Fine — the tool call happens or it does not</td>
+      <td><strong>Insufficient.</strong> What settles may differ from what was authorised</td>
+    </tr>
+    <tr>
+      <td>Reversibility if wrong</td>
+      <td>A line item you dispute</td>
+      <td><strong>A transfer that is gone</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  So: <strong>neither model is wrong, and they answer different questions.</strong> If your agents
+  call tools and burn tokens, action governance is what you need and there is a mature project for
+  it. If your agents send money to counterparties you do not control, you need cumulative
+  envelopes over time windows, an authorise-then-settle split, integer arithmetic, and a record of
+  which control refused — none of which falls out of a per-run cost counter.
+</p>
+
+<div class="note">
+  <p>
+    <strong>Convergent design is the useful signal here.</strong> Two independent efforts arrived at
+    the same shape: decide before the action rather than report after it, a specification separate
+    from the implementation, machine-readable conformance cases, deterministic evaluation with no
+    model in the decision path, and a verdict carrying a reason. When a project with Microsoft's
+    resources builds the same architecture, that is evidence the category is real rather than a
+    private coinage.
+  </p>
+</div>
+
+<h3 id="one-place-they-defer">One place they document a gap, and this project closed it</h3>
+
+<p>
+  Their ADR on Merkle-chained audit records states, in its own words, that there is
+  <em>"no external blockchain anchoring — verification is self-contained"</em> and consequently
+  <em>"no protection against a complete chain replacement (requires external anchoring for that
+  threat model)"</em>.
+</p>
+
+<p>
+  That is the same conclusion
+  <a href="https://github.com/aegoll/aegs/blob/main/spec/07-evidence.md">AEGS-0.1-EVID-6</a>
+  reaches: a hash chain cannot detect truncation of its own tail, because any prefix of a valid
+  chain is itself a valid chain. AEGS goes one clause further —
+  <strong><code>EVID-6a</code></strong> fixes what an external anchor must commit to (length
+  <em>and</em> head), and requires verification to distinguish four outcomes where an unreadable
+  anchor is <strong>never</strong> reported as consistent. <code>Governor.verify_anchored()</code>
+  implements it.
+</p>
+
+<p class="small">
+  Their evidence model is stronger than Tesoro's in a different direction, and it is worth saying
+  so: it carries proof artefacts for the <em>decision procedure</em> — SMT-verified gates, Coq or
+  Lean derivations, TEE attestation over the deciding binary. That proves the decision was sound.
+  A hash chain only proves the record was not altered. The two claims are orthogonal and Tesoro
+  makes only the second.
+</p>
+
+<h2 id="using-both">Using both together</h2>
+
+<p>
+  The layering is straightforward, because the two intercept different things:
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Action governance decides whether the agent may call the tool.</strong> If the tool is
+    a paid API, that decision is about permission, identity and blast radius.
+  </li>
+  <li>
+    <strong>Economic governance decides whether the payment that call requires may happen</strong> —
+    against a daily envelope, a per-counterparty envelope, a declared intent, and everything the
+    agent has already spent this month.
+  </li>
+  <li>
+    Both write evidence. Only one of them can tell you the agent has spent 94% of its monthly
+    budget across four hundred approved actions, none of which individually looked unusual.
+  </li>
+</ul>
+
+<p>
+  Tesoro requires no framework and imports none. Its integration contract is
+  <a href="frameworks.html">three calls</a>, and the governor wraps the agent rather than the
+  agent importing the governor — so it composes with an action-governance layer rather than
+  competing for the same interception point.
+</p>
+
+<h2 id="when-you-do-not-need-this">When you do not need an AEGL at all</h2>
+
+<p>
+  Stated plainly, because a governance layer nobody needs is overhead:
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Your agents do not pay anyone.</strong> If the only cost is inference on your own API
+    key, a provider spend cap and observability are honestly enough.
+  </li>
+  <li>
+    <strong>Every payment goes to one counterparty you have a contract with.</strong> That is an
+    invoice with a dispute process. Reconcile it.
+  </li>
+  <li>
+    <strong>A human approves every payment.</strong> Then you already have the control, and its
+    cost is the human's time.
+  </li>
+</ul>
+
+<p>
+  The <a href="types.html">four kinds of AEGL</a> page is the more precise version of this
+  question: it sets out what each level of control can express and where a per-payment cap is
+  genuinely sufficient.
+</p>
+
+<h2 id="where-next-ecosystem">Where next</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Stablecoins &amp; irreversibility</h3>
+    <p>Why the rail is the reason the controls are shaped this way.</p>
+    <a href="stablecoins.html">the rail →</a>
+  </div>
+  <div class="card">
+    <h3>Four kinds of AEGL</h3>
+    <p>Which level of control you actually need, and where a cap is enough.</p>
+    <a href="types.html">the four types →</a>
+  </div>
+  <div class="card">
+    <h3>Frameworks &amp; rails</h3>
+    <p>The three-call contract, and why it composes with other layers.</p>
+    <a href="frameworks.html">frameworks →</a>
+  </div>
+</div>

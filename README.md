@@ -28,7 +28,11 @@ in the decision path, an append-only hash-chained record of every decision and t
 that made it.
 
 **📖 [Documentation](https://aegoll.github.io/tesoro/)** — what an AEGL is, the architecture,
-policies and rules, framework adapters, and the AEGS standard.
+policies and rules, framework adapters, and the AEGS standard. Two pages worth reading first:
+[**stablecoins and irreversibility**](https://aegoll.github.io/tesoro/stablecoins.html), which is
+why the controls are shaped this way, and
+[**what governs what**](https://aegoll.github.io/tesoro/ecosystem.html), which is how this relates
+to action-governance tools like Microsoft's Agent Governance Toolkit.
 
 ```bash
 pip install tesoro
