@@ -6,6 +6,75 @@
 <meta name="referrer" content="no-referrer">
 <title>Autonomous economic governance — what it is and why it needs a layer</title>
 <meta name="description" content="An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.">
+<link rel="canonical" href="https://aegoll.github.io/tesoro/">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="author" content="Jayzilva">
+
+<!-- Open Graph and Twitter. Not vanity: when this page is pasted into Slack, a PR description or
+     a model's browsing tool, these tags are what it shows instead of a bare URL. -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="tesoro">
+<meta property="og:title" content="Autonomous economic governance — what it is and why it needs a layer">
+<meta property="og:description" content="An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.">
+<meta property="og:url" content="https://aegoll.github.io/tesoro/">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Autonomous economic governance — what it is and why it needs a layer">
+<meta name="twitter:description" content="An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.">
+
+<!-- Structured data. An answer engine quoting this page needs to know what kind of thing it is,
+     who wrote it and what software it documents; a crawler infers none of that from prose. Kept
+     inline, like everything else here, because the site makes no outbound request. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": "https://aegoll.github.io/tesoro/#article",
+      "headline": "Autonomous economic governance \u2014 what it is and why it needs a layer",
+      "description": "An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://aegoll.github.io/tesoro/#website"
+      },
+      "about": {
+        "@id": "https://aegoll.github.io/tesoro/#software"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Jayzilva"
+      },
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://aegoll.github.io/tesoro/#website",
+      "name": "tesoro",
+      "url": "https://aegoll.github.io/tesoro/",
+      "description": "Documentation for tesoro, an Autonomous Economic Governance Layer: spend controls, budget envelopes and auditable evidence for AI agents that pay."
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://aegoll.github.io/tesoro/#software",
+      "name": "tesoro",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "OS Independent",
+      "programmingLanguage": "Python",
+      "softwareVersion": "0.1.1",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "downloadUrl": "https://pypi.org/project/tesoro/",
+      "codeRepository": "https://github.com/aegoll/tesoro",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "A policy-engine host that decides whether an autonomous agent may spend, before it spends, and records which control decided. Deterministic, no model in the decision path."
+    }
+  ]
+}
+</script>
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -13,7 +82,20 @@
 <input type="checkbox" id="menu">
 <div class="topbar">
   <label class="menu-btn" for="menu">&#9776; menu</label>
-  <a class="brand" href="index.html">tesoro <span class="v">0.1.0</span></a>
+  <a class="brand" href="index.html">
+    <!-- The mark, inlined in the topbar so it appears on every page and still costs no request.
+         `currentColor` and the palette variables make it follow the theme, which a flat SVG file
+         linked as an <img> could not do. -->
+    <svg class="mark-sm" viewBox="0 0 96 96" width="22" height="22" aria-hidden="true" focusable="false">
+      <rect x="6" y="6" width="84" height="84" rx="20" fill="none" stroke="currentColor" stroke-width="7"/>
+      <rect x="21" y="58" width="11" height="18" rx="2" fill="var(--accent)"/>
+      <rect x="37" y="48" width="11" height="28" rx="2" fill="var(--accent)"/>
+      <rect x="53" y="38" width="11" height="38" rx="2" fill="var(--accent)"/>
+      <rect x="69" y="34" width="11" height="42" rx="2" fill="var(--bad)"/>
+      <line x1="16" y1="34" x2="82" y2="34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+    </svg>
+    <span>tesoro <span class="v">0.1.1</span></span>
+  </a>
   <div class="links">
     <a href="https://github.com/aegoll/tesoro">GitHub</a>
     <a href="https://pypi.org/project/tesoro/">PyPI</a>
@@ -36,6 +118,7 @@
   </ul>
   <a class="page" href="types.html">Four kinds of AEGL</a>
   <a class="page" href="vocabulary.html">The shared vocabulary</a>
+  <a class="page" href="stablecoins.html">Stablecoins &amp; irreversibility</a>
   <div class="group">Tesoro</div>
   <a class="page" href="tesoro.html">What Tesoro is</a>
   <a class="page" href="architecture.html">Architecture</a>

@@ -331,3 +331,16 @@ svg.mark {
   margin: 0 0 1.1rem;
   color: var(--ink);
 }
+
+/* The mark in the topbar. Sized down and thickened: the landing-page version is 72px, and its
+   4px strokes disappear at 22px. `aria-hidden` because the brand link beside it already says
+   "tesoro" -- announcing it twice is worse for a screen reader than not announcing it at all. */
+.topbar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+svg.mark-sm {
+  flex: 0 0 auto;
+  color: var(--ink);
+}

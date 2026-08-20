@@ -1,0 +1,245 @@
+<!-- title: Stablecoins, x402 and irreversibility — why agent payments need controls before they settle -->
+<!-- description: AI agents pay in stablecoins like USDC over rails such as x402. A stablecoin payment cannot be reversed, charged back or disputed, so the only place to intervene is before it happens. What that changes about spend controls. -->
+
+<h1>Stablecoins and irreversibility</h1>
+<p class="lede">
+  An agent that pays a human-scale invoice by card can be rescued afterwards. An agent that pays
+  <strong>$40,000 in USDC to the wrong address</strong> cannot. There is no chargeback, no issuer to
+  call, and no reversal — which is why a governance layer for autonomous spending has to decide
+  <em>before</em> the payment rather than review after it.
+</p>
+
+<div class="key">
+  <p>
+    <strong>Why do AI agents pay in stablecoins?</strong> Because the alternatives assume a human.
+    A card needs a cardholder, a bank transfer needs banking hours, and both assume someone who can
+    be phoned. A stablecoin transfer settles in seconds, costs a fraction of a cent, works at
+    machine scale and needs no counterparty relationship — and it is <em>final the moment it
+    settles</em>.
+  </p>
+</div>
+
+<h2 id="the-rail">The rail: HTTP 402, USDC, six decimals</h2>
+
+<p>
+  <a href="https://github.com/x402-foundation/x402">x402</a> revives the HTTP status code nobody
+  used — <code>402 Payment Required</code> — as a machine-to-machine payment handshake. A client
+  requests a resource, the server answers <code>402</code> with a price and an address, the client
+  pays and retries with proof. No account, no API key negotiation, no invoice.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Property</th><th>Value</th><th>Consequence for a governance layer</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Asset</td>
+      <td>USDC, a dollar-denominated stablecoin</td>
+      <td>Amounts look like money, so people reason about them as floats. They must not be</td>
+    </tr>
+    <tr>
+      <td>Precision</td>
+      <td><strong>6 decimals</strong> — one atomic unit is $0.000001</td>
+      <td>Every amount is an integer count of atomic units internally, converted once at the boundary</td>
+    </tr>
+    <tr>
+      <td>Settlement</td>
+      <td>seconds, on chain</td>
+      <td>No window in which to intervene after the fact. Authorisation is the only control point</td>
+    </tr>
+    <tr>
+      <td>Reversibility</td>
+      <td><strong>none</strong></td>
+      <td>The entire argument on this page</td>
+    </tr>
+    <tr>
+      <td>Cost per payment</td>
+      <td>fractions of a cent</td>
+      <td>Micropayments become rational, so <em>thousands</em> of tiny payments becomes a normal pattern</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="irreversibility">Irreversibility is the whole argument</h2>
+
+<p>
+  Human payment systems are built on the assumption that mistakes get undone. That assumption is
+  load-bearing and it is absent here.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>Card</th><th>Bank transfer</th><th>Stablecoin</th></tr></thead>
+  <tbody>
+    <tr><td>Reversal window</td><td>120 days typical</td><td>hours, sometimes</td><td><strong>none</strong></td></tr>
+    <tr><td>Dispute process</td><td>chargeback</td><td>recall request</td><td><strong>none</strong></td></tr>
+    <tr><td>Who absorbs fraud</td><td>issuer or merchant</td><td>often the sender</td><td><strong>the sender, entirely</strong></td></tr>
+    <tr><td>Wrong recipient</td><td>recoverable</td><td>sometimes recoverable</td><td><strong>gone</strong></td></tr>
+    <tr><td>Practical control point</td><td>after</td><td>during</td><td><strong>before</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Every control in a card network is <em>detective</em> — it finds the problem and then unwinds it.
+  Detection is worth having, and on this rail it buys you a description of a loss rather than a
+  recovery. So the useful controls move forward in time, and a limit that is only checked in a
+  monthly report is not a limit at all.
+</p>
+
+<div class="warn-box">
+  <p>
+    <strong>This cuts against the intuition that crypto rails need <em>less</em> governance because
+    they are permissionless.</strong> Permissionless means nobody will stop a mistake for you.
+    Finality means nobody can undo one. Those two properties together are the reason an autonomous
+    agent with a wallet needs a spend decision on every action, not a spending report every month.
+  </p>
+</div>
+
+<h2 id="why-money-is-an-integer">Why money is an integer here, and never a float</h2>
+
+<p>
+  USDC has six decimals, so $2.50 is exactly <code>2500000</code> atomic units. That number is
+  exact; <code>2.50</code> as a binary float is not, and the error compounds over a run of
+  micropayments.
+</p>
+
+<pre><code>&gt;&gt;&gt; 0.1 + 0.2
+0.30000000000000004          <span class="c"># a governance layer that accumulates here is wrong</span>
+
+&gt;&gt;&gt; from tesoro.domain import usd_to_atomic
+&gt;&gt;&gt; usd_to_atomic("0.1") + usd_to_atomic("0.2")
+300000                        <span class="c"># exactly $0.30</span></code></pre>
+
+<p>
+  Passing a <code>float</code> to <code>tesoro</code> raises <code>TypeError</code> at the
+  boundary rather than being tolerated, and the rounding direction is pinned so that a fraction of
+  an atomic unit never rounds in the spender's favour. <code>$0.0000001</code> becomes
+  <code>0</code>, not <code>1</code>: rounding that favours the spender is a slow leak rather than
+  an error, and a leak nobody reconciles is a leak nobody finds.
+</p>
+
+<p>
+  This is one of four <a href="vocabulary.html">hard invariants</a> and it exists because of the
+  rail, not because of taste. A float-denominated budget on an irreversible rail is a governance
+  layer that will eventually approve something it believed was smaller.
+</p>
+
+<h2 id="two-currencies">Two channels, two currencies, one agent</h2>
+
+<p>
+  An agent that pays for things also pays to <em>think</em>, and the two are not the same money.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th><code>internal</code></th><th><code>external</code></th></tr></thead>
+  <tbody>
+    <tr><td>What it buys</td><td>inference — the tokens the agent burns reasoning</td><td>data, services, goods from a counterparty</td></tr>
+    <tr><td>Denomination</td><td>real dollars on a provider invoice</td><td>USDC on chain</td></tr>
+    <tr><td>Counterparty</td><td>one model provider, contractual</td><td>anyone the agent decides to pay</td></tr>
+    <tr><td>Reversible</td><td>effectively — it is a bill you dispute</td><td><strong>no</strong></td></tr>
+    <tr><td>If the budget is exhausted</td><td><code>REJECT</code> — the agent cannot think, so it must stop</td><td><code>REVIEW</code> — a human can decide whether this payment is worth it</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  They never share an envelope. Spending them from one budget would let an expensive afternoon of
+  reasoning consume the money meant for purchases, and it would make the report meaningless — two
+  currencies summed into one number is not a total, it is a coincidence.
+</p>
+
+<h2 id="authorize-then-settle">Authorise, then settle — and why the envelope moves on the second</h2>
+
+<p>
+  A payment on this rail has two moments, and conflating them is how a budget drifts:
+</p>
+
+<ul class="gap-list">
+  <li>
+    <strong>Authorisation</strong> — the decision, before anything moves. This is where every
+    control runs, where a verdict is produced, and where the record of <em>which control decided</em>
+    is written.
+  </li>
+  <li>
+    <strong>Settlement</strong> — what actually happened on chain. It may differ from what was
+    authorised, it may fail, and it may never occur because the agent abandoned the task.
+  </li>
+</ul>
+
+<p>
+  Cumulative envelopes consume on <strong>settlement</strong>, not authorisation. An agent that asks
+  about a $40 purchase and then abandons it has spent nothing, and a budget that had already
+  deducted the $40 would refuse a later legitimate purchase for money that was never sent. The
+  reverse error is worse: settling <em>more</em> than was authorised must consume the larger amount,
+  and a version of this layer that consumed only the authorised figure let $5.00 settle against a
+  $0.05 authorisation while recording $0.05 as spent.
+</p>
+
+<h2 id="what-tesoro-does-not-touch">What Tesoro does not touch</h2>
+
+<p>
+  Worth being exact, because "agent payments" invites the assumption that this software moves money.
+  It does not.
+</p>
+
+<ul class="gap-list">
+  <li><strong>No custody.</strong> Tesoro holds no funds and no wallet. It decides; something else pays.</li>
+  <li><strong>No keys.</strong> A key is never stored, logged or journalled, and a masked display path is the only way one is ever shown.</li>
+  <li><strong>No chain interaction.</strong> No RPC, no signing, no broadcasting. It never touches a node, which is also why a decision costs microseconds rather than a block time.</li>
+  <li><strong>No address validation.</strong> Whether an address is the right one is outside what a spend control can know. Tesoro governs <em>how much</em>, <em>to whom by identifier</em>, and <em>for what declared purpose</em> — not whether a counterparty is who it claims.</li>
+  <li><strong>No AML screening engine.</strong> There is a schema for an assessment and no engine behind it: no list, no matching, no jurisdiction model. <strong>No regulatory compliance is claimed or sought.</strong></li>
+</ul>
+
+<h2 id="does-a-per-payment-cap-work">Does a per-payment cap solve this?</h2>
+
+<p>
+  No, and the reason is arithmetic rather than opinion. A cap of $10 per payment permits an
+  unbounded number of $9.99 payments, and on a rail where each one costs a fraction of a cent to
+  send there is nothing to make that irrational. Bounding the total needs a cumulative envelope over
+  a window; bounding the <em>number</em> of actions needs a count envelope, which is a different
+  quantity again.
+</p>
+
+<p>
+  The <a href="types.html">four kinds of AEGL</a> page sets out what each level of control can and
+  cannot express, and why a per-payment cap is honestly enough for some deployments and structurally
+  insufficient for others.
+</p>
+
+<h2 id="what-about-other-rails">What about cards, AP2 or bank rails?</h2>
+
+<p>
+  The governance model is deliberately rail-neutral: envelopes, verdicts, attribution and evidence
+  say nothing about USDC. x402 is the first binding because it is where autonomous machine payments
+  are actually happening, and a card or AP2 binding changes the adapter rather than the controls.
+</p>
+
+<p>
+  What <em>does</em> change per rail is how much the reversibility column above lets you relax. On a
+  card, a missed control is a dispute. Here it is a transfer. The controls in
+  <a href="policies.html">a policy pack</a> are the same either way; the cost of getting them wrong
+  is not.
+</p>
+
+<h2 id="where-next-stablecoins">Where next</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Four kinds of AEGL</h3>
+    <p>What a per-payment cap cannot express, and where the useful boundary falls.</p>
+    <a href="types.html">the four types →</a>
+  </div>
+  <div class="card">
+    <h3>What Tesoro is</h3>
+    <p>The implementation: ten deterministic engines and an honest list of what it does not do.</p>
+    <a href="tesoro.html">tesoro →</a>
+  </div>
+  <div class="card">
+    <h3>Frameworks &amp; rails</h3>
+    <p>Four adapters, and the three-call contract that needs none of them.</p>
+    <a href="frameworks.html">frameworks →</a>
+  </div>
+</div>
