@@ -273,9 +273,23 @@ pytest tests/test_redteam.py -q     <span class="c"># scored against the recorde
   <strong>XACML</strong> (2003) and <strong>OPA</strong>. Cumulative spend limits per period and per
   merchant are <strong>card controls</strong>, decades old. Delegation that narrows at each hop is
   <strong>macaroon caveat attenuation</strong>. An append-only hash chain with an external anchor is
-  <strong>Certificate Transparency</strong> and <strong>Sigstore</strong>. Even
-  <em>fail-closed on a requirement you cannot discharge</em> is already in XACML, which requires a
-  conforming enforcement point to deny unless it can discharge every obligation attached to a policy.
+  <strong>Certificate Transparency</strong> and <strong>Sigstore</strong> — a CT <em>Signed Tree
+  Head</em> is the same <code>(length, head)</code> commitment, and its witness networks are
+  external anchoring by another name. Even <em>fail-closed on a requirement you cannot discharge</em>
+  is already in XACML, which requires a conforming enforcement point to deny unless it can discharge
+  every obligation attached to a policy.
+</p>
+
+<p>
+  One objection is worth answering rather than avoiding. <strong>Card networks can attribute a
+  decline and deliberately choose not to</strong> — ISO 8583 carries a response code, and "do not
+  honour" is a documented catch-all kept vague so that fraud rules cannot be reverse-engineered.
+  Required attribution is safe here because <strong>the reader is different</strong>: attribution
+  flows to the operator who wrote the policy and owns the budget, not to a counterparty with an
+  incentive to probe it. Telling them <em>"refused by <code>daily_usd</code>"</em> discloses a number
+  they authored. Where the detail <em>would</em> reach a counterparty the card reasoning applies in
+  full, which is why identity is pseudonymous by default and a seller is never told the remaining
+  budget.
 </p>
 
 <p>

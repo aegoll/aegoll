@@ -135,12 +135,29 @@
   That is the same conclusion
   <a href="https://github.com/aegoll/aegs/blob/main/spec/07-evidence.md">AEGS-0.1-EVID-6</a>
   reaches: a hash chain cannot detect truncation of its own tail, because any prefix of a valid
-  chain is itself a valid chain. AEGS goes one clause further —
-  <strong><code>EVID-6a</code></strong> fixes what an external anchor must commit to (length
-  <em>and</em> head), and requires verification to distinguish four outcomes where an unreadable
-  anchor is <strong>never</strong> reported as consistent. <code>Governor.verify_anchored()</code>
-  implements it.
+  chain is itself a valid chain. <strong><code>EVID-6a</code></strong> requires what an external
+  anchor commits to — length <em>and</em> head — and requires verification to distinguish four
+  outcomes where an unreadable anchor is <strong>never</strong> reported as consistent.
+  <code>Governor.verify_anchored()</code> implements it.
 </p>
+
+<div class="note">
+  <p>
+    <strong>The mechanism is not ours, and it is worth naming.</strong> This is
+    <a href="https://certificate.transparency.dev/">Certificate Transparency</a>'s model applied to a
+    spend journal: a CT <em>Signed Tree Head</em> commits to a tree size and a root hash — the same
+    <code>(length, head)</code> pair, for the same reason — with consistency proofs detecting
+    omission and witness networks detecting a split view. Anyone who knows CT should find
+    <code>EVID-6a</code> familiar.
+  </p>
+  <p>
+    Two things differ. The adversary is not a log operator with many clients watching but the
+    <em>writer of the journal being governed</em>, and there may be exactly one operator — so peer
+    gossip is unavailable and the anchor has to be a party the writer cannot reach. And the
+    <em>unavailable</em> case is named as its own outcome, with a rule against reporting it as
+    consistency. That is the narrow part.
+  </p>
+</div>
 
 <p class="small">
   Their evidence model is stronger than Tesoro's in a different direction, and it is worth saying
