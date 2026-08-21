@@ -390,6 +390,50 @@ class Governor:
 
         return verify_against_anchor(self._layer.audit.entries(), anchor)
 
+    # --- the kill switch --------------------------------------------------
+
+    def freeze(self, reason: str, *, by: str | None = None) -> None:
+        """Refuse every action until unfrozen, and record why.
+
+        `reason` is required and may not be blank. Whoever finds the agent stopped at 2am has to be
+        able to read why, and an empty string is how that becomes a mystery.
+
+        A refusal during a freeze is attributed to `killswitch` and **wins attribution over every
+        other control**, including a tighter envelope that would also have refused. It is declared
+        dispositive alongside `sanctions`, by the same mechanism: the reason is recorded
+        unconditionally and last.
+
+        **Persisted**, because a freeze that evaporates on restart is not a freeze -- a crash loop
+        would resume spending.
+
+        **What this is not.** It stops a *misbehaving* agent; it does not contain an *adversarial*
+        one. The state is a file the agent's own process can usually write, so an agent that
+        controls its host can lift its own freeze. Not a containment boundary, and it must not be
+        described as one.
+
+        **Why this exists when revoking an identity already refuses.** It does -- and it silently
+        does nothing for an agent that never registered one: `set_status()` returns `False` and the
+        next payment is approved. Measured. This holds no such precondition.
+        """
+        self._layer.freezes.freeze(reason, by=by)
+
+    def unfreeze(self) -> None:
+        """Resume. The freeze that was lifted stays in the journal of decisions it refused."""
+        self._layer.freezes.clear()
+
+    @property
+    def frozen(self) -> bool:
+        """Whether a freeze is in force.
+
+        **An unreadable freeze file reads as frozen.** A corrupt state is an unknown state, and
+        continuing to spend on an unknown state is the failure the kill switch exists to prevent.
+        """
+        return self._layer.freezes.read().frozen
+
+    def freeze_state(self) -> Any:
+        """The full state -- reason, when, and by whom -- or a cleared state."""
+        return self._layer.freezes.read()
+
     # --- lifecycle --------------------------------------------------------
 
     def close(self) -> None:

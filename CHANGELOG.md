@@ -72,6 +72,35 @@ and hides fixes tells a reader what was added and not what was wrong.
   The default pack's content hash changes: `a5a64aeb69dbc5f9206b31022064da26` ->
   `46abca353ed56adc703aa555ca1e12d6`, 12 rules either way.
 
+- **A kill switch: `Governor.freeze(reason)` / `unfreeze()` / `frozen`.** Refuses every action
+  until lifted, and records why. `reason` is required and may not be blank -- whoever finds the
+  agent stopped at 2am has to be able to read why.
+
+  **It exists because revoking an identity is not a substitute, and the reason is measured.**
+  `identities.set_status(agent, "revoked")` refuses an agent that has a registered identity and
+  **silently does nothing for one that does not**: it returns `False` and the next payment is
+  APPROVED. A kill switch whose effect depends on an unrelated registration having happened is not
+  a kill switch, so this one has no precondition.
+
+  **Declared dispositive, and the ranking is declared with it** as `AEGS-0.1-VERD-4a` requires:
+  `sanctions` outranks `killswitch`. A sanctioned counterparty attempted *while frozen* is
+  attributed to `sanctions`, because "this agent tried to pay a barred party" must not be displaced
+  by "an operator had paused it" -- the operator knows they paused it. Both facts stay on the
+  record; precedence decides attribution, not retention.
+
+  **Persisted**, because a freeze that evaporates on restart is not a freeze -- a crash loop would
+  resume spending. **An unreadable state file reads as FROZEN**, not as clear: a corrupt state is an
+  *unknown* state, and continuing to spend on an unknown state is the failure the switch exists to
+  prevent.
+
+  **What it is not:** it stops a *misbehaving* agent and does not contain an *adversarial* one. The
+  state is a file the agent's own process can usually write, so an agent that controls its host can
+  lift its own freeze. Not a containment boundary, and not described as one.
+
+  The engines still run while frozen -- a freeze *narrows* the verdict rather than skipping
+  evaluation -- so the record of a refusal during a freeze still shows what would have happened,
+  which is what an operator needs when deciding whether it is safe to lift.
+
 - **`Governor.verify_anchored(anchor)` — verification against an external anchor.**
   AEGS-0.1-EVID-6a. A hash chain cannot detect truncation of its own tail, because any prefix of a
   valid chain is itself valid; the missing information is *that there was more*, and an anchor

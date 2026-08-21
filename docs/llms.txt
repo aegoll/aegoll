@@ -17,6 +17,7 @@
 
 ### Tesoro
 - [What Tesoro is](https://aegoll.github.io/tesoro/tesoro.html): One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.
+- [The benchmark](https://aegoll.github.io/tesoro/benchmark.html): A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden.
 - [Architecture](https://aegoll.github.io/tesoro/architecture.html): Ten deterministic engines, the decision path, narrowing, evidence, and why no model sits on it.
 - [Policies & rules](https://aegoll.github.io/tesoro/policies.html): Policy packs are data, never code. The fixed vocabulary, the rule shape, envelopes, and profiles.
 - [Frameworks & rails](https://aegoll.github.io/tesoro/frameworks.html): Claude Agent SDK, Google ADK, LangGraph, CrewAI, and the three-call contract that needs none of them.

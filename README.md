@@ -21,11 +21,54 @@ control stopped it.*
 
 </div>
 
-`tesoro` is an *Autonomous Economic Governance Layer* (AEGL): it sits between an agent and
-every dollar it spends — the tokens it burns thinking and the money it pays out — and
-decides, before the payment, whether it should happen. Ten deterministic engines, no model
-in the decision path, an append-only hash-chained record of every decision and the control
-that made it.
+`tesoro` decides whether an autonomous agent may spend — **before** it spends — and records
+**which control decided**. Deterministic arithmetic, no model in the decision path, and an
+append-only hash-chained journal of every decision.
+
+## It is measured against 18 attacks, and 2 of them still work
+
+```
+$ python -m redteam.runner
+  defended 15   by accident 1   undefended 2   error 0
+```
+
+**The interesting column is the middle one.** `DEFENDED_BY_ACCIDENT` means an attack was refused
+by a control it does not target — paced slightly differently it succeeds, so it is counted as a
+**finding, not a pass**. A headline of *16 defended* would count a coincidence as a control.
+
+The two that work are named rather than footnoted:
+
+| Attack | What happens |
+|---|---|
+| **Microtransaction structuring** | 40 payments of $0.001, five minutes apart. $0.04 moves, nothing refused. A count envelope **bounds** this and does not refuse it, because 40 trivial purchases is also what a legitimate agent does |
+| **Journal truncation** | Any prefix of a valid hash chain is a valid hash chain, so a refused agent can delete the refusal. `verify_anchored()` closes it against an external anchor; **no anchor ships by default**, so the benchmark reports the unanchored posture |
+
+Every score is a **sealed record** with a checksum — and one of them exists because an earlier
+measurement was *wrong*: [EXP-009](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-009)
+supersedes EXP-008 rather than editing it, because a record that can be revised after the fact
+stops being evidence.
+
+**📊 [The benchmark](https://aegoll.github.io/tesoro/benchmark.html)** — methodology, all 18
+attacks, the provenance, and the limitations that matter more than the score. The first of those:
+every attack was written by the author of the system under test.
+
+## What is actually new here, and what is not
+
+Most of this is not new, and saying so first is what makes the rest credible. Policy evaluation
+over structured facts is **XACML** (2003) and **OPA**. Cumulative limits per period and per
+counterparty are **card controls**, decades old. Delegation that narrows at each hop is **macaroon
+caveat attenuation**. A hash chain with an external anchor is **Certificate Transparency** and
+**Sigstore**. Even *fail-closed on a requirement you cannot discharge* is already in XACML.
+
+Two things appear to be absent from that prior art:
+
+1. **A benchmark whose scoring separates a defence from a coincidence** — the middle column above.
+2. **Attribution as a required, independently conformance-tested property.** XACML responses *may*
+   carry which policy applied; `AEGS` requires which control decided, and scores it separately from
+   whether the verdict was right.
+
+Both are checkable claims. [The prior-art survey](https://github.com/aegoll/research) records what
+would falsify them.
 
 **📖 [Documentation](https://aegoll.github.io/tesoro/)** — what an AEGL is, the architecture,
 policies and rules, framework adapters, and the AEGS standard. Two pages worth reading first:

@@ -34,6 +34,7 @@ NAV: list[tuple[str, list[tuple[str, str]]]] = [
     ]),
     ("Tesoro", [
         ("tesoro.html", "What Tesoro is"),
+        ("benchmark.html", "The benchmark"),
         ("architecture.html", "Architecture"),
         ("policies.html", "Policies &amp; rules"),
         ("frameworks.html", "Frameworks &amp; rails"),

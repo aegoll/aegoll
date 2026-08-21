@@ -94,7 +94,17 @@ def _usd_str(value: Any) -> str:
 #:
 #: Precedence: `sanctions` outranks every narrowing control. With one entry there is nothing
 #: further to order, and a second entry would need its rank stated here.
-DISPOSITIVE_CONTROLS = ("sanctions",)
+#: **In precedence order, highest first.** VERD-4a requires the set *and* the ranking to be
+#: declared, because an undeclared dispositive control is indistinguishable from arbitrary
+#: attribution. `sanctions` outranks `killswitch`: a barred counterparty is a categorical and
+#: consequential fact, and it must not be displaced by "an operator had paused this agent" --
+#: the operator knows they paused it, and would otherwise lift the freeze and be surprised.
+DISPOSITIVE_CONTROLS = ("sanctions", "killswitch")
+#: `killswitch` joined 2026-08-21. A freeze decides regardless of what any other control
+#: found, and regardless of whether the verdict was already REJECT -- an operator reading a
+#: refusal during a freeze needs to see the freeze, not whichever envelope happened to be
+#: tightest. Neither name is in the AEGS defined control set; both classify as extensions,
+#: which CTRL-1 permits.
 
 CLAMP_ORIGIN = {
     "clamped_by_identity": "identity",
@@ -102,6 +112,9 @@ CLAMP_ORIGIN = {
     "clamped_by_treasury": "treasury",
     "clamped_by_sanction": "sanctions",
     "clamped_by_risk": "risk",
+    #: The kill switch. Recorded like a clamp so it wins attribution by the same mechanism
+    #: `sanctions` does -- appended last, so reverse iteration finds it first.
+    "frozen": "killswitch",
 }
 
 

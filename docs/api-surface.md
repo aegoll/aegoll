@@ -111,6 +111,13 @@ class Governor:
     def report(self) -> "Report": ...
     def decisions(self, limit: int | None = None) -> list["Decision"]: ...
 
+    # --- the kill switch ---
+    def freeze(self, reason: str, *, by: str | None = None) -> None: ...
+    def unfreeze(self) -> None: ...
+    def freeze_state(self) -> "FreezeState": ...
+    @property
+    def frozen(self) -> bool: ...
+
     # --- verifying the evidence ---
     def verify(self) -> tuple[bool, list[str]]: ...
     def verify_anchored(self, anchor: "Anchor") -> "AnchorResult": ...
@@ -168,6 +175,23 @@ class Governor:
   deployments, so shipping one as a default would make the gap look closed while defending
   nothing. `docs/design/evidence-anchoring.md` lists five candidate sinks and what each
   actually guarantees.
+- **`freeze()` requires a reason, and the reason is not decoration.** Whoever finds the agent
+  stopped at 2am has to read why. A blank reason raises.
+- **A freeze is dispositive.** A refusal during a freeze is attributed to `killswitch` and wins
+  attribution over every other control, including a tighter envelope that would also have refused —
+  an operator needs to see the freeze, not whichever envelope happened to be tightest. Declared
+  alongside `sanctions`, by the same mechanism: recorded unconditionally and last.
+- **It persists.** A freeze that evaporates on restart is not a freeze; a crash loop would resume
+  spending. State lives beside the journal.
+- **An unreadable freeze file reads as frozen.** A corrupt state is an *unknown* state, and
+  continuing to spend on an unknown state is the failure the switch exists to prevent.
+- **It stops a misbehaving agent; it does not contain an adversarial one.** The state is a file the
+  agent's own process can usually write. Not a containment boundary, and it is not described as one.
+  This is the same limit that makes an append-only file a poor anchor.
+- **It exists because revoking an identity is not a substitute.** Revocation does refuse — and it
+  silently does nothing for an agent that never registered an identity: `set_status()` returns
+  `False` and the next payment is approved. Measured, and the reason `freeze()` holds no
+  precondition.
 - **An anchor bounds truncation rather than eliminating it.** Everything appended since the
   last publication is unattested and remains truncatable, so the honest claim is *detectable
   beyond a bound you chose*. The report's chain caveat says so whether or not an anchor is

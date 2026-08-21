@@ -976,10 +976,19 @@ def test_the_real_pipeline_attributes_the_way_the_spec_says():
 
 
 def test_the_dispositive_set_is_declared():
-    """VERD-4a requires the set and its precedence to be documented, not merely behaved."""
+    """VERD-4a requires the set and its precedence to be documented, not merely behaved.
+
+    The tuple is **in precedence order, highest first**, and the ordering is load-bearing rather
+    than incidental: `sanctions` outranks `killswitch`, so "tried to pay a barred counterparty" is
+    never displaced by "an operator had paused this agent".
+
+    `killswitch` joined on 2026-08-21. Adding to the set is permitted -- VERD-4a is a MAY -- but it
+    triggers the MUST that the ranking be written down, which is why this pins the order and not
+    merely the membership.
+    """
     from tesoro.record import DISPOSITIVE_CONTROLS
 
-    assert DISPOSITIVE_CONTROLS == ("sanctions",), DISPOSITIVE_CONTROLS
+    assert DISPOSITIVE_CONTROLS == ("sanctions", "killswitch"), DISPOSITIVE_CONTROLS
 
 
 def test_the_rounding_mode_is_actually_pinned_down():

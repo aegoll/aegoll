@@ -23,6 +23,7 @@ from .domain import (
     Decision,
     PaymentRequest,
     Purpose,
+    Reason,
     Vendor,
     Verdict,
     usd_to_atomic,
@@ -57,11 +58,12 @@ class Paths:
     history: Path
     audit: Path
     review: Path
+    freeze: Path
 
     @classmethod
     def under(cls, root: Path | str | None = None) -> "Paths":
         r = Path(root) if root is not None else default_data_dir()
-        return cls(r / "history.db", r / "audit.jsonl", r / "review.json")
+        return cls(r / "history.db", r / "audit.jsonl", r / "review.json", r / "freeze.json")
 
     @classmethod
     def for_journal(cls, journal: Path | str) -> "Paths":
@@ -74,13 +76,13 @@ class Paths:
         ignoring it: the file they asked for never appears and no error says why.
         """
         j = Path(journal)
-        return cls(j.parent / "history.db", j, j.parent / "review.json")
+        return cls(j.parent / "history.db", j, j.parent / "review.json", j.parent / "freeze.json")
 
     @classmethod
     def ephemeral(cls, root: Path | str) -> "Paths":
         """In-memory history, on-disk audit/review. Used by scenarios and tests."""
         r = Path(root)
-        return cls(Path(":memory:"), r / "audit.jsonl", r / "review.json")
+        return cls(Path(":memory:"), r / "audit.jsonl", r / "review.json", r / "freeze.json")
 
 
 class Tesoro:
@@ -111,6 +113,9 @@ class Tesoro:
         # cross-framework view. It changes nothing about how decisions are made.
         self.audit = AuditLog(self.paths.audit, labels=labels)
         self.queue = ReviewQueue(self.paths.review)
+        from .freeze import FreezeStore  # noqa: PLC0415
+
+        self.freezes = FreezeStore(self.paths.freeze)
         cost_atomic = None
         if advisor is not None:
             from .advisors import estimate_call_cost_usd  # noqa: PLC0415
@@ -239,7 +244,74 @@ class Tesoro:
         decision = self.governor.decide(
             request, snapshot, intent_verdict, identity_verdict
         )
+        decision = self._apply_freeze(decision, request, snapshot)
         return decision, intent_verdict, identity_verdict
+
+    def _apply_freeze(self, decision: Decision, request: PaymentRequest, snapshot) -> Decision:
+        """Narrow to REJECT while frozen, and record the freeze as the deciding control.
+
+        Applied *after* evaluation rather than instead of it, deliberately. Every control may only
+        narrow, and a freeze is no exception -- and running the engines anyway means the record of a
+        refusal during a freeze still shows what would have happened, which is what an operator
+        needs when deciding whether to lift it.
+
+        The reason is appended **last** with `source="authorize"`, which is how
+        `record._deciding_engine` attributes it: reverse iteration finds it first, so the freeze
+        wins attribution over whichever envelope happened to be tightest. Identical mechanism to
+        `sanctions`, and both are declared in `DISPOSITIVE_CONTROLS`.
+
+        `decision_hash` is recomputed, because the verdict is one of its inputs and a decision whose
+        hash disagrees with its own verdict would fail replay for the wrong reason.
+
+        **Known limit:** a decision made while frozen replays as its unfrozen counterpart unless the
+        freeze is restored first, because the journal records the freeze as a reason and `replay`
+        recomputes from policy and history. Stated rather than discovered.
+        """
+        state = self.freezes.read()
+        if not state.frozen:
+            return decision
+
+        from dataclasses import replace  # noqa: PLC0415
+
+        from .authorize import _decision_hash  # noqa: PLC0415
+
+        reason = Reason(
+            source="authorize",
+            code="frozen",
+            detail=(
+                f"the governor is frozen: {state.reason}"
+                + (f" (at {state.at})" if state.at else "")
+            ),
+            verdict=Verdict.REJECT,
+        )
+        # Precedence, which VERD-4a requires to be declared: `sanctions` outranks `killswitch`.
+        # A sanctions finding is categorical and consequential -- "this agent tried to pay a barred
+        # counterparty" must not be displaced by "an operator had paused it", because the operator
+        # already knows they paused it and would otherwise lift the freeze and be surprised.
+        #
+        # Attribution is won by the *last* `authorize` reason, so honouring that precedence means
+        # inserting the freeze *before* a sanctions clamp rather than after it.
+        from .record import CLAMP_ORIGIN  # noqa: PLC0415
+
+        reasons = list(decision.reasons)
+        at = len(reasons)
+        for i in range(len(reasons) - 1, -1, -1):
+            candidate = reasons[i]
+            if (
+                candidate.source == "authorize"
+                and candidate.verdict
+                and CLAMP_ORIGIN.get(candidate.code or "") == "sanctions"
+            ):
+                at = i
+                break
+        reasons.insert(at, reason)
+
+        return replace(
+            decision,
+            verdict=Verdict.REJECT,
+            reasons=tuple(reasons),
+            decision_hash=_decision_hash(request, self.bundle, snapshot, Verdict.REJECT),
+        )
 
     def decide(self, request: PaymentRequest, now: datetime | None = None) -> Decision:
         """Decide without recording anything. Used by the cockpit playground."""
