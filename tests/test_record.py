@@ -332,3 +332,33 @@ def test_the_schema_ships_with_the_project():
     assert schema["version"] == record_mod.AEGS_VERSION
     assert schema["$id"].endswith("decision-record-0.1.json")
     assert "additionalProperties" in schema
+
+
+def test_a_profile_cannot_be_satisfied_by_inventing_an_assessment():
+    """The mistake this test exists to prevent, made and caught on 2026-08-22.
+
+    Designing the `stablecoin-1` profile, I wanted `AMLAssessment: MUST_RECORD` to be satisfiable,
+    so I emitted `assessments.aml = {"assessed": false}`. It looked honest -- the record would
+    finally *say* screening had not run instead of being silent about it.
+
+    **It was a false statement.** `assessed: false` means *this control exists and did not run this
+    time*. There is no AML control here at all, so the truthful representation is the key's
+    **absence** -- which is what `IMPLEMENTED_CONTROLS` enforces, and what
+    `test_a_control_this_implementation_lacks_is_absent_not_zero` caught within a minute.
+
+    Absent is not not-run. The four-states rule applies to the record's own vocabulary, and the
+    honest way to satisfy a profile is to build the control, not to widen the record.
+
+    The consequence is kept rather than worked around: `stablecoin-1` requires an AML assessment,
+    and **tesoro does not conform to `stablecoin-1`** until a screening provider is integrated
+    behind the control. A profile is a bar; an implementation that has not cleared it says so.
+    """
+    from tesoro import record as record_mod
+
+    assert "aml" not in record_mod.IMPLEMENTED_CONTROLS, (
+        "an AML control was added to IMPLEMENTED_CONTROLS. If a real screening control now exists "
+        "this test should be replaced -- but if the entry was added to make a profile pass, the "
+        "record is now claiming a control that does not run."
+    )
+    assert "sanctions" not in record_mod.IMPLEMENTED_CONTROLS
+    assert set(record_mod.IMPLEMENTED_CONTROLS) == {"trust", "risk", "roi"}
