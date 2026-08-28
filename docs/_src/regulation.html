@@ -1,0 +1,150 @@
+<!-- title: Where the obligations fall — and why none of them fall here -->
+<!-- description: GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed. -->
+
+<h1>Where the obligations fall</h1>
+<p class="lede">
+  Every framework named here attaches its duties to a <strong>kind of entity</strong>: a licensed
+  issuer, a registered service provider, an obliged institution. <strong>Tesoro is a library.</strong>
+  It is none of those things, it cannot become one, and this page exists so nobody has to guess
+  which parts of that are being claimed.
+</p>
+
+<div class="key">
+  <p>
+    <strong>Why state this at all, rather than say nothing?</strong> Because silence in this area
+    reads as a claim. A governance library that lists regulations without saying who they bind
+    invites the reading that installing it addresses them &mdash; and that reading is wrong in a way
+    that only becomes visible during an examination. Saying plainly what this is not is both safer
+    for a reader and more useful than a page of logos.
+  </p>
+</div>
+
+<h2 id="who-each-one-binds">Who each one binds</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Framework</th><th>Binds</th><th>Where this sits</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>GENIUS Act</strong> (US)</td>
+      <td><strong>Permitted payment stablecoin issuers</strong> &mdash; federal or state-qualified entities</td>
+      <td>Outside. A library is not an issuer and cannot be permitted</td>
+    </tr>
+    <tr>
+      <td><strong>MiCA</strong> (EU)</td>
+      <td>EMT and ART issuers, and crypto-asset service providers</td>
+      <td>Outside. Not an issuer, not a CASP</td>
+    </tr>
+    <tr>
+      <td><strong>FATF R.16</strong> (Travel Rule)</td>
+      <td>Ordering and beneficiary institutions; VASPs for virtual-asset transfers</td>
+      <td>Outside. It defines a <em>record</em> and never a message &mdash; see below</td>
+    </tr>
+    <tr>
+      <td><strong>FCA</strong> (UK) &middot; <strong>MAS</strong> (SG) &middot; <strong>HKMA</strong> (HK) &middot; <strong>VARA</strong> (AE)</td>
+      <td>Licensed and registered firms in each jurisdiction</td>
+      <td>Outside. Licensing is organisational; software is not licensable</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>The entity carries the obligation, always.</strong> If you are one of those entities and an
+  agent spends through you, the exposure is yours &mdash; and it arrives without a category, because
+  an autonomous agent is not an obliged entity under any of the seven. That is correct rather than an
+  oversight: an agent has no legal personality and cannot hold a licence.
+</p>
+
+<h2 id="the-genius-timeline">The GENIUS timeline, with its dates</h2>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>When</th><th>What</th></tr></thead>
+  <tbody>
+    <tr><td><strong>18 July 2025</strong></td><td>Signed into law</td></tr>
+    <tr><td><strong>by 18 July 2026</strong></td><td>Federal regulators are to issue implementing regulations through notice-and-comment rulemaking</td></tr>
+    <tr><td><strong>8 April 2026</strong></td><td>FinCEN and OFAC issue a joint proposed rule for permitted payment stablecoin issuers &mdash; AML/CFT programmes, sanctions compliance programmes, and <em>the technical capability to block, freeze and reject specific transactions</em>. Published in the Federal Register on <strong>10 April 2026</strong>; comments closed <strong>9 June 2026</strong>; proposed to take effect 12 months after final issuance</td></tr>
+    <tr><td><strong>by 18 January 2027</strong></td><td>The Act takes effect &mdash; the <em>earlier</em> of 18 months after enactment or 120 days after final implementing regulations. <strong>It is a ceiling, not a fixed date</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p>
+    <strong>What was read, and what was not.</strong> The dates above come from the Federal Register
+    listing and from published law-firm analyses, cross-checked against each other on 28 August 2026.
+    <strong>The NPRM itself was not read in full.</strong> The FATF material elsewhere on this site
+    <em>was</em> read in the source text &mdash; the consolidated Recommendations 2012&ndash;2025 and
+    the June 2025 explanatory note &mdash; and that difference is stated rather than smoothed over.
+  </p>
+</div>
+
+<h2 id="the-direction-of-travel">One line in the April proposal is worth reading carefully</h2>
+
+<p>
+  The FinCEN and OFAC proposal asks permitted issuers for <strong>the technical capability to block,
+  freeze and reject specific transactions</strong>. That is a requirement about mechanism, not only
+  about policy, and it points the same way this project does: <strong>toward controls that act before
+  a transfer settles rather than reports that describe it afterwards.</strong>
+</p>
+
+<p>
+  <strong>It is still not a requirement this software satisfies.</strong> The obligation is on the
+  issuer. What a library can offer is a place for that capability to be exercised and evidenced:
+  <code>Governor.freeze()</code> refuses everything and says why, persisted, attributed to
+  <code>killswitch</code>, and an unreadable state file reads as <em>frozen</em> rather than as
+  permission. The <code>sanctions</code> control is the highest-precedence dispositive control, so a
+  real screening provider has somewhere to land &mdash; and <strong>no engine sits behind it
+  today</strong>.
+</p>
+
+<h2 id="what-is-not-claimed">What is not claimed, in plain terms</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Not compliance</h3>
+    <p>With GENIUS, MiCA, the Travel Rule, or any framework named on this site. None is claimed or
+    sought, and no configuration of this software produces it.</p>
+  </div>
+  <div class="card">
+    <h3>Not AML screening</h3>
+    <p>No list, no matching, no jurisdiction model. The <code>stablecoin-1</code> profile requires an
+    AML position in the record and <strong>this implementation does not conform to it</strong>.</p>
+  </div>
+  <div class="card">
+    <h3>Not Travel Rule support</h3>
+    <p>It defines a <strong>record</strong>, never a transfer. Transmitting those fields, or
+    presenting their presence as satisfying an obligation, is forbidden by the standard itself.</p>
+  </div>
+  <div class="card">
+    <h3>Not audited</h3>
+    <p>Every conformance case and adversarial attack was written by the author of the system under
+    test. That is a real limitation and it is not fixable by more of the same work.</p>
+  </div>
+</div>
+
+<h2 id="what-an-obliged-entity-gets">What an obliged entity actually gets</h2>
+
+<p>
+  Evidence, not compliance &mdash; and the distinction is the whole design. For a spend that an agent
+  proposed, a record that answers: <strong>which accountable human authority it acted under</strong>,
+  <strong>which control permitted or refused it</strong>, and <strong>how the transfer was
+  initiated</strong> &mdash; the last being a fact R.16's required data set has no field for, because
+  every element there identifies whose money moved and none identifies who instructed the movement.
+</p>
+
+<p>
+  Whether that evidence helps discharge any particular obligation is a legal determination requiring
+  a qualified person, a jurisdiction and facts a technical layer does not hold. This software does
+  not make that determination and neither does this page.
+</p>
+
+<div class="warn-box">
+  <p>
+    <strong>This page is general information and is not legal advice.</strong> It states which
+    entities each framework binds and asserts no compliance with any of them. Dates and scope are as
+    described in the sources named above and may have changed; verify against the instruments
+    themselves before relying on anything here.
+  </p>
+</div>

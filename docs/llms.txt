@@ -16,6 +16,7 @@
 - [Four kinds of AEGL](https://tesoro-labs.github.io/tesoro/types.html): Per-payment cap, cumulative envelope, governed budget, behavioural. Ordered by what each can express, and where the useful boundary falls.
 - [The shared vocabulary](https://tesoro-labs.github.io/tesoro/vocabulary.html): The words this documentation uses precisely: two channels, four verdicts, thirteen controls, envelopes, and the four states.
 - [Stablecoins & irreversibility](https://tesoro-labs.github.io/tesoro/stablecoins.html): AI agents pay in stablecoins like USDC over rails such as x402. A stablecoin payment cannot be reversed, charged back or disputed, so the only place to intervene is before it happens. What that changes about spend controls.
+- [Where the obligations fall](https://tesoro-labs.github.io/tesoro/regulation.html): GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed.
 - [What governs what](https://tesoro-labs.github.io/tesoro/ecosystem.html): Agent governance splits into layers: what an agent may do, and what an agent may pay. How Tesoro relates to Microsoft's Agent Governance Toolkit, OPA, guardrails and observability tools, and what each is actually for.
 
 ### Tesoro

@@ -99,6 +99,22 @@ and hides fixes tells a reader what was added and not what was wrong.
   evidence. This implementation emits `delegated` or `unknown` and **never `direct`** — a person
   driving it is asking it to decide, not confirming a specific transfer.
 
+- **A regulatory positioning page — `docs/regulation.html`, "Where the obligations fall".**
+  GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the
+  Travel Rule binds VASPs. **This is a library and is none of them.** None of those terms appeared
+  anywhere in the documentation before now, and silence in this area reads as a claim: a governance
+  library that lists regulations without saying who they bind invites the reading that installing it
+  addresses them.
+
+  Two dates were corrected by re-verifying rather than copying: the GENIUS effective date is the
+  *earlier* of 18 months after enactment or 120 days after final regulations, so **18 January 2027
+  is a ceiling and not a fixed date**; and the FinCEN/OFAC joint proposal is 8 April 2026 when
+  issued, 10 April in the Federal Register, comments closed 9 June.
+
+  The page also marks **what was read and what was not** — the Federal Register listing and
+  law-firm analyses, not the NPRM itself, stated next to the FATF material that *was* read in the
+  source text.
+
 - **`IdentityStore.delegation_depth()`** — hops to the accountable authority. `None`, never a
   partial count, when the chain cannot be walked to the top: a depth of 1 for a chain whose next
   link is unregistered claims an accountability distance nobody verified. Cycles terminate, which
