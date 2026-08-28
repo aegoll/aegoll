@@ -8,6 +8,9 @@
 
 ## Pages
 
+### Start here
+- [Evaluate this in ten minutes](https://tesoro-labs.github.io/tesoro/evaluate.html): A reviewer's page. The narrow claim and the prior art it concedes, the four things this refuses to build, the two attacks that still succeed, and the conformance profile the reference implementation deliberately fails. Every number is reproducible.
+
 ### Concepts
 - [Autonomous economic governance](https://tesoro-labs.github.io/tesoro/): An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.
 - [Four kinds of AEGL](https://tesoro-labs.github.io/tesoro/types.html): Per-payment cap, cumulative envelope, governed budget, behavioural. Ordered by what each can express, and where the useful boundary falls.

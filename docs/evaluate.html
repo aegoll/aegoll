@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Evaluate this in ten minutes — what is new, what it refuses, what it fails</title>
+<meta name="description" content="A reviewer's page. The narrow claim and the prior art it concedes, the four things this refuses to build, the two attacks that still succeed, and the conformance profile the reference implementation deliberately fails. Every number is reproducible.">
+<link rel="canonical" href="https://tesoro-labs.github.io/tesoro/evaluate.html">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="author" content="Jayzilva">
+
+<!-- Open Graph and Twitter. Not vanity: when this page is pasted into Slack, a PR description or
+     a model's browsing tool, these tags are what it shows instead of a bare URL. -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="tesoro">
+<meta property="og:title" content="Evaluate this in ten minutes — what is new, what it refuses, what it fails">
+<meta property="og:description" content="A reviewer's page. The narrow claim and the prior art it concedes, the four things this refuses to build, the two attacks that still succeed, and the conformance profile the reference implementation deliberately fails. Every number is reproducible.">
+<meta property="og:url" content="https://tesoro-labs.github.io/tesoro/evaluate.html">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Evaluate this in ten minutes — what is new, what it refuses, what it fails">
+<meta name="twitter:description" content="A reviewer's page. The narrow claim and the prior art it concedes, the four things this refuses to build, the two attacks that still succeed, and the conformance profile the reference implementation deliberately fails. Every number is reproducible.">
+
+<!-- Structured data. An answer engine quoting this page needs to know what kind of thing it is,
+     who wrote it and what software it documents; a crawler infers none of that from prose. Kept
+     inline, like everything else here, because the site makes no outbound request. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": "https://tesoro-labs.github.io/tesoro/evaluate.html#article",
+      "headline": "Evaluate this in ten minutes \u2014 what is new, what it refuses, what it fails",
+      "description": "A reviewer's page. The narrow claim and the prior art it concedes, the four things this refuses to build, the two attacks that still succeed, and the conformance profile the reference implementation deliberately fails. Every number is reproducible.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://tesoro-labs.github.io/tesoro/#website"
+      },
+      "about": {
+        "@id": "https://tesoro-labs.github.io/tesoro/#software"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Jayzilva"
+      },
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://tesoro-labs.github.io/tesoro/#website",
+      "name": "tesoro",
+      "url": "https://tesoro-labs.github.io/tesoro/",
+      "description": "Documentation for tesoro, an Autonomous Economic Governance Layer: spend controls, budget envelopes and auditable evidence for AI agents that pay."
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://tesoro-labs.github.io/tesoro/#software",
+      "name": "tesoro",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "OS Independent",
+      "programmingLanguage": "Python",
+      "softwareVersion": "0.1.2",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "downloadUrl": "https://pypi.org/project/tesoro/",
+      "codeRepository": "https://github.com/tesoro-labs/tesoro",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "A policy-engine host that decides whether an autonomous agent may spend, before it spends, and records which control decided. Deterministic, no model in the decision path."
+    }
+  ]
+}
+</script>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<input type="checkbox" id="menu">
+<div class="topbar">
+  <label class="menu-btn" for="menu">&#9776; menu</label>
+  <a class="brand" href="index.html">
+    <!-- The mark, inlined in the topbar so it appears on every page and still costs no request.
+         `currentColor` and the palette variables make it follow the theme, which a flat SVG file
+         linked as an <img> could not do. -->
+    <svg class="mark-sm" viewBox="0 0 96 96" width="22" height="22" aria-hidden="true" focusable="false">
+      <rect x="6" y="6" width="84" height="84" rx="20" fill="none" stroke="currentColor" stroke-width="7"/>
+      <rect x="21" y="58" width="11" height="18" rx="2" fill="var(--accent)"/>
+      <rect x="37" y="48" width="11" height="28" rx="2" fill="var(--accent)"/>
+      <rect x="53" y="38" width="11" height="38" rx="2" fill="var(--accent)"/>
+      <rect x="69" y="34" width="11" height="42" rx="2" fill="var(--bad)"/>
+      <line x1="16" y1="34" x2="82" y2="34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+    </svg>
+    <span>tesoro <span class="v">0.1.2</span></span>
+  </a>
+  <div class="links">
+    <a href="https://github.com/tesoro-labs/tesoro">GitHub</a>
+    <a href="https://pypi.org/project/tesoro/">PyPI</a>
+    <a href="https://github.com/tesoro-labs/aegs">AEGS</a>
+  </div>
+</div>
+
+<div class="shell">
+<aside class="nav">
+  <div class="group">Start here</div>
+  <a class="page" href="evaluate.html" aria-current="page">Evaluate this in ten minutes</a>
+  <ul class="sub">
+    <li><a href="#what-does-not-work">Start here: what does not work</a></li>
+    <li><a href="#what-is-new">What is genuinely new, stated narrowly</a></li>
+    <li><a href="#what-it-refuses">What it refuses to build</a></li>
+    <li><a href="#check-it">Check any of it yourself</a></li>
+    <li><a href="#the-honest-hole">The largest hole, which effort cannot close</a></li>
+    <li><a href="#where-next">Where to go next</a></li>
+  </ul>
+  <div class="group">Concepts</div>
+  <a class="page" href="index.html">Autonomous economic governance</a>
+  <a class="page" href="types.html">Four kinds of AEGL</a>
+  <a class="page" href="vocabulary.html">The shared vocabulary</a>
+  <a class="page" href="stablecoins.html">Stablecoins &amp; irreversibility</a>
+  <a class="page" href="ecosystem.html">What governs what</a>
+  <div class="group">Tesoro</div>
+  <a class="page" href="tesoro.html">What Tesoro is</a>
+  <a class="page" href="benchmark.html">The benchmark</a>
+  <a class="page" href="architecture.html">Architecture</a>
+  <a class="page" href="policies.html">Policies &amp; rules</a>
+  <a class="page" href="frameworks.html">Frameworks &amp; rails</a>
+  <div class="group">The standard</div>
+  <a class="page" href="aegs.html">AEGS</a>
+  <div class="group">Practice</div>
+  <a class="page" href="start.html">Get started</a>
+</aside>
+
+<main>
+<h1>Evaluate this in ten minutes</h1>
+<p class="lede">
+  Written for someone deciding whether this is worth more than ten minutes. It leads with what
+  <strong>does not work</strong>, because that is the fastest way to find out whether the rest is
+  honest &mdash; and every number on this page is one command away from being checked.
+</p>
+
+<div class="key">
+  <p>
+    <strong>In one sentence.</strong> Tesoro renders a deterministic, attributable verdict on a
+    proposed payment <em>before</em> it executes, and emits evidence sufficient to reconstruct which
+    control produced that verdict. AEGS is the standard it implements. Nothing here screens
+    sanctions, holds funds, or claims regulatory compliance.
+  </p>
+</div>
+
+<h2 id="what-does-not-work">Start here: what does not work</h2>
+
+<p>
+  Eighteen adversarial attacks run in CI against a recorded baseline. <strong>Two still
+  succeed</strong>, and one is refused by a control that was not aiming at it &mdash; which is scored
+  as a finding, not a pass.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Attack</th><th>Outcome</th><th>Why it is still here</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>RT-ECON-001</code><br>Microtransaction structuring</td>
+      <td><strong>Undefended</strong></td>
+      <td>Forty payments of $0.001, five minutes apart. $0.04 moves and nothing refuses it. A count
+      envelope <em>bounds</em> the mechanism at 500 actions a day &mdash; it does not refuse this
+      instance, <strong>because forty trivial purchases in an afternoon is also what a legitimate
+      agent does.</strong> Refusing it would be a false positive dressed as a defence.</td>
+    </tr>
+    <tr>
+      <td><code>RT-EVID-002</code><br>Journal truncation</td>
+      <td><strong>Undefended</strong></td>
+      <td>Any prefix of a valid hash chain is itself a valid hash chain, so a refused agent can
+      delete the refusal. <code>verify_anchored()</code> closes this against an external anchor, and
+      <strong>no anchor ships by default</strong> &mdash; so the benchmark reports the unanchored
+      posture, which is the one an installer actually gets.</td>
+    </tr>
+    <tr>
+      <td><code>RT-ECON-003</code><br>Trust farming</td>
+      <td><strong>By accident</strong></td>
+      <td>Two hundred settled $0.001 purchases to build earned authority, then one large purchase at
+      the raised ceiling. It is refused &mdash; by <code>risk</code>, which was not aiming at it.
+      <strong>A coincidence is not a control.</strong> It can regress silently when something
+      unrelated is tuned, so it is counted against the score.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>And a profile the reference implementation fails on purpose.</strong> The
+  <code>stablecoin-1</code> conformance profile requires a recorded AML position. There is no AML
+  control here, so no <code>assessments/aml</code> key is emitted, so the profile finds against it.
+  The obvious shortcut &mdash; emitting <code>{"assessed": false}</code> &mdash; was tried, and it is
+  a <em>false statement</em>: it means <em>this control exists and did not run</em>. A guard caught
+  it. The record stays silent and the non-conformance is declared.
+</p>
+
+<div class="note">
+  <p>
+    <strong>Why a benchmark that publishes its own failures.</strong> Any spend control can claim to
+    stop overspending. The useful question is which attacks were tried, which worked, and how you
+    would know if that changed. A score of 18/18 would mean the attacks were chosen to be survivable.
+  </p>
+</div>
+
+<h2 id="what-is-new">What is genuinely new, stated narrowly</h2>
+
+<p>
+  Most of the surface here is old, and conceding that is what makes the remaining claim worth
+  reading.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Mechanism</th><th>Prior art it is</th></tr></thead>
+  <tbody>
+    <tr><td>Delegation that narrows at each hop</td><td><strong>Macaroon caveat attenuation</strong> &mdash; 2014, and the same lattice</td></tr>
+    <tr><td>A hash chain committed to an external witness</td><td><strong>Certificate Transparency</strong>. A signed tree head is exactly a <code>(length, head)</code> pair, and this survey <em>refuted</em> the novelty claimed for it</td></tr>
+    <tr><td>Policy as data rather than code</td><td><strong>OPA and Cedar</strong></td></tr>
+    <tr><td>Per-counterparty and per-period spend envelopes</td><td><strong>Card controls</strong>, decades old</td></tr>
+    <tr><td>Reporting which policy decided</td><td><strong>XACML 3.0</strong> responses <em>may</em> carry a <code>PolicyIdentifierList</code> &mdash; expressible since 2003</td></tr>
+    <tr><td>A pre-execution attributed authorization</td><td><strong>ISO 8583</strong> card authorization, including a decline-reason field</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>What survives is narrow.</strong> Attribution as a <em>required</em> output, independently
+  conformance-scored, with a normative evaluation order &mdash; justified by the fact that the
+  <em>verdict</em> is order-independent while the <em>attribution</em> is not. XACML permits
+  attribution; nothing requires it or scores whether you produced it.
+</p>
+
+<p>
+  The ISO 8583 survey is the more interesting of the two, because it supplied the objection rather
+  than the confirmation: <strong>card networks deliberately obscure decline reasons</strong> so
+  fraudsters cannot reverse-engineer the rules. That is a real argument against attribution, and it
+  does not apply here for a specific reason &mdash; the reader of the record is the operator who
+  <em>wrote</em> the policy, not an anonymous cardholder.
+</p>
+
+<h2 id="what-it-refuses">What it refuses to build</h2>
+
+<p>Each refusal has a reason, and the reasons are the design.</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Sanctions and AML screening</h3>
+    <p>No list, no matching, no KYC, no SAR workflow. <strong>This layer consumes compliance
+    signals and must never produce them.</strong> The <code>sanctions</code> control is already the
+    highest-precedence dispositive control, so a real provider has somewhere to land.</p>
+  </div>
+  <div class="card">
+    <h3>A bundled anchor sink</h3>
+    <p>An append-only file beside the journal is the same file at one remove wherever the agent's
+    own host can rewrite it. Shipping one would make the truncation gap <em>look</em> closed.
+    Refused on architectural grounds, not commercial ones.</p>
+  </div>
+  <div class="card">
+    <h3>A policy language</h3>
+    <p>A DSL is how policy becomes code and stops being data. Policy is YAML an operator can read,
+    diff, and hash.</p>
+  </div>
+  <div class="card">
+    <h3>A model on the decision path</h3>
+    <p>No LLM decides anything. An advisory model may <em>narrow</em> a verdict and never widen one,
+    and a test enforces that no engine imports one.</p>
+  </div>
+</div>
+
+<h2 id="check-it">Check any of it yourself</h2>
+
+<p>Nothing on this page needs to be taken on trust. Each command answers one claim.</p>
+
+<pre><code>pip install tesoro
+tesoro init                                   # scaffolds a policy pack
+tesoro decide --vendor acme --amount 5.00     # one verdict, before money moves
+
+# Does that record satisfy a named profile?
+tesoro conformance --profile aegs-2
+#   conformant: 1/1
+
+tesoro conformance --profile stablecoin-1
+#   conformant: 0/1
+#   [MUST_RECORD] AMLAssessment: no 'assessments/aml' key at all
+
+# The evidence chain, recomputed from payloads rather than stored hashes
+tesoro audit
+#   chain: VALID</code></pre>
+
+<p>
+  <strong>The benchmark needs the repository, not the package.</strong> The 18 attacks are a
+  development harness and are deliberately not shipped in the wheel &mdash; an adversarial suite is
+  something you run against a checkout you can read, not an opaque dependency:
+</p>
+
+<pre><code>git clone https://github.com/tesoro-labs/tesoro &amp;&amp; cd tesoro
+python -m redteam.runner
+
+#   defended 15   by accident 1   undefended 2   error 0</code></pre>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Claim</th><th>How it is checked</th></tr></thead>
+  <tbody>
+    <tr><td>The benchmark score is real</td><td>A test compares a live run against <code>baseline.json</code> and <strong>fails on any difference in either direction</strong> &mdash; a closed gap is as much a deliberate change as a regression</td></tr>
+    <tr><td>The standard is implementable</td><td>161 machine-readable vectors across 9 families, executing in CI. They are also <em>mutation-checked</em>: allowing widening fails 14 of them</td></tr>
+    <tr><td>Every normative clause is testable</td><td>A linter fails any clause containing a <code>MUST</code> with no test citing it</td></tr>
+    <tr><td>The measurements are not retouched</td><td>Sealed experiment records with checksums. A wrong measurement is corrected by <em>superseding</em> the record, never by editing it &mdash; <code>EXP-008 &rarr; EXP-009 &rarr; EXP-010</code> is exactly that</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="the-honest-hole">The largest hole, which effort cannot close</h2>
+
+<div class="warn-box">
+  <p>
+    <strong>There is one implementation of this standard, and the same person wrote both.</strong> A
+    specification with a single implementation is a description of that implementation. No amount of
+    additional work here fixes that &mdash; it needs somebody else to build one.
+  </p>
+  <p>
+    That is why the vectors are machine-readable and versioned separately, why the conformance suite
+    installs as its own package and scores an implementation it has never seen, and why the profile
+    manifests are data rather than code. All of it exists so a second implementation is possible
+    without permission.
+  </p>
+</div>
+
+<h2 id="where-next">Where to go next</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>The benchmark</h3>
+    <p>All eighteen attacks, the four outcomes, and the sealed lineage behind the score.</p>
+    <a href="benchmark.html">benchmark &rarr;</a>
+  </div>
+  <div class="card">
+    <h3>The concept</h3>
+    <p>What an autonomous economic governance layer is, and why existing controls do not fit.</p>
+    <a href="index.html">concepts &rarr;</a>
+  </div>
+  <div class="card">
+    <h3>The standard</h3>
+    <p>AEGS: 93 clauses, the four states, the narrowing rule, and the conformance profiles.</p>
+    <a href="aegs.html">AEGS &rarr;</a>
+  </div>
+  <div class="card">
+    <h3>Run it</h3>
+    <p>Install to a first refusal in about five minutes. No wallet, no testnet, no model key.</p>
+    <a href="start.html">get started &rarr;</a>
+  </div>
+</div>
+<div class="next">
+  <span></span>
+  <a href="index.html"><span class="lbl">Next</span>Autonomous economic governance &rarr;</a>
+</div>
+<footer class="page">
+  Apache-2.0 · specification text CC-BY-4.0 · no trackers and no external requests, by design
+</footer>
+</main>
+</div>
+
+</body>
+</html>

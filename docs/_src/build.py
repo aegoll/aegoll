@@ -24,7 +24,16 @@ OUT = HERE.parent
 #: knowing what an AEGL is, so the concept comes before the product and the product before the
 #: standard. Jumping straight to "here is our package" assumes a reader who already agrees there
 #: is a problem.
+#:
+#: `evaluate.html` sits above all of that, and it is a second argument. The concept-first order is
+#: right for a reader who wants to understand the problem; it is wrong for the reader who arrives
+#: sceptical and is deciding whether any of this is serious. That reader wants the failures, the
+#: prior art and the refusals, and wants them before the essay. The page leads with what does not
+#: work for the same reason.
 NAV: list[tuple[str, list[tuple[str, str]]]] = [
+    ("Start here", [
+        ("evaluate.html", "Evaluate this in ten minutes"),
+    ]),
     ("Concepts", [
         ("index.html", "Autonomous economic governance"),
         ("types.html", "Four kinds of AEGL"),

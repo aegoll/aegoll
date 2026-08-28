@@ -947,7 +947,7 @@ def build_parser() -> argparse.ArgumentParser:
     pex.set_defaults(func=cmd_policy)
 
     con = sub.add_parser("conformance", help="score journalled records against a profile")
-    con.add_argument("--profile", help="aegs-1 | aegs-2 | none (default: from config)")
+    con.add_argument("--profile", help="aegs-1 | aegs-2 | stablecoin-1 | none (default: from config)")
     con.add_argument("--config", help="path to tesoro.yaml or tesoro.json")
     con.add_argument("--limit", type=int, default=10, help="non-conformant records to detail")
     con.add_argument("--json", action="store_true", help="machine-readable output")
