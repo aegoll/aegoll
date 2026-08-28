@@ -14,6 +14,7 @@ than no record, because it looks like evidence.
 
 from __future__ import annotations
 
+import inspect
 import json
 from datetime import datetime, timezone
 
@@ -362,3 +363,119 @@ def test_a_profile_cannot_be_satisfied_by_inventing_an_assessment():
     )
     assert "sanctions" not in record_mod.IMPLEMENTED_CONTROLS
     assert set(record_mod.IMPLEMENTED_CONTROLS) == {"trust", "risk", "roi"}
+
+
+# --- AEGS-0.1-CTRL-6a: jurisdiction is declared, never inferred ------------
+
+
+def test_a_jurisdiction_is_never_inferred_from_anything_observable():
+    """AEGS-0.1-CTRL-6a. The prohibition, tested against the tempting signals.
+
+    Every one of these is correlated with jurisdiction and none of them is jurisdiction. A `.de`
+    domain is registrable from anywhere; a postal address is where post goes; a settlement chain
+    is a ledger. A layer that will not fabricate its own control output must not fabricate its
+    inputs either.
+
+    The failure this prevents is specific and quiet: an inferred value sits in the record looking
+    exactly like a declared one, so the next reader cannot tell that a program pattern-matched a
+    TLD. An absent jurisdiction is visibly absent and can be refused on.
+    """
+    from tesoro.domain import Vendor
+
+    for vendor in (
+        Vendor(id="acme.de", name="Acme GmbH", address="Musterstr. 1, 10115 Berlin"),
+        Vendor(id="acme.co.uk", name="Acme Ltd", address="1 High St, London"),
+        Vendor(id="0xabc", name="Acme", address="base:0xabc123"),
+    ):
+        assert vendor.jurisdiction_state == "undeclared", vendor.id
+        assert vendor.declared_jurisdiction is None
+
+
+def test_the_three_jurisdiction_states_are_kept_apart():
+    """`str | None` cannot hold three states, which is why the sentinel is there.
+
+    Collapsing `undeclared` into `unknown` would be the same defect as `assessed: false` on a
+    control that does not exist: a record asserting that somebody was asked when nobody was.
+    """
+    from tesoro.domain import JURISDICTION_STATES, Vendor
+
+    cases = {
+        "undeclared": Vendor(id="a"),
+        "unknown": Vendor(id="b", jurisdiction=None),
+        "declared": Vendor(id="c", jurisdiction="LK"),
+    }
+    assert set(cases) == set(JURISDICTION_STATES)
+    for expected, vendor in cases.items():
+        assert vendor.jurisdiction_state == expected
+
+    assert cases["declared"].declared_jurisdiction == "LK"
+    assert cases["unknown"].declared_jurisdiction is None
+    assert cases["undeclared"].declared_jurisdiction is None
+
+
+def test_an_undeclared_jurisdiction_is_absent_from_the_record_not_null():
+    """Absent and null are different claims, so the record makes them different keys.
+
+    A present `null` says an operator was asked. Emitting one for a counterparty nobody was
+    asked about would overstate what happened, which is the whole of the four-state rule.
+    """
+    from tesoro.record import _counterparty
+
+    undeclared = _counterparty({"id": "acme", "name": "Acme", "sanctioned": False})
+    assert "jurisdiction" not in undeclared
+
+    unknown = _counterparty({
+        "id": "acme", "name": "Acme", "sanctioned": False,
+        "jurisdictionState": "unknown", "jurisdiction": None,
+    })
+    assert "jurisdiction" in unknown and unknown["jurisdiction"] is None
+
+    declared = _counterparty({
+        "id": "acme", "name": "Acme", "sanctioned": False,
+        "jurisdictionState": "declared", "jurisdiction": "LK",
+    })
+    assert declared["jurisdiction"] == "LK"
+
+
+def test_a_policy_rule_can_act_on_the_state_and_not_only_the_value():
+    """The fact base carries both, because the value alone loses the distinction.
+
+    `vendor.jurisdiction` is None for `undeclared` and for `unknown` alike. An operator whose
+    rules treat "nobody was asked" differently from "asked and does not know" -- a reasonable
+    thing to want, and the second is the better counterparty -- needs the state as a fact.
+
+    Built through `build_facts` rather than read out of its source, so a refactor that stops
+    emitting either key fails here instead of passing on a string match.
+    """
+    from types import SimpleNamespace
+
+    from tesoro.domain import PaymentRequest, Vendor
+    from tesoro.engines.economic.policy import build_facts
+
+    def facts_for(vendor):
+        request = PaymentRequest(
+            id="req-1", agent_id="agent-1", vendor=vendor,
+            resource="/market/snapshot", amount_atomic=1_000_000,
+        )
+        return build_facts(
+            request,
+            trust=SimpleNamespace(value=0.5, flags=()),
+            risk=SimpleNamespace(value=0.2, flags=()),
+            roi=SimpleNamespace(known=False, ratio=None, justified=False),
+            budget=SimpleNamespace(ok=True, binding=None, headroom_atomic=50_000_000),
+            snapshot=SimpleNamespace(vendor=SimpleNamespace(is_new=True, settled_count=0)),
+        )
+
+    undeclared = facts_for(Vendor(id="acme.de", address="Musterstr. 1, Berlin"))
+    unknown = facts_for(Vendor(id="acme", jurisdiction=None))
+    declared = facts_for(Vendor(id="acme", jurisdiction="LK"))
+
+    # The value cannot tell the first two apart...
+    assert undeclared["vendor.jurisdiction"] is None
+    assert unknown["vendor.jurisdiction"] is None
+    assert declared["vendor.jurisdiction"] == "LK"
+
+    # ...which is exactly why the state is a separate fact.
+    assert undeclared["vendor.jurisdiction_state"] == "undeclared"
+    assert unknown["vendor.jurisdiction_state"] == "unknown"
+    assert declared["vendor.jurisdiction_state"] == "declared"

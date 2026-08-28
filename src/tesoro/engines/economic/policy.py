@@ -48,6 +48,13 @@ def build_facts(
         "vendor.id": request.vendor.id,
         "vendor.sanctioned": request.vendor.sanctioned,
         "vendor.tags": list(request.vendor.tags),
+        # AEGS-0.1-CTRL-6a. Two facts, not one: the value, and which of the three states it is
+        # in. `vendor.jurisdiction` is None for both `undeclared` and `unknown`, and a rule that
+        # wants to refuse an unvetted counterparty needs to say WHICH -- "nobody was asked" and
+        # "an operator was asked and does not know" are different facts and can deserve
+        # different verdicts. Neither is ever computed from the address or the id.
+        "vendor.jurisdiction": request.vendor.declared_jurisdiction,
+        "vendor.jurisdiction_state": request.vendor.jurisdiction_state,
         "vendor.is_new": snapshot.vendor.is_new,
         "vendor.settled_count": snapshot.vendor.settled_count,
         "trust.score": trust.value,

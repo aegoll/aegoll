@@ -56,6 +56,29 @@ def _hash_entry(seq: int, at: str, prev_hash: str, payload: dict[str, Any]) -> s
     return digest(blob)
 
 
+def _vendor_payload(vendor: Any) -> dict[str, Any]:
+    """The counterparty as it enters the hash chain. AEGS-0.1-CTRL-6a.
+
+    `jurisdictionState` always travels; `jurisdiction` only when an operator declared something.
+    Both are needed downstream, and the state is the one that cannot be reconstructed from the
+    value: `None` is emitted for *asked and does not know* and would be indistinguishable from
+    *never asked* without it.
+
+    Adding a key changes the hash of entries written from now on and none of the entries already
+    written, because each entry commits to its own payload. That is the point of the chain and
+    not a migration.
+    """
+    payload: dict[str, Any] = {
+        "id": vendor.id,
+        "name": vendor.display,
+        "sanctioned": vendor.sanctioned,
+        "jurisdictionState": vendor.jurisdiction_state,
+    }
+    if vendor.jurisdiction_state != "undeclared":
+        payload["jurisdiction"] = vendor.declared_jurisdiction
+    return payload
+
+
 class AuditLog:
     def __init__(self, path: str | Path, labels: dict[str, str] | None = None) -> None:
         self.path = Path(path)
@@ -116,11 +139,7 @@ class AuditLog:
 
         payload: dict[str, Any] = {
             "agent": request.agent_id,
-            "vendor": {
-                "id": request.vendor.id,
-                "name": request.vendor.display,
-                "sanctioned": request.vendor.sanctioned,
-            },
+            "vendor": _vendor_payload(request.vendor),
             "transaction": {
                 "id": request.id,
                 "resource": request.resource,

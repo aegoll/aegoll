@@ -35,6 +35,7 @@ from .config import DEFAULT_BUNDLE, available_bundles, load_bundle
 from .errors import ConfigError, PolicyError
 from .runtime import Tesoro, Paths
 from .domain import Purpose, Vendor, fmt_usd
+from .states import MISSING
 
 #: The fixed instant `--fixed-time` pins the clock to. Lived in the scenarios module,
 #: which has left the package; it is a clock constant, so it belongs beside the clock.
@@ -139,7 +140,21 @@ def _aegl(args: argparse.Namespace, ephemeral: bool = False) -> Tesoro:
 def cmd_decide(args: argparse.Namespace) -> int:
     tesoro = _aegl(args, ephemeral=args.dry_run)
     try:
-        vendor = Vendor(id=args.vendor, name=args.vendor, sanctioned=args.sanctioned)
+        # AEGS-0.1-CTRL-6a: three states, and the CLI has to be able to say all three. No flag
+        # leaves the sentinel in place (nobody was asked); `--vendor-jurisdiction-unknown` sets
+        # an explicit None (asked, does not know); `--vendor-jurisdiction LK` declares. Nothing
+        # here looks at the vendor id or an address to guess.
+        jurisdiction: object = MISSING
+        if args.vendor_jurisdiction_unknown:
+            jurisdiction = None
+        elif args.vendor_jurisdiction is not None:
+            jurisdiction = args.vendor_jurisdiction
+        vendor = Vendor(
+            id=args.vendor,
+            name=args.vendor,
+            sanctioned=args.sanctioned,
+            jurisdiction=jurisdiction,
+        )
         request = tesoro.build_request(
             resource=args.resource,
             amount_usd=args.amount,
@@ -921,6 +936,17 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--purpose", default="data_purchase",
                    choices=[x.value for x in Purpose])
     d.add_argument("--sanctioned", action="store_true")
+    j = d.add_mutually_exclusive_group()
+    j.add_argument(
+        "--vendor-jurisdiction",
+        metavar="CODE",
+        help="the counterparty's jurisdiction, as YOU declare it. Never inferred (CTRL-6a)",
+    )
+    j.add_argument(
+        "--vendor-jurisdiction-unknown",
+        action="store_true",
+        help="you were asked and do not know. Different from not saying, and recorded as such",
+    )
     d.add_argument("--dry-run", action="store_true",
                    help="decide without journalling (uses in-memory history)")
     d.add_argument("--fixed-time", action="store_true", help="deterministic clock")

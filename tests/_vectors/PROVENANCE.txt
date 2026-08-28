@@ -27,7 +27,7 @@ that user nothing.
 Source
 ------
   repo:    tesoro-labs/aegs
-  commit:  45de7795ad5d922a078e839ca3587d951ad622c9
+  commit:  175b43c96792a462e79de7d4cc50b518fd54cd62
   path:    vectors/
   copied:  2026-08-28
   count:   158 vectors across 9 families, covering 57 clauses

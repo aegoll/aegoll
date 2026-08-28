@@ -18,6 +18,8 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import Enum
 from typing import Any
 
+from .states import MISSING, Missing
+
 USDC_DECIMALS = 6
 _ATOMIC = Decimal(10) ** USDC_DECIMALS
 
@@ -152,6 +154,12 @@ class Purpose(str, Enum):
     UNKNOWN = "unknown"
 
 
+#: Three states for a declared jurisdiction, because two are not enough and this is
+#: AEGS-0.1-CTRL-6a. `str | None` alone cannot separate *nobody was asked* from *an operator
+#: was asked and does not know*, and those are different facts about the same counterparty.
+JURISDICTION_STATES = ("undeclared", "unknown", "declared")
+
+
 @dataclass(frozen=True)
 class Vendor:
     id: str
@@ -159,10 +167,39 @@ class Vendor:
     address: str | None = None
     sanctioned: bool = False
     tags: tuple[str, ...] = ()
+    #: **Declared by an operator, never derived.** AEGS-0.1-CTRL-6a forbids inferring this from
+    #: `address`, from a domain suffix in `id`, from an IP, or from a settlement chain. Each of
+    #: those correlates with jurisdiction and none of them *is* jurisdiction, which is a legal
+    #: fact about a legal person -- a `.de` domain is registrable from anywhere and a postal
+    #: address is where post goes.
+    #:
+    #: The default is `MISSING`, not `None`, and the difference carries the clause. An absent
+    #: jurisdiction is visibly absent: a policy can refuse on it and a reviewer can ask for it.
+    #: An inferred one is a guess wearing the clothes of a fact, indistinguishable in the record
+    #: from a declared one. `None` is the third state and means an operator was asked and does
+    #: not know, which is a real answer and not the same as never having asked.
+    jurisdiction: "str | None | Missing" = MISSING
 
     @property
     def display(self) -> str:
         return self.name or self.id
+
+    @property
+    def jurisdiction_state(self) -> str:
+        """`undeclared` | `unknown` | `declared`. Never computed from anything observable."""
+        if isinstance(self.jurisdiction, Missing):
+            return "undeclared"
+        return "unknown" if self.jurisdiction is None else "declared"
+
+    @property
+    def declared_jurisdiction(self) -> str | None:
+        """The declared value, or None for both of the ways there isn't one.
+
+        Callers that need to tell those apart read `jurisdiction_state`. This exists so the
+        common case -- put the value in a record or a fact base -- does not have to know about
+        the sentinel.
+        """
+        return None if isinstance(self.jurisdiction, Missing) else self.jurisdiction
 
 
 @dataclass(frozen=True)

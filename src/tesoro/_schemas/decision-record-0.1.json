@@ -92,6 +92,13 @@
                 "null"
               ]
             },
+            "jurisdiction": {
+              "description": "The counterparty's jurisdiction, AS DECLARED BY AN OPERATOR. AEGS-0.1-CTRL-6a forbids deriving it from anything observable -- a postal address, a domain suffix, an IP address, a settlement chain or a wallet address. Each of those correlates with jurisdiction and none of them is jurisdiction, which is a legal fact about a legal person. Three states, and they differ: the key ABSENT means nobody was asked; `null` means an operator was asked and does not know; a string is a declared value. An inferred value would appear here identically to a declared one, and the next reader would have no way to tell.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "sanctioned": {
               "type": [
                 "boolean",

@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/jurisdiction-undeclared-is-not-unknown",
+  "clause": "AEGS-0.1-CTRL-6a",
+  "operation": "classify_jurisdiction",
+  "description": "A counterparty with no declared jurisdiction is undeclared, not unknown.",
+  "input": {
+    "counterparty": {
+      "id": "acme.de",
+      "name": "Acme GmbH",
+      "address": "Musterstr. 1, 10115 Berlin"
+    }
+  },
+  "expect": {
+    "jurisdictionState": "undeclared",
+    "jurisdiction": null
+  },
+  "note": "The input carries a .de identifier AND a German postal address, and both are ignored. An implementation that reads either one fails this vector, which is the point of putting them there. A .de domain is registrable from anywhere and a postal address is where post goes -- each correlates with jurisdiction and neither IS jurisdiction, which is a legal fact about a legal person. `undeclared` is also not `unknown`: nobody was asked, which is a different statement from an operator having been asked and not knowing."
+}

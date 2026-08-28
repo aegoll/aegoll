@@ -41,6 +41,7 @@
         "hash_strength",
         "classify_state",
         "classify_control",
+        "classify_jurisdiction",
         "clamp_delegation",
         "disclose",
         "evaluate_profile",
@@ -426,6 +427,10 @@
             "type": "string"
           }
         },
+        "counterparty": {
+          "type": "object",
+          "description": "A counterparty as it appears in a record. AEGS-0.1-CTRL-6a: `jurisdiction` ABSENT means nobody was asked, `null` means an operator was asked and does not know, and a string is a declared value. `address` and `id` are present in these vectors on purpose -- an implementation that derives a jurisdiction from either one fails them."
+        },
         "engineless": {
           "type": "array",
           "items": {
@@ -778,6 +783,20 @@
                 "type": "string"
               },
               "description": "Inherited controls the child assigns a weaker level. PROF-4 requires this to be empty; asserting it explicitly is stronger than asserting `onlyTightens` alone, which a runner could satisfy by computing nothing."
+            },
+            "jurisdictionState": {
+              "enum": [
+                "undeclared",
+                "unknown",
+                "declared"
+              ],
+              "description": "AEGS-0.1-CTRL-6a. Three states, because `str | null` cannot separate *nobody was asked* from *asked and does not know*."
+            },
+            "jurisdiction": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "requiringWithoutClass": {
               "type": "array",

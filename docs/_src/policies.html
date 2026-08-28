@@ -115,11 +115,46 @@
 <h3>Twenty facts a rule may read</h3>
 
 <div class="scroll">
+<div class="note">
+  <p>
+    <strong>Two facts for jurisdiction, and the second is the useful one.</strong>
+    <code>vendor.jurisdiction</code> is the value an operator declared &mdash; and it is
+    <code>null</code> for <em>two different situations</em>: nobody was asked, and an operator was
+    asked and does not know. <code>vendor.jurisdiction_state</code> separates them, with one of
+    <code>undeclared</code>, <code>unknown</code> or <code>declared</code>.
+  </p>
+  <p>
+    <strong>Nothing derives it.</strong> Not from the counterparty's address, not from a domain
+    suffix in its id, not from the settlement chain. Each of those correlates with jurisdiction and
+    none of them <em>is</em> jurisdiction &mdash; a <code>.de</code> domain is registrable from
+    anywhere. An absent jurisdiction is visibly absent and you can refuse on it; an inferred one is
+    a guess that looks exactly like a declared fact.
+    <a href="https://github.com/tesoro-labs/aegs/blob/main/spec/02-controls.md">AEGS-0.1-CTRL-6a</a>
+    makes that a requirement rather than a preference.
+  </p>
+</div>
+
+<pre><code>rules:
+  - id: unvetted-counterparty
+    priority: 1
+    when:
+      vendor.jurisdiction_state: undeclared
+    then: REVIEW
+    because: nobody has said where this counterparty is</code></pre>
+
+<p class="small">
+  <code>priority</code> is not optional here. Rules are evaluated in priority order and the first
+  match is terminal, so a rule without one sorts last and is reached only when nothing else
+  matched &mdash; which for a rule meant to catch unvetted counterparties is indistinguishable
+  from it not working. This example was run before it was published, and it fired for
+  <code>undeclared</code> and fell through for a declared <code>LK</code>.
+</p>
+
 <table>
   <thead><tr><th>Group</th><th>Facts</th></tr></thead>
   <tbody>
     <tr><td>the action</td><td><code>amount_usd</code> <code>resource</code> <code>purpose</code> <code>channel</code> <code>agent_id</code></td></tr>
-    <tr><td>counterparty</td><td><code>vendor.id</code> <code>vendor.sanctioned</code> <code>vendor.tags</code> <code>vendor.is_new</code> <code>vendor.settled_count</code></td></tr>
+    <tr><td>counterparty</td><td><code>vendor.id</code> <code>vendor.sanctioned</code> <code>vendor.tags</code> <code>vendor.is_new</code> <code>vendor.settled_count</code> <code>vendor.jurisdiction</code> <code>vendor.jurisdiction_state</code></td></tr>
     <tr><td>trust &amp; risk</td><td><code>trust.score</code> <code>trust.flags</code> <code>risk.score</code> <code>risk.flags</code></td></tr>
     <tr><td>value</td><td><code>roi.known</code> <code>roi.ratio</code> <code>roi.justified</code></td></tr>
     <tr><td>budget</td><td><code>budget.ok</code> <code>budget.binding</code> <code>budget.headroom_usd</code></td></tr>

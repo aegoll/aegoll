@@ -406,6 +406,31 @@ def _defined_controls() -> frozenset[str]:
     return frozenset(r.control for r in Profile.load("none").requirements)
 
 
+def _classify_jurisdiction(data: dict) -> dict:
+    """AEGS-0.1-CTRL-6a, driven through `Vendor` rather than reimplemented here.
+
+    The vector hands over a counterparty exactly as a record carries one, including an `address`
+    and a dotted `id` that an implementation might be tempted to read. `Vendor` is constructed
+    from the declared field only -- if this function grew a fallback to the address, the vectors
+    would go green while the clause was being broken, which is the shape of every conformance
+    suite that scores its own runner instead of the implementation.
+    """
+    from tesoro.domain import Vendor
+    from tesoro.states import MISSING
+
+    cp = data["counterparty"]
+    vendor = Vendor(
+        id=cp.get("id", ""),
+        name=cp.get("name", ""),
+        address=cp.get("address"),
+        jurisdiction=cp["jurisdiction"] if "jurisdiction" in cp else MISSING,
+    )
+    return {
+        "jurisdictionState": vendor.jurisdiction_state,
+        "jurisdiction": vendor.declared_jurisdiction,
+    }
+
+
 def _classify_control(data: dict) -> dict:
     """AEGS-0.1-CTRL-1: the name set is closed, and matching is exact.
 
@@ -559,6 +584,9 @@ def _run(vector: dict):
 
     if operation == "disclose":
         return _disclose(data)
+
+    if operation == "classify_jurisdiction":
+        return _classify_jurisdiction(data)
 
     if operation == "evaluate_profile":
         return _evaluate_profile(data)

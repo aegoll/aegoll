@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/jurisdiction-null-is-an-answer-somebody-gave",
+  "clause": "AEGS-0.1-CTRL-6a",
+  "operation": "classify_jurisdiction",
+  "description": "An explicit null jurisdiction is a declared position, not an absence.",
+  "input": {
+    "counterparty": {
+      "id": "acme",
+      "name": "Acme",
+      "jurisdiction": null
+    }
+  },
+  "expect": {
+    "jurisdictionState": "unknown",
+    "jurisdiction": null
+  },
+  "note": "This is STATE-1 applied to a field rather than a control. An operator who was asked and does not know has told you something; a record that collapses that into the absent case throws it away, and the next reader cannot tell whether the question was ever put. The same asymmetry keeps `assessed: false` out of a record with no engine behind it."
+}

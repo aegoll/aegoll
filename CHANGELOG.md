@@ -44,6 +44,46 @@ and hides fixes tells a reader what was added and not what was wrong.
 
 ## [Unreleased]
 
+### Added
+
+- **A counterparty's jurisdiction, declared by an operator and never inferred.**
+  `Vendor.jurisdiction`, two new policy facts — `vendor.jurisdiction` and
+  `vendor.jurisdiction_state` — and `tesoro decide --vendor-jurisdiction CODE` /
+  `--vendor-jurisdiction-unknown`. Specified as
+  [`AEGS-0.1-CTRL-6a`](https://github.com/tesoro-labs/aegs/blob/main/spec/02-controls.md), with
+  three conformance vectors.
+
+  **Three states, because two cannot carry the fact.** `str | None` cannot separate *nobody was
+  asked* from *an operator was asked and does not know*, so the field defaults to the `MISSING`
+  sentinel: an absent key means nothing is claimed, an explicit `null` is an answer somebody gave,
+  and a string is a declared value. Collapsing the first two would be the same defect as
+  `assessed: false` on a control that does not exist.
+
+  **Nothing derives it, and that is enforced rather than intended.** Not from the counterparty's
+  postal address, not from a domain suffix in its id, not from the settlement chain. Each of those
+  correlates with jurisdiction and none of them *is* jurisdiction, which is a legal fact about a
+  legal person — a `.de` domain is registrable from anywhere and a postal address is where post
+  goes. The vectors hand the runner a `.de` identifier alongside a Berlin address specifically so
+  an implementation that reads either one fails them; planting exactly that inference was confirmed
+  to fail one vector and two tests before the plant was reverted.
+
+  The asymmetry is the argument. An **absent** jurisdiction is visibly absent — a policy can refuse
+  on it and a reviewer can ask for it. An **inferred** one is a guess wearing the clothes of a
+  fact, sitting in the record identically to a declared value, with the error invisible at exactly
+  the moment somebody builds a determination on it.
+
+  This adds no jurisdiction *model*, which is a separate thing the reference implementation still
+  does not have and does not claim.
+
+### Fixed
+
+- **A documented policy rule that would never have fired.** The example added to the policies page
+  omitted `priority`, and rules are evaluated in priority order with the first match terminal — so
+  a rule without one sorts last and is reached only when nothing else matched. For a rule meant to
+  catch unvetted counterparties that is indistinguishable from it not working. Caught by running
+  the example instead of reading it, which is now the rule for anything published as a command or a
+  config.
+
 ## [0.1.2] — 2026-08-28
 
 The first release that is not a rename or a repackage. Two red-team findings closed, a kill switch,

@@ -118,6 +118,32 @@ CLAMP_ORIGIN = {
 }
 
 
+def _counterparty(vendor: dict[str, Any]) -> dict[str, Any]:
+    """The counterparty block. AEGS-0.1-CTRL-6a governs one field of it.
+
+    `jurisdiction` is emitted **only when an operator declared something**, and the two ways of
+    not declaring are kept apart rather than collapsed:
+
+    * key absent      -- nobody was asked. Nothing is claimed.
+    * key present, null -- an operator was asked and does not know. That is an answer.
+
+    Collapsing them would be the same defect as `assessed: false` on a control that does not
+    exist: a record asserting more than anyone established. And nothing here derives the value
+    from `address` or from a domain suffix in `id` -- both are in this dict and both are
+    ignored, deliberately. A `.de` domain is registrable from anywhere; a postal address is
+    where post goes. An inferred jurisdiction would sit in this field looking exactly like a
+    declared one, which is what makes inferring it worse than leaving it out.
+    """
+    block: dict[str, Any] = {
+        "id": vendor.get("id", ""),
+        "name": vendor.get("name"),
+        "sanctioned": vendor.get("sanctioned"),
+    }
+    if vendor.get("jurisdictionState", "undeclared") != "undeclared":
+        block["jurisdiction"] = vendor.get("jurisdiction")
+    return block
+
+
 def _deciding_engine(decision: dict[str, Any]) -> str:
     """Which control determined the verdict. AEGS-0.1-VERD-4 and VERD-4a.
 
@@ -233,11 +259,7 @@ def from_audit_entry(
             "amount": _usd_str(tx.get("amountUsd")),
             "asset": "USD" if str(tx.get("resource", "")).startswith("llm:") else "USDC",
             "purpose": tx.get("purpose"),
-            "counterparty": {
-                "id": vendor.get("id", ""),
-                "name": vendor.get("name"),
-                "sanctioned": vendor.get("sanctioned"),
-            },
+            "counterparty": _counterparty(vendor),
         },
         "decision": final_verdict,
         "authorization": {

@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/jurisdiction-declared-is-carried-verbatim",
+  "clause": "AEGS-0.1-CTRL-6a",
+  "operation": "classify_jurisdiction",
+  "description": "A declared jurisdiction is recorded as given, with no normalisation.",
+  "input": {
+    "counterparty": {
+      "id": "acme",
+      "name": "Acme",
+      "jurisdiction": "LK"
+    }
+  },
+  "expect": {
+    "jurisdictionState": "declared",
+    "jurisdiction": "LK"
+  },
+  "note": "AEGS defines no jurisdiction vocabulary and does not require ISO 3166. Mapping an operator's string onto a code list would be a second inference on top of the one CTRL-6a forbids: the layer would be deciding what the operator meant. What is recorded is what was declared."
+}

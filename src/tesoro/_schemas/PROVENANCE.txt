@@ -12,7 +12,7 @@ inside the monorepo — an installed wheel has no sibling `aegs/`. See PLAN.md F
 Source
 ------
   repo:    tesoro-labs/aegs
-  commit:  4641e15dfc30ec551b707ca908873b68cc215021
+  commit:  175b43c96792a462e79de7d4cc50b518fd54cd62
   path:    schemas/
   copied:  2026-08-17
 
