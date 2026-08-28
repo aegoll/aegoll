@@ -3,7 +3,7 @@
   "id": "profiles/unimplementable-controls-stay-optional",
   "clause": "AEGS-0.1-PROF-6",
   "operation": "evaluate_profile",
-  "description": "No profile requires a control for which no implementation has an engine.",
+  "description": "No ladder profile requires a control for which no implementation has an engine.",
   "input": {
     "profiles": [
       "none",
@@ -18,5 +18,5 @@
   "expect": {
     "allOptional": true
   },
-  "note": "Requiring AMLAssessment at MUST_EXERCISE would make aegs-2 look considerably more serious and would make it unsatisfiable -- so every implementation would claim aegs-1, the higher level would go unused, and the specification would have gained a decoration. Requiring the impossible moves the real bar DOWN."
+  "note": "Requiring AMLAssessment at MUST_EXERCISE would make aegs-2 look considerably more serious and would make it unsatisfiable -- so every implementation would claim aegs-1, the higher level would go unused, and the specification would have gained a decoration. Requiring the impossible moves the real bar DOWN. The input names the three ladder profiles explicitly rather than scanning every profile, and that is now load-bearing: PROF-6a permits a VERTICAL profile to require an engineless control, and stablecoin-1 does. Scanning all profiles here would assert something the standard no longer claims."
 }

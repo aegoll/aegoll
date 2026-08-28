@@ -1,0 +1,24 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/vertical-profile-names-its-deployment-class",
+  "clause": "AEGS-0.1-PROF-6a",
+  "operation": "evaluate_profile",
+  "description": "No profile requires an engineless control without naming the deployment class expected to satisfy it.",
+  "input": {
+    "profiles": [
+      "none",
+      "aegs-1",
+      "aegs-2",
+      "stablecoin-1"
+    ],
+    "engineless": [
+      "AMLAssessment",
+      "ComplianceAssessment",
+      "IncidentRecord"
+    ]
+  },
+  "expect": {
+    "requiringWithoutClass": []
+  },
+  "note": "This scans every profile, where profiles/unimplementable-controls-stay-optional deliberately names only the three ladder profiles. The two are complements: that one says a LADDER profile requires none of these, this one says any profile that does require one is vertical and says so. Together they close the hole PROF-6a would otherwise open, which is that 'vertical' becomes a label anything can wear to escape PROF-6. The other half of PROF-6a -- whether the named class GENUINELY meets the requirement outside AEGS -- is a judgement no vector can make, and the clause says so rather than pretending otherwise."
+}

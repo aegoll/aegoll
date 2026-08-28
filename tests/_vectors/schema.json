@@ -426,6 +426,13 @@
             "type": "string"
           }
         },
+        "engineless": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Controls the standard defines as schemas with no engine behind them anywhere. PROF-6a: a profile may require one only if it declares the deployment class expected to satisfy it, which is what stops `vertical` from becoming a label any profile can wear to escape PROF-6."
+        },
         "anchor": {
           "type": "object",
           "additionalProperties": false,
@@ -764,6 +771,20 @@
               "items": {
                 "type": "string"
               }
+            },
+            "loosened": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Inherited controls the child assigns a weaker level. PROF-4 requires this to be empty; asserting it explicitly is stronger than asserting `onlyTightens` alone, which a runner could satisfy by computing nothing."
+            },
+            "requiringWithoutClass": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "`profile:control` for every profile that requires an engineless control without declaring a deploymentClass. PROF-6a requires this to be empty."
             },
             "requiredCount": {
               "type": "integer",

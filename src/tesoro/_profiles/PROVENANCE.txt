@@ -11,15 +11,23 @@ it does not define one.
 Source
 ------
   repo:    aegoll/aegs
-  commit:  04137ea4d03b48244e3b7fb38d09634628c3821b
+  commit:  45de7795ad5d922a078e839ca3587d951ad622c9
   path:    profiles/
-  copied:  2026-08-17
+  copied:  2026-08-28
 
 Files
 -----
   aegs-1.json   baseline: budget, policy, decision, attribution, evidence
   aegs-2.json   extends aegs-1; adds trust and risk, tightens identity
   none.json     no enforcement; a real, working escape hatch
+  stablecoin-1.json
+                VERTICAL, not a rung on the ladder. Extends aegs-2 and requires
+                AMLAssessment at MUST_RECORD under PROF-6a, on the basis that the
+                deployment class it names -- obliged entities settling in stablecoins --
+                already meets that bar by licence. This package has no AML control, so it
+                emits no assessments/aml key, so it DOES NOT CONFORM to this profile.
+                That is the intended reading. A profile whose only claimants are the
+                implementations that wrote it measures nothing.
 
 Rules
 -----

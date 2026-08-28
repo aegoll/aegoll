@@ -1,0 +1,83 @@
+{
+  "aegsVersion": "0.1",
+  "profile": "stablecoin-1",
+  "extends": "aegs-2",
+  "deploymentClass": "Obliged entities settling in stablecoins: banks adding stablecoin rails, issuers, payment firms, custody and infrastructure providers, wallets, and card issuers whose cards spend stablecoin balances.",
+  "title": "Agent spending inside an obliged entity",
+  "description": "Everything in aegs-2, plus one requirement aegs-2 deliberately does not make: the record must state a position on AML screening. The class this profile names is already held to that bar by licence, so requiring it here is not a new obligation -- it is the existing one restated as evidence a decision record must carry. AEGS-0.1-PROF-6a is what permits a vertical profile to require a control no AEGS implementation has an engine for, and the reference implementation does not conform to this profile as a result.",
+  "controls": [
+    {
+      "control": "AgentIdentity",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "actor",
+      "note": "Unchanged from aegs-2 in level, and the reason it is required here is different enough to restate. Under FATF R.16 the required data set names whose money moved -- name, account number, address or national identity number -- and carries nothing about who instructed the movement. The June 2025 revision narrowed the definition of `originator` from the account holder who *allows* a transfer to the one who *requests* it, which moves further from delegated authority rather than towards it. So an agent-initiated payment produces a Travel Rule record naming a person who pressed nothing, and the delegation chain in `actor` is the only place the missing fact lives: which accountable human authority this agent acted under, and how far that authority was clamped. This profile does not carry that fact into a transfer -- see AMLAssessment below and TRAV in the crosswalk -- it requires that the record be able to answer the question at all."
+    },
+    {
+      "control": "AMLAssessment",
+      "requirement": "MUST_RECORD",
+      "recordPath": "assessments/aml",
+      "note": "MUST_RECORD, not MUST_EXERCISE, and the gap between the two levels is the whole design. MUST_EXERCISE would require screening on every decision; MUST_RECORD requires the record to state a position, and an explicit null satisfies it. An entity with a provider records that screening ran and what it said. An entity without one records that it did not. Both beat silence, and silence is what every implementation emits today. What it must never become is an invented key: `assessments.aml = {\"assessed\": false}` claims the control exists and did not run, and an implementation with no AML control at all makes a false statement by emitting it. Absence is the truthful representation, and absence fails this profile. That is the correct outcome."
+    },
+    {
+      "control": "TrustAssessment",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "assessments/trust"
+    },
+    {
+      "control": "RiskAssessment",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "assessments/risk"
+    },
+    {
+      "control": "BudgetEnvelope",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "budgetState"
+    },
+    {
+      "control": "Policy",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "policy"
+    },
+    {
+      "control": "GovernanceDecision",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "decision"
+    },
+    {
+      "control": "Authorization",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "authorization/decidingEngine"
+    },
+    {
+      "control": "EvidenceRecord",
+      "requirement": "MUST_EXERCISE",
+      "recordPath": "evidence"
+    },
+    {
+      "control": "EconomicIntent",
+      "requirement": "MUST_RECORD",
+      "recordPath": "intentId"
+    },
+    {
+      "control": "ConformanceDeclaration",
+      "requirement": "OPTIONAL",
+      "note": "Left optional deliberately, against the temptation to require it here. An obliged entity has more reason than most to declare what it enforces -- but a profile that requires a declaration of itself is measuring paperwork, and PROF-5 already requires an implementation to state the profile it enforces whether or not the record repeats it."
+    },
+    {
+      "control": "ComplianceAssessment",
+      "requirement": "OPTIONAL",
+      "note": "Schema only, no engine, and no vertical case for requiring it that AMLAssessment does not already make better. Restraint: one new requirement is a bar, four are a wishlist."
+    },
+    {
+      "control": "IncidentRecord",
+      "requirement": "OPTIONAL",
+      "note": "Schema only, no engine."
+    }
+  ],
+  "nonConformant": [
+    "Everything that is non-conformant under aegs-2.",
+    "A decision record with no `assessments/aml` key at all. The profile does not require screening to run; it requires the record to say whether it did. An explicit null satisfies it and an absent key does not.",
+    "An `assessments/aml` key emitted by an implementation that has no AML control, in order to pass this profile. `assessed: false` means the control exists and did not run this time, which is a different and false claim. The honest way to satisfy this profile is to integrate a provider, not to widen the record.",
+    "A conformance claim of `stablecoin-1` from an implementation whose sanctions control is a boolean on a vendor object with no list behind it. The control being present in the schema is not the control existing."
+  ]
+}

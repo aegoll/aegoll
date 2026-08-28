@@ -118,8 +118,8 @@ def test_the_verdict_is_identical_under_every_profile(name):
 # --- loading the vendored manifests --------------------------------------
 
 
-def test_the_three_profiles_are_vendored_and_load():
-    assert available_profiles() == ["aegs-1", "aegs-2", "none"]
+def test_the_profiles_are_vendored_and_load():
+    assert available_profiles() == ["aegs-1", "aegs-2", "none", "stablecoin-1"]
     for name in available_profiles():
         assert Profile.load(name).id == name
 
@@ -175,17 +175,77 @@ def test_every_required_control_names_a_record_path():
                 assert req.record_path, f"{name}: {req.control}"
 
 
-def test_no_profile_requires_a_control_with_no_engine():
-    """AML, Compliance and Incident are schemas with no engine anywhere.
+#: Schemas with no engine anywhere. AEGS-0.1-PROF-6 / PROF-6a.
+UNBACKED = {"AMLAssessment", "ComplianceAssessment", "IncidentRecord"}
 
-    Requiring one would make the profile unsatisfiable, which does not raise the bar — it
-    makes the bar decorative.
+
+def test_no_ladder_profile_requires_a_control_with_no_engine():
+    """AEGS-0.1-PROF-6, and the word "ladder" is the whole content of the amendment.
+
+    Every implementation is expected to claim a rung, so an unreachable rung is dead weight:
+    everyone claims the rung below, the higher level goes unused, and the standard has gained
+    a decoration. Requiring the impossible moves the real bar *down*.
+
+    This test used to scan every profile. It now scans the ladder, because PROF-6a lets a
+    **vertical** profile require one of these — see the next test for the guard that keeps
+    that from being a loophole.
     """
-    unbacked = {"AMLAssessment", "ComplianceAssessment", "IncidentRecord"}
     for name in available_profiles():
         profile = Profile.load(name)
-        for control in unbacked:
+        if profile.is_vertical():
+            continue
+        for control in UNBACKED:
             assert profile.requirement_for(control) == "OPTIONAL", f"{name}: {control}"
+
+
+def test_a_profile_requiring_an_engineless_control_names_who_can_satisfy_it():
+    """AEGS-0.1-PROF-6a. The guard that stops "vertical" being a label to hide behind.
+
+    A vertical profile may require a control no implementation has an engine for, because
+    the question is whether the *deployment class it names* can satisfy it rather than
+    whether any AEGS implementation can. For `stablecoin-1` that class is obliged entities,
+    for whom sanctions and AML screening is a licence condition they already meet.
+
+    Without this test the amendment is an escape hatch: label a profile vertical and require
+    anything. The half a test can check is that a class was named. Whether that class
+    genuinely meets the bar is a judgement, and PROF-6a says so rather than implying a
+    rigour it does not have.
+    """
+    for name in available_profiles():
+        profile = Profile.load(name)
+        for control in UNBACKED:
+            if RANK[profile.requirement_for(control)] > 0:
+                assert profile.deployment_class, (
+                    f"{name} requires {control}, which no implementation has an engine for, "
+                    "and names no deploymentClass. Under PROF-6 that profile is "
+                    "unsatisfiable by anyone; under PROF-6a a vertical profile may require "
+                    "it but must name the class expected to satisfy it."
+                )
+
+
+def test_this_implementation_does_not_conform_to_stablecoin_1(a_record):
+    """The consequence of PROF-6a, kept rather than worked around.
+
+    `stablecoin-1` requires a recorded AML position. tesoro has no AML control, so
+    `IMPLEMENTED_CONTROLS` keeps `aml` out of the record entirely — absent, because a
+    present key would claim a control that does not exist. Absence fails MUST_RECORD.
+
+    **So the reference implementation fails its own vertical profile, and that is the point.**
+    A profile whose only claimants are the implementations that wrote it measures nothing.
+    This test exists so that a future change which makes tesoro "pass" has to come here and
+    say why: if a screening provider was integrated, replace this test. If the record was
+    widened to emit an empty `aml` key, that is the false statement caught on 2026-08-22 and
+    the change is wrong.
+    """
+    assessment = Profile.load("stablecoin-1").assess(a_record)
+    assert not assessment.conformant
+    findings = [f for f in assessment.findings if f.control == "AMLAssessment"]
+    assert len(findings) == 1
+    assert findings[0].requirement == "MUST_RECORD"
+    assert "assessments/aml" in findings[0].where
+
+    # And it fails for that reason alone -- every other control of aegs-2 still passes.
+    assert {f.control for f in assessment.findings} == {"AMLAssessment"}
 
 
 # --- scoring a real record -----------------------------------------------

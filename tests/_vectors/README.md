@@ -101,7 +101,7 @@ implementations sharing code prove less about the specification than two that on
 data.
 
 The reference implementation's runner is about forty lines
-(`aegoll/tests/test_vectors.py`), which is roughly the intended size.
+(`tesoro/tests/test_vectors.py`), which is roughly the intended size.
 
 ```
 python tools/check_vectors.py     # validate the vectors themselves

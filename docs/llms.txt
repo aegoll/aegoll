@@ -23,7 +23,7 @@
 - [Frameworks & rails](https://aegoll.github.io/tesoro/frameworks.html): Claude Agent SDK, Google ADK, LangGraph, CrewAI, and the three-call contract that needs none of them.
 
 ### The standard
-- [AEGS](https://aegoll.github.io/tesoro/aegs.html): Twelve sections, 90 clauses, 151 test vectors, and a suite that scores anything emitting Decision Records.
+- [AEGS](https://aegoll.github.io/tesoro/aegs.html): Thirteen sections, 93 clauses, 161 test vectors, and a suite that scores anything emitting Decision Records.
 
 ### Practice
 - [Get started](https://aegoll.github.io/tesoro/start.html): Install to a first refusal in about five minutes. No wallet, no testnet, no model key.

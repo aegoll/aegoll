@@ -1,0 +1,19 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/stablecoin-1-only-tightens-aegs-2",
+  "clause": "AEGS-0.1-PROF-4",
+  "operation": "evaluate_profile",
+  "description": "stablecoin-1 tightens exactly one control of aegs-2 and relaxes none.",
+  "input": {
+    "profile": "stablecoin-1",
+    "extendsProfile": "aegs-2"
+  },
+  "expect": {
+    "onlyTightens": true,
+    "loosened": [],
+    "tightened": [
+      "AMLAssessment"
+    ]
+  },
+  "note": "The list of tightened controls is pinned at exactly one, and that is the restraint being tested rather than a detail of the manifest. A vertical profile is where scope creep is cheapest -- ConformanceDeclaration, ComplianceAssessment and IncidentRecord could each be argued into an obliged entity's profile, and each would raise a bar nobody in the vertical could clear for reasons unrelated to the vertical. One new requirement is a bar; four are a wishlist. If this vector ever needs updating, the question to ask first is whether the new requirement is one the named deployment class already meets."
+}

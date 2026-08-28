@@ -495,6 +495,19 @@ def _evaluate_profile(data: dict) -> dict:
         out["tightened"] = sorted(tightened)
         return out
 
+    if "engineless" in data:
+        # PROF-6a. A profile may require a control nobody has an engine for only if it names
+        # the deployment class expected to satisfy it -- which is what stops "vertical" from
+        # becoming a label any profile can wear to escape PROF-6.
+        out["requiringWithoutClass"] = sorted(
+            f"{name}:{control}"
+            for name in data["profiles"]
+            for control in data["engineless"]
+            if RANK[Profile.load(name).requirement_for(control)] > 0
+            and not Profile.load(name).is_vertical()
+        )
+        return out
+
     if "controls" in data:
         out["allOptional"] = all(
             Profile.load(name).requirement_for(control) == "OPTIONAL"

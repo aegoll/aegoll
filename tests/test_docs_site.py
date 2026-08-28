@@ -242,3 +242,39 @@ def test_the_stablecoin_page_exists_and_says_what_the_rail_costs():
     # It must not overclaim: this layer holds no funds and screens nobody.
     assert "no custody" in t
     assert "no regulatory compliance is claimed" in t
+
+
+def test_the_standards_page_counts_match_the_standard_beside_it():
+    """The counts on the AEGS page must be the counts in `aegs/`, not the counts when written.
+
+    These went stale silently and stayed that way. The page advertised 151 vectors and 21
+    evidence vectors while the standard held 161 and 28, because adding a vector upstream
+    touches nothing here and nobody re-reads a number that looks plausible.
+
+    That is the same failure this file was written for -- generated output drifting from its
+    source -- one repository further out. A count on a public page is a claim about another
+    repository, so it needs the same treatment as the vendored copies: checked against the
+    thing it describes, and skipped rather than failed when that thing is not present.
+    """
+    sibling = ROOT.parent / "aegs"
+    if not sibling.is_dir():
+        pytest.skip("no sibling aegs/ checkout; nothing to check the counts against")
+
+    page = (DOCS / "aegs.html").read_text(encoding="utf-8")
+
+    families = {p.name: len(list(p.glob("*.json"))) for p in (sibling / "vectors").iterdir() if p.is_dir()}
+    total = sum(families.values())
+    clauses = len(re.findall(r"(?m)^## AEGS-0\.1-[A-Z]+-\d+[a-z]?", "\n".join(
+        f.read_text(encoding="utf-8") for f in sorted((sibling / "spec").glob("*.md"))
+    )))
+
+    assert f"{total} test vectors" in page, (
+        f"the page does not say {total} test vectors; aegs/vectors holds that many"
+    )
+    assert f"<strong>{clauses}</strong>" in page, (
+        f"the page does not show {clauses} clauses; aegs/spec defines that many headings"
+    )
+    for family in ("evidence", "profiles", "verdicts", "arithmetic"):
+        assert f"<code>{family}</code></td><td>{families[family]}</td>" in page, (
+            f"the {family} family holds {families[family]} vectors and the page disagrees"
+        )

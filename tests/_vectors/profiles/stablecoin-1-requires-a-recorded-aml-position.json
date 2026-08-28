@@ -1,0 +1,15 @@
+{
+  "aegsVersion": "0.1",
+  "id": "profiles/stablecoin-1-requires-a-recorded-aml-position",
+  "clause": "AEGS-0.1-PROF-6a",
+  "operation": "evaluate_profile",
+  "description": "stablecoin-1 requires AMLAssessment at MUST_RECORD, not MUST_EXERCISE.",
+  "input": {
+    "profile": "stablecoin-1",
+    "control": "AMLAssessment"
+  },
+  "expect": {
+    "requirement": "MUST_RECORD"
+  },
+  "note": "The level is the design. MUST_EXERCISE would require screening on every decision and would be unsatisfiable by anyone who has not bought a provider. MUST_RECORD requires the record to state a position, which an explicit null satisfies -- an entity with a provider records what it said, an entity without records that it has none, and both beat the silence every implementation emits today. What it must never become is an invented key: `assessments.aml = {\"assessed\": false}` claims the control exists and did not run, which is false where there is no control at all. Absence is truthful and absence fails this profile, so the reference implementation does not conform. That is the intended outcome."
+}

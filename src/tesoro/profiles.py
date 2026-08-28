@@ -124,6 +124,13 @@ class Profile:
     requirements: tuple[Requirement, ...]
     non_conformant: tuple[str, ...]
     source: Path | None = None
+    #: The class of deployment a *vertical* profile is written for, or None for a rung on
+    #: the general ladder. AEGS-0.1-PROF-6a: a vertical profile may require a control no
+    #: implementation has an engine for, where the class it names already meets that
+    #: requirement outside AEGS. `stablecoin-1` requires AMLAssessment on that basis, and
+    #: this implementation does not conform to it -- which is the intended reading, not a
+    #: defect. Absence of the field is meaningful, so it is read rather than defaulted away.
+    deployment_class: str | None = None
 
     @classmethod
     def load(cls, name: str) -> "Profile":
@@ -149,6 +156,7 @@ class Profile:
             ),
             non_conformant=tuple(raw.get("nonConformant") or []),
             source=path,
+            deployment_class=raw.get("deploymentClass"),
         )
 
     # --- reading the contract --------------------------------------------
@@ -158,6 +166,18 @@ class Profile:
             if req.control == control:
                 return req.requirement
         return "OPTIONAL"  # absent from the list means optional by omission
+
+    def is_vertical(self) -> bool:
+        """True for a profile written for one class of deployment. PROF-6a.
+
+        The distinction is not cosmetic: PROF-6 forbids a *ladder* profile from requiring a
+        control nobody has an engine for, because every implementation must claim some rung
+        and an unreachable one moves the real bar down. A vertical profile is claimed by one
+        class, so the question becomes whether that class can satisfy it -- and for
+        `stablecoin-1` the class is obliged entities, for whom screening is a licence
+        condition they already meet.
+        """
+        return bool(self.deployment_class)
 
     def required_controls(self) -> tuple[Requirement, ...]:
         return tuple(r for r in self.requirements if r.required)
