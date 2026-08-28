@@ -144,6 +144,43 @@ def _counterparty(vendor: dict[str, Any]) -> dict[str, Any]:
     return block
 
 
+def _transfer_information(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """The transfer block, or None when an operator supplied nothing. AEGS-0.1-CTRL-6b.
+
+    Two things this deliberately does not do.
+
+    It does not **invent** a block. Absent means nobody supplied originator or beneficiary
+    information, which is the ordinary case and an honest one; emitting an empty shell would make
+    every record look like it was reaching for a Travel Rule obligation it is not addressing.
+
+    It does not **transmit** anything. This function builds a record and nothing downstream sends
+    it to a counterparty. The prohibition is normative rather than incidental because a record
+    shaped like a payment message is one refactor away from being used as one.
+
+    What it always adds where the block exists is `initiation`, and that is the point of the
+    block. R.16's required set names whose money moved and never who instructed the movement, so a
+    transfer record of an agent-initiated payment names a person who pressed nothing -- and is
+    indistinguishable from one a person reviewed and sent, or one made with stolen credentials.
+    The layer knows which of those happened. Here is where it says so.
+    """
+    supplied = payload.get("transferInformation")
+    if not supplied:
+        return None
+
+    identity = payload.get("identity") or {}
+    known = bool(identity.get("known", False))
+    return {
+        "originator": supplied.get("originator"),
+        "beneficiary": supplied.get("beneficiary"),
+        "initiation": {
+            # Never `direct`. A person driving this layer is asking it to decide, not confirming
+            # a specific transfer, and claiming otherwise would overstate what happened.
+            "mode": "delegated" if known else "unknown",
+            "delegationDepth": identity.get("delegationDepth"),
+        },
+    }
+
+
 def _deciding_engine(decision: dict[str, Any]) -> str:
     """Which control determined the verdict. AEGS-0.1-VERD-4 and VERD-4a.
 
@@ -261,6 +298,9 @@ def from_audit_entry(
             "purpose": tx.get("purpose"),
             "counterparty": _counterparty(vendor),
         },
+        # Omitted entirely when an operator supplied nothing -- an empty block would make every
+        # record look like it was reaching for an obligation it is not addressing. CTRL-6b.
+        **({"transferInformation": _transfer} if (_transfer := _transfer_information(payload)) else {}),
         "decision": final_verdict,
         "authorization": {
             "decidingEngine": "advisor"

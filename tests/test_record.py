@@ -479,3 +479,74 @@ def test_a_policy_rule_can_act_on_the_state_and_not_only_the_value():
     assert undeclared["vendor.jurisdiction_state"] == "undeclared"
     assert unknown["vendor.jurisdiction_state"] == "unknown"
     assert declared["vendor.jurisdiction_state"] == "declared"
+
+
+# --- AEGS-0.1-CTRL-6b: transfer information, recorded and never transmitted ---
+
+
+def test_no_transfer_block_when_an_operator_supplied_nothing():
+    """Absent, not an empty shell. AEGS-0.1-CTRL-6b.
+
+    Emitting `{"originator": null, "beneficiary": null, ...}` on every decision would make every
+    record look like it was reaching for a Travel Rule obligation this layer is not addressing.
+    Absence is the ordinary case and an honest one.
+    """
+    from tesoro.record import _transfer_information
+
+    assert _transfer_information({}) is None
+    assert _transfer_information({"identity": {"known": True}}) is None
+
+
+def test_the_initiation_mode_is_the_field_the_transfer_format_lacks():
+    """The reason the block exists, rather than a detail of it.
+
+    R.16's required set names whose money moved and never who instructed the movement, so a
+    transfer record of an agent-initiated payment names a person who pressed nothing. This layer
+    knows which of *reviewed and sent*, *delegated under policy* and *credentials compromised*
+    actually happened, and refuses to emit the block without saying.
+    """
+    from tesoro.record import _transfer_information
+
+    supplied = {"originator": {"name": "Jayzilva Ltd"}, "beneficiary": None}
+
+    delegated = _transfer_information({
+        "transferInformation": supplied,
+        "identity": {"known": True, "delegationDepth": 2},
+    })
+    assert delegated["initiation"] == {"mode": "delegated", "delegationDepth": 2}
+
+    # No identity exercised: `unknown`, never `direct`. `direct` would be the flattering guess.
+    unknown = _transfer_information({"transferInformation": supplied, "identity": {"known": False}})
+    assert unknown["initiation"]["mode"] == "unknown"
+    assert unknown["initiation"]["delegationDepth"] is None
+
+
+def test_this_layer_never_claims_a_transfer_was_directly_initiated():
+    """`direct` is in the vocabulary and this implementation must not produce it.
+
+    A person driving this layer is asking it to decide, not confirming a specific transfer the
+    way a card-present cardholder does. Recording `direct` would overstate what happened, and the
+    mode is the one field here that is *not* the operator's to declare -- so nobody else can put
+    it there either.
+    """
+    from tesoro.record import _transfer_information
+
+    for identity in ({"known": True, "delegationDepth": 0}, {"known": False}, {}):
+        block = _transfer_information({"transferInformation": {"originator": None}, "identity": identity})
+        assert block["initiation"]["mode"] != "direct"
+
+
+def test_the_operator_cannot_declare_the_initiation_mode():
+    """It is the layer's account of its own operation, not a field to be asserted.
+
+    If a caller could set it, the one fact this block adds over a payment message format becomes
+    another thing somebody can simply write down -- and a record that can be told what to say
+    about its own provenance is not evidence.
+    """
+    import dataclasses
+
+    from tesoro.domain import TransferInformation
+
+    fields = {f.name for f in dataclasses.fields(TransferInformation)}
+    assert fields == {"originator", "beneficiary"}, fields
+    assert "initiation" not in TransferInformation().as_dict()

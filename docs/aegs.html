@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>AEGS — the standard Tesoro implements</title>
-<meta name="description" content="Thirteen sections, 94 clauses, 164 test vectors, and a suite that scores anything emitting Decision Records.">
+<meta name="description" content="Thirteen sections, 95 clauses, 167 test vectors, and a suite that scores anything emitting Decision Records.">
 <link rel="canonical" href="https://tesoro-labs.github.io/tesoro/aegs.html">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
 <meta name="author" content="Jayzilva">
@@ -15,12 +15,12 @@
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="tesoro">
 <meta property="og:title" content="AEGS — the standard Tesoro implements">
-<meta property="og:description" content="Thirteen sections, 94 clauses, 164 test vectors, and a suite that scores anything emitting Decision Records.">
+<meta property="og:description" content="Thirteen sections, 95 clauses, 167 test vectors, and a suite that scores anything emitting Decision Records.">
 <meta property="og:url" content="https://tesoro-labs.github.io/tesoro/aegs.html">
 <meta property="og:locale" content="en">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AEGS — the standard Tesoro implements">
-<meta name="twitter:description" content="Thirteen sections, 94 clauses, 164 test vectors, and a suite that scores anything emitting Decision Records.">
+<meta name="twitter:description" content="Thirteen sections, 95 clauses, 167 test vectors, and a suite that scores anything emitting Decision Records.">
 
 <!-- Structured data. An answer engine quoting this page needs to know what kind of thing it is,
      who wrote it and what software it documents; a crawler infers none of that from prose. Kept
@@ -33,7 +33,7 @@
       "@type": "TechArticle",
       "@id": "https://tesoro-labs.github.io/tesoro/aegs.html#article",
       "headline": "AEGS \u2014 the standard Tesoro implements",
-      "description": "Thirteen sections, 94 clauses, 164 test vectors, and a suite that scores anything emitting Decision Records.",
+      "description": "Thirteen sections, 95 clauses, 167 test vectors, and a suite that scores anything emitting Decision Records.",
       "inLanguage": "en",
       "isPartOf": {
         "@id": "https://tesoro-labs.github.io/tesoro/#website"
@@ -125,7 +125,7 @@
     <li><a href="#three-names-and-why">Three names, and why the distinction matters</a></li>
     <li><a href="#twelve-sections-90-clauses">Twelve sections, 90 clauses</a></li>
     <li><a href="#the-clause-that-does">The clause that does the most work</a></li>
-    <li><a href="#164-test-vectors-and">164 test vectors, and they execute</a></li>
+    <li><a href="#167-test-vectors-and">167 test vectors, and they execute</a></li>
     <li><a href="#conformance-scoring-an-implementation">Conformance: scoring an implementation</a></li>
     <li><a href="#open">The largest open question</a></li>
     <li><a href="#what-is-closed-and">What is closed, and how</a></li>
@@ -190,9 +190,9 @@
 <table>
   <thead><tr><th>Count</th><th>Is</th></tr></thead>
   <tbody>
-    <tr><td><strong>94</strong></td><td>clauses defined by their own heading</td></tr>
-    <tr><td><strong>73</strong></td><td>of those that contain a normative <strong>MUST</strong> or <strong>MUST NOT</strong></td></tr>
-    <tr><td><strong>59</strong></td><td>clauses cited by at least one <a href="https://github.com/tesoro-labs/aegs/tree/main/vectors">test vector</a></td></tr>
+    <tr><td><strong>95</strong></td><td>clauses defined by their own heading</td></tr>
+    <tr><td><strong>74</strong></td><td>of those that contain a normative <strong>MUST</strong> or <strong>MUST NOT</strong></td></tr>
+    <tr><td><strong>60</strong></td><td>clauses cited by at least one <a href="https://github.com/tesoro-labs/aegs/tree/main/vectors">test vector</a></td></tr>
   </tbody>
 </table>
 </div>
@@ -244,7 +244,7 @@
   </p>
 </div>
 
-<h2 id="164-test-vectors-and">164 test vectors, and they execute</h2>
+<h2 id="167-test-vectors-and">167 test vectors, and they execute</h2>
 
 <p>
   Language-neutral JSON: an input, an expected output, and the clause in dispute. When one fails, the
@@ -260,7 +260,7 @@
     <tr><td><code>verdicts</code></td><td>32</td><td>narrowing, attribution, order-forward vs order-reversed</td></tr>
     <tr><td><code>envelopes</code></td><td>27</td><td>headroom, exact-equality boundaries, channel separation</td></tr>
     <tr><td><code>evidence</code></td><td>28</td><td>canonical form byte-for-byte, and four tamper scenarios</td></tr>
-    <tr><td><code>controls</code></td><td>14</td><td>the closed name set, exact matching, jurisdiction declared not inferred</td></tr>
+    <tr><td><code>controls</code></td><td>17</td><td>the closed name set, exact matching, jurisdiction and initiation declared not inferred</td></tr>
     <tr><td><code>profiles</code></td><td>13</td><td>requirement levels, extends-only-tightens, and the ladder/vertical split</td></tr>
     <tr><td><code>fourstates</code> · <code>identity</code> · <code>path</code></td><td>17</td><td>state classification, disclosure, the delegation clamp</td></tr>
   </tbody>

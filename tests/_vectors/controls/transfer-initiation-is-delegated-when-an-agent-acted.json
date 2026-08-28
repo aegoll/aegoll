@@ -1,0 +1,18 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/transfer-initiation-is-delegated-when-an-agent-acted",
+  "clause": "AEGS-0.1-CTRL-6b",
+  "operation": "classify_initiation",
+  "description": "A transfer requested by a registered agent is recorded as delegated, with its depth.",
+  "input": {
+    "identity": {
+      "known": true,
+      "delegationDepth": 2
+    }
+  },
+  "expect": {
+    "mode": "delegated",
+    "delegationDepth": 2
+  },
+  "note": "This is the field R.16 does not have. Its required set -- name, account number or unique transaction reference, address or national identity number or customer identification number or date and place of birth, plus LEI or BIC for a legal person -- identifies whose money moved and never who instructed the movement. A transfer record of an agent-initiated payment therefore names a person who pressed nothing, and nothing in the format separates them from a person who reviewed and sent it or one whose credentials were stolen. An AEGL holds that fact and this is where it goes."
+}

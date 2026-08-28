@@ -149,6 +149,10 @@ class AuditLog:
             "decision": decision.as_dict(),
             "settlement": settlement,
         }
+        # CTRL-6b: recorded, never transmitted. It enters the hash chain like everything else,
+        # and nothing downstream sends it anywhere. Omitted when an operator supplied nothing.
+        if request.transfer_information is not None:
+            payload["transferInformation"] = request.transfer_information.as_dict()
         if intent is not None:
             payload["intent"] = intent
         if identity is not None:

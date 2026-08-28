@@ -1,0 +1,17 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/transfer-initiation-is-unknown-without-an-identity",
+  "clause": "AEGS-0.1-CTRL-6b",
+  "operation": "classify_initiation",
+  "description": "With no agent identity exercised, the initiation mode is unknown rather than direct.",
+  "input": {
+    "identity": {
+      "known": false
+    }
+  },
+  "expect": {
+    "mode": "unknown",
+    "delegationDepth": null
+  },
+  "note": "`unknown` is an answer and `direct` would be the flattering guess. A layer that cannot say who acted must not record that a person did. STATE-1 applied to initiation, and the same rule that keeps a cold-start trust score from being rendered as a measured zero."
+}

@@ -109,6 +109,52 @@
         }
       }
     },
+    "transferInformation": {
+      "description": "Originator and beneficiary information AN OPERATOR SUPPLIED, and how the transfer was initiated. AEGS-0.1-CTRL-6b.\n\nThis is a RECORD, never a message. An implementation must not transmit these fields as part of the transfer, must not represent their presence as satisfying any transfer-information obligation, and must not populate any of them from something it inferred. The whole block is optional: absent means an operator supplied nothing, which is the ordinary case.\n\n`initiation` is required whenever the block is present, and it is the reason the block exists. FATF R.16's required set -- name, account number or unique transaction reference, address or national identity number or customer identification number or date and place of birth, plus LEI or BIC for a legal person -- identifies whose money moved and never who instructed the movement. An agent-initiated payment therefore produces a transfer record naming a person who pressed nothing, indistinguishable from one who reviewed and sent it and from one whose credentials were compromised. An AEGL holds that missing fact, and this is where it goes.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "initiation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "originator": {
+          "description": "The party whose funds move. In ISO 20022 terms the debtor, per INR.16 footnote 48 -- not the initiating party.",
+          "$ref": "#/$defs/transferParty"
+        },
+        "beneficiary": {
+          "$ref": "#/$defs/transferParty"
+        },
+        "initiation": {
+          "description": "How this transfer came to be requested. Not inferred from anything observable: it is the layer's record of its own operation, which is exactly what separates it from the declared fields above.",
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "description": "`direct`: a person requested this specific transfer. `delegated`: software requested it under authority a person conferred earlier, and the record's `actor` says whose. `unknown`: no agent identity was exercised, so the layer cannot say -- which is an answer, not a default.",
+              "enum": [
+                "direct",
+                "delegated",
+                "unknown"
+              ]
+            },
+            "delegationDepth": {
+              "description": "How many hops from the accountable authority, where a chain was exercised. Null where there is no chain.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
     "decision": {
       "description": "The final verdict, after every clamp.",
       "enum": [
@@ -566,6 +612,59 @@
           }
         },
         "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "transferParty": {
+      "description": "A party to a transfer, AS DECLARED BY AN OPERATOR. Every field is optional and every field is nullable, because absent (nobody supplied it) and null (an operator was asked and does not know) are different answers -- AEGS-0.1-CTRL-6a and STATE-1. Nothing here is derived from anything observable.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "account": {
+          "description": "An account number, or a unique transaction reference where no account is used. R.16 accepts either and AEGS does not distinguish them: a layer that cannot verify which one it was handed should not claim to know.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identifier": {
+          "description": "One further identifier, named by its scheme rather than guessed at. AEGS defines no scheme vocabulary -- `lei`, `bic`, `nationalId`, `customerId` and `dateAndPlaceOfBirth` are what R.16 names, and an operator may use another. Validating a value against its scheme would be a claim to have checked it.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "scheme"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "scheme": {
+              "type": "string",
+              "minLength": 1
+            },
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "jurisdiction": {
+          "description": "Declared, never inferred. AEGS-0.1-CTRL-6a.",
           "type": [
             "string",
             "null"

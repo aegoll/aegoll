@@ -202,6 +202,72 @@ class Vendor:
         return None if isinstance(self.jurisdiction, Missing) else self.jurisdiction
 
 
+#: How a transfer came to be requested. AEGS-0.1-CTRL-6b.
+#:
+#: This layer never emits `direct`. A person driving the CLI is still asking the layer to decide,
+#: not confirming a specific transfer the way a card-present cardholder does, and claiming
+#: otherwise would be the kind of flattering guess CTRL-6a exists to forbid. `direct` is in the
+#: vocabulary for implementations that genuinely have a per-transfer human confirmation step.
+INITIATION_MODES = ("direct", "delegated", "unknown")
+
+
+@dataclass(frozen=True)
+class TransferParty:
+    """A party to a transfer, as an operator declared them. AEGS-0.1-CTRL-6b.
+
+    Nothing here is derived. The layer holds an address, a vendor id and a settlement chain and
+    uses none of them to fill these in -- see `Vendor.jurisdiction` for the same rule stated at
+    length. Every field is optional and every field may be None, because *nobody supplied it* and
+    *an operator was asked and does not know* are different answers.
+    """
+
+    name: str | None = None
+    #: An account number, or a unique transaction reference where no account is used. R.16
+    #: accepts either and this does not try to tell them apart: a layer that cannot verify which
+    #: one it was handed should not claim to know.
+    account: str | None = None
+    #: `(scheme, value)` -- e.g. `("lei", "5493...")`. The scheme is named rather than guessed,
+    #: and the value is never validated against it, because validating would be a claim to have
+    #: checked something.
+    identifier: tuple[str, str | None] | None = None
+    jurisdiction: str | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "name": self.name,
+            "account": self.account,
+            "jurisdiction": self.jurisdiction,
+        }
+        if self.identifier is not None:
+            scheme, value = self.identifier
+            out["identifier"] = {"scheme": scheme, "value": value}
+        return out
+
+
+@dataclass(frozen=True)
+class TransferInformation:
+    """Originator and beneficiary information an operator supplied. **Never transmitted.**
+
+    AEGS-0.1-CTRL-6b: an implementation must not send these fields as part of the transfer and
+    must not present their presence as satisfying any transfer-information obligation. This is a
+    record. A record shaped like a Travel Rule payload is one refactor away from being sent as
+    one, which is why the prohibition is in the specification and not only in a docstring.
+
+    `initiation` is deliberately **not** a field here. It is not the operator's to declare -- it
+    is the layer's own account of how the request reached it, and letting a caller set it would
+    turn the one fact this block adds over a message format into another thing to be asserted.
+    """
+
+    originator: TransferParty | None = None
+    beneficiary: TransferParty | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "originator": self.originator.as_dict() if self.originator else None,
+            "beneficiary": self.beneficiary.as_dict() if self.beneficiary else None,
+        }
+
+
 @dataclass(frozen=True)
 class PaymentRequest:
     """A request to spend, before any decision has been made."""
@@ -218,6 +284,10 @@ class PaymentRequest:
     expected_value_atomic: int | None = None
     value_confidence: float | None = None
     quoted_at: datetime | None = None
+    #: Operator-declared originator and beneficiary information, recorded and never transmitted.
+    #: AEGS-0.1-CTRL-6b. `None` -- the ordinary case -- means nobody supplied any, and the record
+    #: omits the block entirely rather than emitting an empty one.
+    transfer_information: TransferInformation | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @property

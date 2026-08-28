@@ -1,0 +1,18 @@
+{
+  "aegsVersion": "0.1",
+  "id": "controls/transfer-initiation-depth-is-null-when-the-chain-breaks",
+  "clause": "AEGS-0.1-CTRL-6b",
+  "operation": "classify_initiation",
+  "description": "A delegation chain that cannot be walked to the top reports no depth at all.",
+  "input": {
+    "identity": {
+      "known": true,
+      "delegationDepth": null
+    }
+  },
+  "expect": {
+    "mode": "delegated",
+    "delegationDepth": null
+  },
+  "note": "A partial count is worse than none. Reporting depth 1 for a chain whose next link is not registered says ONE HOP FROM THE ACCOUNTABLE AUTHORITY, a claim about accountability nobody checked. Unverifiable delegated authority is not authority, and an unverifiable depth is not a depth. The mode still says delegated because an agent did act -- only the distance is unknown."
+}

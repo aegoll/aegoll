@@ -431,6 +431,24 @@ def _classify_jurisdiction(data: dict) -> dict:
     }
 
 
+def _classify_initiation(data: dict) -> dict:
+    """AEGS-0.1-CTRL-6b, driven through the record builder rather than reimplemented.
+
+    `_transfer_information` is what actually shapes the block a record carries, so the vectors
+    exercise it directly. A runner that computed the mode itself would go green while the record
+    said something else -- the same defect as the seven anchor vectors that passed against a
+    dict shape the public API never produced.
+    """
+    from tesoro.record import _transfer_information
+
+    block = _transfer_information({
+        "transferInformation": {"originator": None, "beneficiary": None},
+        "identity": data.get("identity") or {},
+    })
+    assert block is not None, "the builder dropped a supplied block"
+    return block["initiation"]
+
+
 def _classify_control(data: dict) -> dict:
     """AEGS-0.1-CTRL-1: the name set is closed, and matching is exact.
 
@@ -587,6 +605,9 @@ def _run(vector: dict):
 
     if operation == "classify_jurisdiction":
         return _classify_jurisdiction(data)
+
+    if operation == "classify_initiation":
+        return _classify_initiation(data)
 
     if operation == "evaluate_profile":
         return _evaluate_profile(data)

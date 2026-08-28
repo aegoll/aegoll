@@ -446,3 +446,56 @@ def test_identities_are_per_agent(tmp_path):
     store.register(agent_id="a", purpose="a", now=BASE)
     assert store.get("b") is None
     assert store.get("a") is not None
+
+
+# --- AEGS-0.1-CTRL-6b: delegation depth ------------------------------------
+
+
+def test_delegation_depth_counts_hops_to_the_accountable_authority(tmp_path):
+    """`0` for an agent acting under its own registration, one more per hop."""
+    from tesoro.engines.evidence.identity import IdentityStore
+
+    store = IdentityStore(tmp_path / "identities.json")
+    store.register(agent_id="root", purpose="ops")
+    store.register(agent_id="mid", purpose="ops", parent_agent_id="root")
+    store.register(agent_id="leaf", purpose="ops", parent_agent_id="mid")
+
+    assert store.delegation_depth("root") == 0
+    assert store.delegation_depth("mid") == 1
+    assert store.delegation_depth("leaf") == 2
+
+
+def test_a_broken_chain_reports_no_depth_rather_than_a_partial_one(tmp_path):
+    """None, not 1. AEGS-0.1-CTRL-6b.
+
+    Reporting a depth of 1 for a chain whose parent is not registered says *one hop from the
+    accountable authority* -- a claim about accountability that nobody checked. The identity
+    engine already refuses to treat unverifiable delegated authority as authority; an
+    unverifiable depth gets the same treatment rather than being rounded down to a number.
+    """
+    from tesoro.engines.evidence.identity import IdentityStore
+
+    store = IdentityStore(tmp_path / "identities.json")
+    store.register(agent_id="orphan", purpose="ops", parent_agent_id="never-registered")
+
+    assert store.delegation_depth("orphan") is None
+    assert store.delegation_depth("not-registered-at-all") is None
+
+
+def test_a_delegation_cycle_terminates(tmp_path):
+    """Identities are operator-maintained JSON, so `a -> b -> a` is a file somebody can write.
+
+    Not defensive programming: without the guard this walk sits on the decision path and hangs
+    it, which is a denial of service delivered through a config file.
+    """
+    from tesoro.engines.evidence.identity import IdentityStore
+
+    store = IdentityStore(tmp_path / "identities.json")
+    store.register(agent_id="a", purpose="ops")
+    store.register(agent_id="b", purpose="ops", parent_agent_id="a")
+    raw = json.loads((tmp_path / "identities.json").read_text(encoding="utf-8"))
+    raw["a"]["parentAgentId"] = "b"
+    (tmp_path / "identities.json").write_text(json.dumps(raw), encoding="utf-8")
+
+    assert store.delegation_depth("a") is None
+    assert store.delegation_depth("b") is None

@@ -42,6 +42,7 @@
         "classify_state",
         "classify_control",
         "classify_jurisdiction",
+        "classify_initiation",
         "clamp_delegation",
         "disclose",
         "evaluate_profile",
@@ -389,8 +390,11 @@
           }
         },
         "identity": {
-          "type": "object",
-          "description": "An identity to project for an audience."
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The actor as the layer resolved it. AEGS-0.1-CTRL-6b: `known` false means no agent identity was exercised, so the initiation mode is `unknown` -- an answer, not a default. `delegationDepth` is null wherever the chain could not be walked to the accountable authority, because a partial count asserts an accountability distance nobody verified."
         },
         "audience": {
           "enum": [
@@ -828,6 +832,21 @@
             },
             "everyRequiredNamesAPath": {
               "type": "boolean"
+            },
+            "mode": {
+              "enum": [
+                "direct",
+                "delegated",
+                "unknown"
+              ],
+              "description": "AEGS-0.1-CTRL-6b initiation mode."
+            },
+            "delegationDepth": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
             }
           }
         },

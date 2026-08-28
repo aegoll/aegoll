@@ -7,7 +7,7 @@ and never to individual engines, so the composition lives in exactly one place.
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -217,7 +217,7 @@ class Tesoro:
             else None
         )
         snapshot = snapshot if snapshot is not None else self.snapshot_for(request, moment)
-        return identity_engine.evaluate(
+        verdict = identity_engine.evaluate(
             request,
             registered,
             now=moment,
@@ -225,6 +225,13 @@ class Tesoro:
             spent_today_atomic=snapshot.spent_today_atomic,
             network=request.metadata.get("network"),
         )
+        # Walked here rather than in the engine, because the engine is given one parent and the
+        # depth is a property of the whole chain. `None` when it cannot be walked to the top --
+        # a partial count would assert an accountability distance nobody verified. CTRL-6b.
+        if verdict is not None and registered is not None:
+            depth = self.identities.delegation_depth(request.agent_id)
+            verdict = replace(verdict, delegation_depth=depth)
+        return verdict
 
     def _evaluate(self, request: PaymentRequest, now: datetime | None = None):
         """One decision, and the context it was reached with.

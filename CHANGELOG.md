@@ -75,6 +75,36 @@ and hides fixes tells a reader what was added and not what was wrong.
   This adds no jurisdiction *model*, which is a separate thing the reference implementation still
   does not have and does not claim.
 
+- **Travel Rule fields, carried where an operator supplies them and never transmitted.**
+  `TransferInformation` and `TransferParty` on a `PaymentRequest`, emitted as
+  `transferInformation` in the Decision Record. Specified as
+  [`AEGS-0.1-CTRL-6b`](https://github.com/tesoro-labs/aegs/blob/main/spec/02-controls.md), with
+  three conformance vectors.
+
+  **This does not implement R.16 and is not a step towards implementing it.** The clause forbids
+  transmitting these fields, forbids presenting their presence as satisfying any
+  transfer-information obligation, and forbids populating any of them from something inferred. A
+  schema is an invitation: a record shaped like a Travel Rule payload is one refactor from being
+  sent as one.
+
+  **What it adds is the field R.16 does not have.** Checked against the consolidated FATF
+  Recommendations 2012–2025, the required set names whose money moved and never who instructed the
+  movement — so an agent-initiated payment produces a transfer record naming a person who pressed
+  nothing, indistinguishable from one who reviewed and sent it and from one whose credentials were
+  compromised. `initiation.mode` is where this layer says which, and the block is never emitted
+  without it.
+
+  **The mode is not the operator's to declare**, and a test pins that: it is the layer's account
+  of its own operation, and a record that can be told what to say about its own provenance is not
+  evidence. This implementation emits `delegated` or `unknown` and **never `direct`** — a person
+  driving it is asking it to decide, not confirming a specific transfer.
+
+- **`IdentityStore.delegation_depth()`** — hops to the accountable authority. `None`, never a
+  partial count, when the chain cannot be walked to the top: a depth of 1 for a chain whose next
+  link is unregistered claims an accountability distance nobody verified. Cycles terminate, which
+  is not defensive programming — identities are operator-maintained JSON, so `a → b → a` is a file
+  somebody can write and walking it would hang the decision path.
+
 ### Fixed
 
 - **A documented policy rule that would never have fired.** The example added to the policies page

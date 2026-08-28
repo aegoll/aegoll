@@ -11,7 +11,7 @@ it does not define one.
 Source
 ------
   repo:    tesoro-labs/aegs
-  commit:  175b43c96792a462e79de7d4cc50b518fd54cd62
+  commit:  3608466b7336d62c04184e68b74a9138bbfe568e
   path:    profiles/
   copied:  2026-08-28
 

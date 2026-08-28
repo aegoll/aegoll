@@ -231,6 +231,10 @@ class IdentityVerdict:
     verdict: Verdict
     reasons: tuple[Reason, ...] = ()
     flags: tuple[str, ...] = ()
+    #: Hops to the accountable authority, where the whole chain could be walked. `None` when it
+    #: could not -- an unregistered agent, an unregistered parent, or a cycle. AEGS-0.1-CTRL-6b
+    #: consumes this, and `None` there means the depth is unknown rather than zero.
+    delegation_depth: int | None = None
 
     @property
     def known(self) -> bool:
@@ -244,6 +248,7 @@ class IdentityVerdict:
             "status": self.identity.status if self.identity else None,
             "verdict": self.verdict.value,
             "flags": list(self.flags),
+            "delegationDepth": self.delegation_depth,
             # Only ever the vendor-safe projection here: this dict is journalled,
             # and a journal that carries controller details makes every reader of
             # it a holder of personal data.
@@ -504,6 +509,38 @@ class IdentityStore:
 
     def all(self) -> list[Identity]:
         return [Identity.from_dict(raw) for raw in self._load().values()]
+
+    def delegation_depth(self, agent_id: str) -> int | None:
+        """Hops from `agent_id` up to the agent that has no parent. AEGS-0.1-CTRL-6b.
+
+        `0` for an agent acting under its own registration. `None` when the chain cannot be
+        walked to the top -- an unregistered agent, a parent that is not registered, or a cycle.
+
+        **None rather than a partial count**, and that is the whole reason this is a method and
+        not a length. A depth of 1 reported for a chain whose next link is missing says *one hop
+        from the accountable authority*, which is a claim about accountability that nobody
+        checked. Unverifiable delegated authority is not authority, and an unverifiable depth is
+        not a depth.
+
+        The cycle guard is not defensive programming: identities are operator-maintained JSON, so
+        `a -> b -> a` is a file somebody can write, and walking it would hang the decision path.
+        """
+        raw = self._load()
+        seen: set[str] = set()
+        current = agent_id
+        depth = 0
+        while True:
+            if current in seen:
+                return None
+            seen.add(current)
+            record = raw.get(current)
+            if record is None:
+                return None
+            parent = record.get("parentAgentId")
+            if not parent:
+                return depth
+            depth += 1
+            current = parent
 
     def set_status(self, agent_id: str, status: str) -> bool:
         """Suspend, revoke or reactivate. The record of registration survives."""
