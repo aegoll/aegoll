@@ -6,7 +6,7 @@
 <meta name="referrer" content="no-referrer">
 <title>What Tesoro is — a governed budget for autonomous agents</title>
 <meta name="description" content="One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.">
-<link rel="canonical" href="https://aegoll.github.io/tesoro/tesoro.html">
+<link rel="canonical" href="https://tesoro-labs.github.io/tesoro/tesoro.html">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
 <meta name="author" content="Jayzilva">
 
@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="tesoro">
 <meta property="og:title" content="What Tesoro is — a governed budget for autonomous agents">
 <meta property="og:description" content="One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.">
-<meta property="og:url" content="https://aegoll.github.io/tesoro/tesoro.html">
+<meta property="og:url" content="https://tesoro-labs.github.io/tesoro/tesoro.html">
 <meta property="og:locale" content="en">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="What Tesoro is — a governed budget for autonomous agents">
@@ -31,15 +31,15 @@
   "@graph": [
     {
       "@type": "TechArticle",
-      "@id": "https://aegoll.github.io/tesoro/tesoro.html#article",
+      "@id": "https://tesoro-labs.github.io/tesoro/tesoro.html#article",
       "headline": "What Tesoro is \u2014 a governed budget for autonomous agents",
       "description": "One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.",
       "inLanguage": "en",
       "isPartOf": {
-        "@id": "https://aegoll.github.io/tesoro/#website"
+        "@id": "https://tesoro-labs.github.io/tesoro/#website"
       },
       "about": {
-        "@id": "https://aegoll.github.io/tesoro/#software"
+        "@id": "https://tesoro-labs.github.io/tesoro/#software"
       },
       "author": {
         "@type": "Person",
@@ -49,22 +49,22 @@
     },
     {
       "@type": "WebSite",
-      "@id": "https://aegoll.github.io/tesoro/#website",
+      "@id": "https://tesoro-labs.github.io/tesoro/#website",
       "name": "tesoro",
-      "url": "https://aegoll.github.io/tesoro/",
+      "url": "https://tesoro-labs.github.io/tesoro/",
       "description": "Documentation for tesoro, an Autonomous Economic Governance Layer: spend controls, budget envelopes and auditable evidence for AI agents that pay."
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://aegoll.github.io/tesoro/#software",
+      "@id": "https://tesoro-labs.github.io/tesoro/#software",
       "name": "tesoro",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "OS Independent",
       "programmingLanguage": "Python",
-      "softwareVersion": "0.1.1",
+      "softwareVersion": "0.1.2",
       "license": "https://www.apache.org/licenses/LICENSE-2.0",
       "downloadUrl": "https://pypi.org/project/tesoro/",
-      "codeRepository": "https://github.com/aegoll/tesoro",
+      "codeRepository": "https://github.com/tesoro-labs/tesoro",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -94,12 +94,12 @@
       <rect x="69" y="34" width="11" height="42" rx="2" fill="var(--bad)"/>
       <line x1="16" y1="34" x2="82" y2="34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>
-    <span>tesoro <span class="v">0.1.1</span></span>
+    <span>tesoro <span class="v">0.1.2</span></span>
   </a>
   <div class="links">
-    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://github.com/tesoro-labs/tesoro">GitHub</a>
     <a href="https://pypi.org/project/tesoro/">PyPI</a>
-    <a href="https://github.com/aegoll/aegs">AEGS</a>
+    <a href="https://github.com/tesoro-labs/aegs">AEGS</a>
   </div>
 </div>
 
@@ -319,7 +319,7 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
   </p>
   <p>
     The honest short form is <strong>~200 µs, varying by 2× with load</strong>, and it is recorded as
-    a <a href="https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-007">sealed
+    a <a href="https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-007">sealed
     measurement</a> with its own limitations section.
   </p>
 </div>
@@ -329,8 +329,8 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
 <p>
   Stated here rather than in a footnote, because everything above is only worth reading if this
   section is honest. Every item also appears in the
-  <a href="https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md">CHANGELOG</a> and the
-  <a href="https://github.com/aegoll/aegs/blob/main/spec/12-security-considerations.md">specification's
+  <a href="https://github.com/tesoro-labs/tesoro/blob/main/CHANGELOG.md">CHANGELOG</a> and the
+  <a href="https://github.com/tesoro-labs/aegs/blob/main/spec/12-security-considerations.md">specification's
   security section</a>.
 </p>
 
@@ -338,7 +338,7 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
   <li>
     <strong>Structuring is undefended.</strong> Forty payments of a tenth of a cent breach no value
     envelope and no rate limit — 0.08% of a daily budget, nothing refused. It ships as a
-    <a href="https://github.com/aegoll/tesoro-integrations/tree/main/usecases/aml-structuring">runnable
+    <a href="https://github.com/tesoro-labs/tesoro-integrations/tree/main/usecases/aml-structuring">runnable
     demonstration</a> rather than a paragraph. Catching it needs a control that reads the shape of a
     sequence, and no envelope does.
   </li>
@@ -348,7 +348,7 @@ chain    : 6 entries, VALID  [sha256, 128 bits]
     ceiling of 100 is 2,328 a day for $2.33, inside every value envelope. A rate limit bounds the
     rate; no product of a rate limit and a duration was ever compared against anything.
     <code>actions_per_day</code> and <code>actions_per_month</code> now bound the total.
-    <a href="https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md">AEGS-0.1-ENV-7</a> had
+    <a href="https://github.com/tesoro-labs/aegs/blob/main/spec/03-envelopes.md">AEGS-0.1-ENV-7</a> had
     permitted count envelopes since 0.1; what was missing was any window longer than an hour.
   </li>
   <li>

@@ -56,7 +56,7 @@ jobs:
     # rewrote every $id and the copies here silently kept a dead one -- so the
     # check exists because it has already been needed once.
     #
-    # Needs a token while aegoll/aegs is private, and skips without one rather
+    # Needs a token while tesoro-labs/aegs is private, and skips without one rather
     # than guessing whether a 404 means "no access" or "file deleted".
     runs-on: ubuntu-latest
     steps:

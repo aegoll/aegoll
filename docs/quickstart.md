@@ -37,7 +37,7 @@ You now have two files:
 The split matters and is the one concept worth understanding up front:
 
 - A **profile** says *which controls must exist and what must be recorded*. That is written
-  by [the standard](https://github.com/aegoll/aegs), not by you.
+  by [the standard](https://github.com/tesoro-labs/aegs), not by you.
 - A **policy pack** says *what the rules actually are*. That is yours. Edit it freely.
 
 ## 3 · Check it before an agent holds a wallet
@@ -221,7 +221,7 @@ defending against nothing — whoever can truncate the journal can rewrite the f
 | [`docs/api-surface.md`](api-surface.md) | the public API, and what is deliberately not public |
 | [`docs/adapters.md`](adapters.md) | framework and rail adapters, and writing your own |
 | [`docs/advisors.md`](advisors.md) | optional models, and why they can only ever tighten |
-| [the standard](https://github.com/aegoll/aegs) | AEGS: the spec, its test vectors, and the conformance suite |
+| [the standard](https://github.com/tesoro-labs/aegs) | AEGS: the spec, its test vectors, and the conformance suite |
 
 ## Before you rely on this
 
@@ -238,7 +238,7 @@ an envelope produces one.
 **Velocity evasion used to be the second one, and is closed.** Pacing *under* a rate limit — 97
 actions an hour against a ceiling of 100 — was unbounded in total, at 2,328 a day for $2.33. It
 closed with a count envelope over a day rather than an hour, which
-[AEGS-0.1-ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md) had permitted
+[AEGS-0.1-ENV-7](https://github.com/tesoro-labs/aegs/blob/main/spec/03-envelopes.md) had permitted
 since 0.1 and nothing had implemented.
 
 The fairest available summary of this layer, from its own red-team suite: *it resists prose;

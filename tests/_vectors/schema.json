@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aegoll.github.io/aegs/vectors/schema.json",
+  "$id": "https://tesoro-labs.github.io/aegs/vectors/schema.json",
   "title": "AEGS test vector",
   "version": "0.1",
   "description": "One input, one expected output, and the normative clause it checks. The clause is required: a vector without one is a test of somebody's implementation rather than of this specification.",

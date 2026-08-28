@@ -142,7 +142,7 @@ def test_the_vendored_profiles_declare_their_source():
     provenance = package_dir() / "_profiles" / "PROVENANCE.txt"
     assert provenance.is_file(), "vendored data with no stated source is unmaintainable"
     text = provenance.read_text(encoding="utf-8")
-    assert "commit:" in text and "aegoll/aegs" in text
+    assert "commit:" in text and "tesoro-labs/aegs" in text
 
 
 def test_none_is_an_opt_out_not_an_empty_contract():

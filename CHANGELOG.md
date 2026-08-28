@@ -26,10 +26,13 @@ The `aegoll` project was removed from PyPI rather than left as a yanked shell. I
 downloads, so nothing depended on it — and that was the whole argument for doing this now rather
 than after somebody had a config file.
 
-**AEGS and AEGL are unchanged.** They name the standard and the category, not this package, and the
-schema `$id`s still resolve through `aegoll.github.io` because the GitHub *organisation* keeps its
-name. A package whose name does not echo its standard is normal — nobody thinks `requests` sounds
-like HTTP.
+**AEGS and AEGL are unchanged.** They name the standard and the category, not this package. A
+package whose name does not echo its standard is normal — nobody thinks `requests` sounds like HTTP.
+
+> The sentence here used to add *"and the schema `$id`s still resolve through the same host because
+> the GitHub organisation keeps its name."* **That stopped being true on 2026-08-28**, when the
+> organisation was renamed from `aegoll` to `tesoro-labs`. Corrected rather than deleted, because a
+> changelog that silently drops a claim it made is the thing this file exists not to be.
 
 Notable changes to `aegoll`. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [semantic versioning](https://semver.org/), with the caveat that **`0.x` means
@@ -41,7 +44,37 @@ and hides fixes tells a reader what was added and not what was wrong.
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-08-28
+
+The first release that is not a rename or a repackage. Two red-team findings closed, a kill switch,
+anchored evidence, a vertical conformance profile the reference implementation deliberately fails,
+and **an sdist** — 0.1.0 and 0.1.1 both shipped wheel-only because a hand upload omitted it.
+
 ### Added
+
+- **The `stablecoin-1` conformance profile, vendored from the standard — and this package does
+  not conform to it.** It extends `aegs-2` and requires an AML position in the record. There is no
+  AML control here, so no `assessments/aml` key is emitted, so the profile finds against it. That
+  is the intended reading: a profile whose only claimants are the implementations that wrote it
+  measures nothing.
+
+  Getting there needed a change to the standard. `AEGS-0.1-PROF-6` forbids a profile from requiring
+  a control no implementation has an engine for, and names `AMLAssessment` as one of three — so the
+  profile was not merely unbuilt, it was **prohibited by the specification it was written for**.
+  PROF-6 is right about *ladder* profiles, where every implementation must claim a rung and an
+  unreachable rung just moves the real bar down. It is wrong about *vertical* profiles, which one
+  class of deployment claims: obliged entities settling in stablecoins already meet the AML bar by
+  licence. `AEGS-0.1-PROF-6a` permits it, guarded by the condition that the named class must
+  *already* meet the requirement outside AEGS — otherwise "vertical" is a label anything can wear.
+
+  **The obvious shortcut was tried first and was a false statement.** Emitting
+  `assessments.aml = {"assessed": false}` looks honest; it means *this control exists and did not
+  run*, and there is no AML control here at all. `IMPLEMENTED_CONTROLS` caught it within a minute.
+  Absent is not not-run.
+
+- **`Profile.is_vertical()` and `Profile.deployment_class`**, read from the manifest rather than
+  defaulted away, because the field's absence is meaningful: a profile without one is a ladder
+  profile and PROF-6 applies to it unchanged.
 
 - **Count envelopes over a long window: `actions_per_day` and `actions_per_month`.** The rate
   counters `velocity_60s` and `velocity_1h` bound how *fast* an agent acts. Nothing bounded how
@@ -55,7 +88,7 @@ and hides fixes tells a reader what was added and not what was wrong.
   rate limit was out of reach because the pacing sat under it. The red-team suite's paced-evasion
   attack moved from **undefended to defended** and is refused at action 500, attributed to
   `treasury` citing `actions_per_day`. See
-  [EXP-010](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010).
+  [EXP-010](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010).
 
   **This needed no new control and no new clause.** `AEGS-0.1-ENV-7` has permitted count
   envelopes since 0.1 and fixes their semantics; tesoro already implemented two of them. The
@@ -176,6 +209,29 @@ and hides fixes tells a reader what was added and not what was wrong.
   implementation may still be wide open, and a conformance result does not tell an adopter
   otherwise.
 
+### Changed — the organisation, 2026-08-28
+
+- **`github.com/aegoll` is now `github.com/tesoro-labs`, and the schema `$id`s moved with it.**
+  Every link a reviewer followed said `aegoll`, a coined word this project had already abandoned
+  for being unspellable, fronting a package called `tesoro`. `tesoro` is taken as a GitHub user, so
+  the org could not simply take it.
+
+  A `$id` is an identifier and moving one is not free — two documents claiming the same schema
+  under different names cannot be told apart by a validator that caches by `$id`. Done now for one
+  reason: **at 0.1 there are no external consumers, and this is the cheapest it will ever be.**
+
+  Two consequences worth stating rather than discovering. GitHub redirects renamed *repository*
+  URLs but does not keep the old Pages hostname alive, so `aegoll.github.io/...` stops resolving
+  and the name becomes claimable by anyone. And **the PyPI trusted publisher was configured with
+  `Owner: aegoll`**, so it stops matching until it is changed.
+
+  The sweep was two narrow patterns, not a blanket replace. `aegoll` was also the *package* name
+  for its first two releases, and this file says so on purpose — `pip install aegoll`,
+  `import aegoll`, `aegoll[langgraph]`, `.aegoll/`, `pypi.org/project/aegoll/`. A blanket rename
+  would have turned all of those into false statements, and two of them did survive the first
+  attempt long enough to be caught by a dry run. Sealed records under `research/experiments/` are
+  untouched: EXP-007 measured the published `aegoll` package, which is true and stays true.
+
 ### Fixed
 
 - **The red-team CI job had been green against nothing since it was added.** It tested for a
@@ -196,7 +252,7 @@ can omit a file without telling anyone -- which is exactly what happened.
   `0.1.1` publishes both, because the workflow builds `dist/*` and uploads the directory rather
   than a file somebody remembered to name.
 - **The trusted-publishing setup instructions in `release.yml` gave the wrong owner.** They said
-  `Owner: tesoro`; the owner is the *organisation*, `aegoll` (`github.com/aegoll/tesoro`). Anyone
+  `Owner: tesoro`; the owner is the *organisation*, `tesoro-labs` (`github.com/tesoro-labs/tesoro`). Anyone
   following the comment configured a publisher that could never match, and the failure surfaces
   minutes later as an opaque permissions error at the final step. A setup instruction that is
   wrong is worse than one that is missing: it produces confident, incorrect configuration.
@@ -218,7 +274,7 @@ can omit a file without telling anyone -- which is exactly what happened.
 
 ### Added
 
-- **Documentation site** at <https://aegoll.github.io/tesoro/> -- nine pages behind a left
+- **Documentation site** at <https://tesoro-labs.github.io/tesoro/> -- nine pages behind a left
   sidebar with per-page section navigation: the AEGL concept and its four types, the shared
   vocabulary, what Tesoro is, architecture, policies and rules, frameworks and rails, AEGS, and a
   quickstart. Section links are extracted from the headings by the generator, so a renamed

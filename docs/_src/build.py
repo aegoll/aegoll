@@ -49,7 +49,7 @@ NAV: list[tuple[str, list[tuple[str, str]]]] = [
 
 #: The canonical origin. Discovery metadata needs absolute URLs -- a relative canonical is
 #: ignored by every crawler, and an Open Graph image or URL must resolve from someone else's host.
-SITE = "https://aegoll.github.io/tesoro"
+SITE = "https://tesoro-labs.github.io/tesoro"
 
 #: One version string. The topbar used to carry a hand-typed `0.1.0` and stayed there through the
 #: 0.1.1 release, which is the argument for reading it from the package instead of retyping it.
@@ -115,9 +115,9 @@ SHELL = """<!DOCTYPE html>
     <span>tesoro <span class="v">{version}</span></span>
   </a>
   <div class="links">
-    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://github.com/tesoro-labs/tesoro">GitHub</a>
     <a href="https://pypi.org/project/tesoro/">PyPI</a>
-    <a href="https://github.com/aegoll/aegs">AEGS</a>
+    <a href="https://github.com/tesoro-labs/aegs">AEGS</a>
   </div>
 </div>
 
@@ -238,7 +238,7 @@ def json_ld(href: str, title: str, description: str, fragment: str) -> str:
             "softwareVersion": VERSION,
             "license": "https://www.apache.org/licenses/LICENSE-2.0",
             "downloadUrl": "https://pypi.org/project/tesoro/",
-            "codeRepository": "https://github.com/aegoll/tesoro",
+            "codeRepository": "https://github.com/tesoro-labs/tesoro",
             "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
             "description": (
                 "A policy-engine host that decides whether an autonomous agent may spend, before "
@@ -309,8 +309,8 @@ def write_discovery() -> None:
         "evidence.",
         "",
         f"- Package: https://pypi.org/project/tesoro/ (version {VERSION}, Apache-2.0)",
-        "- Source: https://github.com/aegoll/tesoro",
-        "- Standard: https://github.com/aegoll/aegs (AEGS 0.1: 12 sections, 90 clauses, "
+        "- Source: https://github.com/tesoro-labs/tesoro",
+        "- Standard: https://github.com/tesoro-labs/aegs (AEGS 0.1: 12 sections, 90 clauses, "
         "151 executing test vectors)",
         "",
         "## Pages",

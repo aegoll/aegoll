@@ -2,28 +2,28 @@
 
 > An Autonomous Economic Governance Layer (AEGL) for AI agents: it decides whether an agent may spend, before it spends, and records which control decided. Deterministic engines, no model in the decision path, integer money, append-only hash-chained evidence.
 
-- Package: https://pypi.org/project/tesoro/ (version 0.1.1, Apache-2.0)
-- Source: https://github.com/aegoll/tesoro
-- Standard: https://github.com/aegoll/aegs (AEGS 0.1: 12 sections, 90 clauses, 151 executing test vectors)
+- Package: https://pypi.org/project/tesoro/ (version 0.1.2, Apache-2.0)
+- Source: https://github.com/tesoro-labs/tesoro
+- Standard: https://github.com/tesoro-labs/aegs (AEGS 0.1: 12 sections, 90 clauses, 151 executing test vectors)
 
 ## Pages
 
 ### Concepts
-- [Autonomous economic governance](https://aegoll.github.io/tesoro/): An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.
-- [Four kinds of AEGL](https://aegoll.github.io/tesoro/types.html): Per-payment cap, cumulative envelope, governed budget, behavioural. Ordered by what each can express, and where the useful boundary falls.
-- [The shared vocabulary](https://aegoll.github.io/tesoro/vocabulary.html): The words this documentation uses precisely: two channels, four verdicts, thirteen controls, envelopes, and the four states.
-- [Stablecoins & irreversibility](https://aegoll.github.io/tesoro/stablecoins.html): AI agents pay in stablecoins like USDC over rails such as x402. A stablecoin payment cannot be reversed, charged back or disputed, so the only place to intervene is before it happens. What that changes about spend controls.
-- [What governs what](https://aegoll.github.io/tesoro/ecosystem.html): Agent governance splits into layers: what an agent may do, and what an agent may pay. How Tesoro relates to Microsoft's Agent Governance Toolkit, OPA, guardrails and observability tools, and what each is actually for.
+- [Autonomous economic governance](https://tesoro-labs.github.io/tesoro/): An autonomous agent that can pay is an agent that can overpay. What an Autonomous Economic Governance Layer is, and why existing controls do not fit.
+- [Four kinds of AEGL](https://tesoro-labs.github.io/tesoro/types.html): Per-payment cap, cumulative envelope, governed budget, behavioural. Ordered by what each can express, and where the useful boundary falls.
+- [The shared vocabulary](https://tesoro-labs.github.io/tesoro/vocabulary.html): The words this documentation uses precisely: two channels, four verdicts, thirteen controls, envelopes, and the four states.
+- [Stablecoins & irreversibility](https://tesoro-labs.github.io/tesoro/stablecoins.html): AI agents pay in stablecoins like USDC over rails such as x402. A stablecoin payment cannot be reversed, charged back or disputed, so the only place to intervene is before it happens. What that changes about spend controls.
+- [What governs what](https://tesoro-labs.github.io/tesoro/ecosystem.html): Agent governance splits into layers: what an agent may do, and what an agent may pay. How Tesoro relates to Microsoft's Agent Governance Toolkit, OPA, guardrails and observability tools, and what each is actually for.
 
 ### Tesoro
-- [What Tesoro is](https://aegoll.github.io/tesoro/tesoro.html): One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.
-- [The benchmark](https://aegoll.github.io/tesoro/benchmark.html): A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden.
-- [Architecture](https://aegoll.github.io/tesoro/architecture.html): Ten deterministic engines, the decision path, narrowing, evidence, and why no model sits on it.
-- [Policies & rules](https://aegoll.github.io/tesoro/policies.html): Policy packs are data, never code. The fixed vocabulary, the rule shape, envelopes, and profiles.
-- [Frameworks & rails](https://aegoll.github.io/tesoro/frameworks.html): Claude Agent SDK, Google ADK, LangGraph, CrewAI, and the three-call contract that needs none of them.
+- [What Tesoro is](https://tesoro-labs.github.io/tesoro/tesoro.html): One implementation of an AEGL: ten deterministic engines, no model in the decision path, attribution on every decision, and an honest list of what it does not do.
+- [The benchmark](https://tesoro-labs.github.io/tesoro/benchmark.html): A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden.
+- [Architecture](https://tesoro-labs.github.io/tesoro/architecture.html): Ten deterministic engines, the decision path, narrowing, evidence, and why no model sits on it.
+- [Policies & rules](https://tesoro-labs.github.io/tesoro/policies.html): Policy packs are data, never code. The fixed vocabulary, the rule shape, envelopes, and profiles.
+- [Frameworks & rails](https://tesoro-labs.github.io/tesoro/frameworks.html): Claude Agent SDK, Google ADK, LangGraph, CrewAI, and the three-call contract that needs none of them.
 
 ### The standard
-- [AEGS](https://aegoll.github.io/tesoro/aegs.html): Thirteen sections, 93 clauses, 161 test vectors, and a suite that scores anything emitting Decision Records.
+- [AEGS](https://tesoro-labs.github.io/tesoro/aegs.html): Thirteen sections, 93 clauses, 161 test vectors, and a suite that scores anything emitting Decision Records.
 
 ### Practice
-- [Get started](https://aegoll.github.io/tesoro/start.html): Install to a first refusal in about five minutes. No wallet, no testnet, no model key.
+- [Get started](https://tesoro-labs.github.io/tesoro/start.html): Install to a first refusal in about five minutes. No wallet, no testnet, no model key.

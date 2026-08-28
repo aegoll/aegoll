@@ -8,11 +8,11 @@
 > heuristic; and it would close paced evasion while only *bounding* structuring. All three held.
 > `actions_per_day: 500` and `actions_per_month: 10000` now ship in the default pack, paced
 > evasion moved from undefended to defended, and structuring did not
-> ([EXP-010](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010)).
+> ([EXP-010](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010)).
 >
 > **What it got wrong:** it treated the count envelope as something the standard could not
 > express, and recommended an AEGS 0.2 clause family on that basis. **AEGS 0.1 already specifies
-> count envelopes — [ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md) — and
+> count envelopes — [ENV-7](https://github.com/tesoro-labs/aegs/blob/main/spec/03-envelopes.md) — and
 > tesoro already implemented two of them, `velocity_60s` and `velocity_1h`.** The gap was a
 > *window*, not a control and not a clause. A 0.2 section was drafted and thrown away.
 >
@@ -56,7 +56,7 @@ paces under whatever it is. The quantity these attacks grow is one no control re
 makes them structural rather than parametric.
 
 A corollary that constrains the fix: **if the new control closes these by tightening an existing
-envelope, it has not closed them.** [EXP-009's report](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-009)
+envelope, it has not closed them.** [EXP-009's report](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-009)
 records that prediction — both attacks must become `DEFENDED` attributed to the *same new control*,
 and an attribution to `treasury` means a threshold moved and the attacks should be re-parameterised
 until they are out of reach again.

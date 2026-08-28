@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tesoro"
-version = "0.1.1"
+version = "0.1.2"
 description = "Autonomous Economic Governance Layer — decide, cap and prove what an autonomous agent spends"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -67,11 +67,11 @@ dev = ["pytest>=8.0", "build>=1.2", "twine>=5.0", "jsonschema>=4.20"]
 tesoro = "tesoro.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aegoll/tesoro"
-Documentation = "https://aegoll.github.io/tesoro/"
-Standard = "https://github.com/aegoll/aegs"
-Examples = "https://github.com/aegoll/tesoro-integrations"
-Changelog = "https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/tesoro-labs/tesoro"
+Documentation = "https://tesoro-labs.github.io/tesoro/"
+Standard = "https://github.com/tesoro-labs/aegs"
+Examples = "https://github.com/tesoro-labs/tesoro-integrations"
+Changelog = "https://github.com/tesoro-labs/tesoro/blob/main/CHANGELOG.md"
 
 # src/ layout. The prototype used a flat one, which hid eleven places where the
 # package resolved paths outside itself -- see PLAN.md F-A1. A src/ layout makes

@@ -2,7 +2,7 @@ Vendored AEGS schemas — package data, not a source of truth.
 
 The canonical schemas live in the standard's own repository:
 
-    https://github.com/aegoll/aegs   ->   schemas/
+    https://github.com/tesoro-labs/aegs   ->   schemas/
 
 They are copied here so that `tesoro` can validate what it emits without a network
 call and without assuming a sibling directory exists on disk. The prototype resolved
@@ -11,7 +11,7 @@ inside the monorepo — an installed wheel has no sibling `aegs/`. See PLAN.md F
 
 Source
 ------
-  repo:    aegoll/aegs
+  repo:    tesoro-labs/aegs
   commit:  4641e15dfc30ec551b707ca908873b68cc215021
   path:    schemas/
   copied:  2026-08-17
@@ -37,7 +37,7 @@ schema is worse than one that fails loudly.
 
 This is not hypothetical. It happened within hours of the first pin: the standard
 rewrote every `$id` from `https://aegs.dev/...` (a host that does not resolve) to
-`https://aegoll.github.io/aegs/...`, and all three copies here silently kept the dead
+`https://tesoro-labs.github.io/aegs/...`, and all three copies here silently kept the dead
 identifier. Nothing failed. That is precisely the failure mode the rules below exist
 for, and it argues for the CI check being built sooner rather than later.
 
@@ -51,4 +51,4 @@ Two rules:
 Licence
 -------
 The AEGS specification and its schemas are CC-BY-4.0. Attribution: Jayzilva,
-https://github.com/aegoll/aegs
+https://github.com/tesoro-labs/aegs

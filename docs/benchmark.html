@@ -6,7 +6,7 @@
 <meta name="referrer" content="no-referrer">
 <title>The benchmark — 18 adversarial attacks against a spend control, and what it still fails</title>
 <meta name="description" content="A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden.">
-<link rel="canonical" href="https://aegoll.github.io/tesoro/benchmark.html">
+<link rel="canonical" href="https://tesoro-labs.github.io/tesoro/benchmark.html">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
 <meta name="author" content="Jayzilva">
 
@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="tesoro">
 <meta property="og:title" content="The benchmark — 18 adversarial attacks against a spend control, and what it still fails">
 <meta property="og:description" content="A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden.">
-<meta property="og:url" content="https://aegoll.github.io/tesoro/benchmark.html">
+<meta property="og:url" content="https://tesoro-labs.github.io/tesoro/benchmark.html">
 <meta property="og:locale" content="en">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="The benchmark — 18 adversarial attacks against a spend control, and what it still fails">
@@ -31,15 +31,15 @@
   "@graph": [
     {
       "@type": "TechArticle",
-      "@id": "https://aegoll.github.io/tesoro/benchmark.html#article",
+      "@id": "https://tesoro-labs.github.io/tesoro/benchmark.html#article",
       "headline": "The benchmark \u2014 18 adversarial attacks against a spend control, and what it still fails",
       "description": "A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended \u2014 and the two open ones are published rather than hidden.",
       "inLanguage": "en",
       "isPartOf": {
-        "@id": "https://aegoll.github.io/tesoro/#website"
+        "@id": "https://tesoro-labs.github.io/tesoro/#website"
       },
       "about": {
-        "@id": "https://aegoll.github.io/tesoro/#software"
+        "@id": "https://tesoro-labs.github.io/tesoro/#software"
       },
       "author": {
         "@type": "Person",
@@ -49,22 +49,22 @@
     },
     {
       "@type": "WebSite",
-      "@id": "https://aegoll.github.io/tesoro/#website",
+      "@id": "https://tesoro-labs.github.io/tesoro/#website",
       "name": "tesoro",
-      "url": "https://aegoll.github.io/tesoro/",
+      "url": "https://tesoro-labs.github.io/tesoro/",
       "description": "Documentation for tesoro, an Autonomous Economic Governance Layer: spend controls, budget envelopes and auditable evidence for AI agents that pay."
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://aegoll.github.io/tesoro/#software",
+      "@id": "https://tesoro-labs.github.io/tesoro/#software",
       "name": "tesoro",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "OS Independent",
       "programmingLanguage": "Python",
-      "softwareVersion": "0.1.1",
+      "softwareVersion": "0.1.2",
       "license": "https://www.apache.org/licenses/LICENSE-2.0",
       "downloadUrl": "https://pypi.org/project/tesoro/",
-      "codeRepository": "https://github.com/aegoll/tesoro",
+      "codeRepository": "https://github.com/tesoro-labs/tesoro",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -94,12 +94,12 @@
       <rect x="69" y="34" width="11" height="42" rx="2" fill="var(--bad)"/>
       <line x1="16" y1="34" x2="82" y2="34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>
-    <span>tesoro <span class="v">0.1.1</span></span>
+    <span>tesoro <span class="v">0.1.2</span></span>
   </a>
   <div class="links">
-    <a href="https://github.com/aegoll/tesoro">GitHub</a>
+    <a href="https://github.com/tesoro-labs/tesoro">GitHub</a>
     <a href="https://pypi.org/project/tesoro/">PyPI</a>
-    <a href="https://github.com/aegoll/aegs">AEGS</a>
+    <a href="https://github.com/tesoro-labs/aegs">AEGS</a>
   </div>
 </div>
 
@@ -236,7 +236,7 @@
   is now impossible — and does <em>not</em> refuse it, because forty trivial purchases in an
   afternoon is also what a legitimate agent does. Refusing the instance needs a control that reads
   the <em>shape</em> of a sequence, and
-  <a href="https://github.com/aegoll/tesoro/blob/main/docs/design/behavioural-monitoring.md">the design
+  <a href="https://github.com/tesoro-labs/tesoro/blob/main/docs/design/behavioural-monitoring.md">the design
   document recommends against building one deterministically</a>: structuring's signature is
   identical to a monitoring agent polling on a timer, and the difference is intent. Inferring intent
   needs a model, and no model sits in this decision path.
@@ -296,17 +296,17 @@
   <thead><tr><th>Record</th><th>Score</th><th>What it is</th></tr></thead>
   <tbody>
     <tr>
-      <td><a href="https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-008">EXP-008</a></td>
+      <td><a href="https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-008">EXP-008</a></td>
       <td>14 / 1 / 3 / 0</td>
       <td>The first baseline, against the published package</td>
     </tr>
     <tr>
-      <td><a href="https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-009">EXP-009</a></td>
+      <td><a href="https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-009">EXP-009</a></td>
       <td>14 / 1 / 3 / 0</td>
       <td><strong>Supersedes EXP-008 — its measurement of one attack was wrong</strong></td>
     </tr>
     <tr>
-      <td><a href="https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010">EXP-010</a></td>
+      <td><a href="https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010">EXP-010</a></td>
       <td><strong>15 / 1 / 2 / 0</strong></td>
       <td>After a count envelope closed paced evasion</td>
     </tr>
@@ -344,7 +344,7 @@
 
 <h2 id="running-it">Running it</h2>
 
-<pre><code>git clone https://github.com/aegoll/tesoro &amp;&amp; cd tesoro
+<pre><code>git clone https://github.com/tesoro-labs/tesoro &amp;&amp; cd tesoro
 pip install -e .
 
 python -m redteam.runner            <span class="c"># the readable report</span>
@@ -431,7 +431,7 @@ pytest tests/test_redteam.py -q     <span class="c"># scored against the recorde
   governance whose scoring separates a defence from a coincidence</strong>, and a specification that
   requires <em>which control decided</em> as an independently tested property rather than an optional
   field. Both are checkable claims, and
-  <a href="https://github.com/aegoll/research">the prior-art survey</a> records what would falsify
+  <a href="https://github.com/tesoro-labs/research">the prior-art survey</a> records what would falsify
   them.
 </p>
 

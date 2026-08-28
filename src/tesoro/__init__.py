@@ -53,4 +53,4 @@ __all__ = [
     "usd_to_atomic",
 ]
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"

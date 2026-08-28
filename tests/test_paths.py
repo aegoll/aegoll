@@ -152,7 +152,7 @@ def test_vendored_schemas_are_reachable_and_declared():
     provenance = package_dir() / "_schemas" / "PROVENANCE.txt"
     assert provenance.is_file(), "vendored data with no stated source is unmaintainable"
     text = provenance.read_text(encoding="utf-8")
-    assert "commit:" in text and "aegoll/aegs" in text
+    assert "commit:" in text and "tesoro-labs/aegs" in text
 
 
 @pytest.mark.parametrize("module_name", ["tesoro", "tesoro.config", "tesoro.advisors"])

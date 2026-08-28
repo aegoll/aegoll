@@ -11,7 +11,7 @@ name: release
 # ONE-TIME SETUP, done in the browser and not by this file:
 #
 #   pypi.org -> your project -> Manage -> Publishing -> Add a new publisher -> GitHub
-#     Owner:            aegoll        <-- the ORG, not the repo. github.com/aegoll/tesoro
+#     Owner:            tesoro-labs   <-- the ORG, not the repo. github.com/tesoro-labs/tesoro
 #     Repository:       tesoro
 #     Workflow name:    release.yml
 #     Environment:      pypi

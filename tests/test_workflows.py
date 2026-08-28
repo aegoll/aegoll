@@ -110,11 +110,15 @@ def test_the_publish_job_holds_no_token_and_can_mint_one():
 def test_the_setup_instructions_name_the_organisation_as_the_owner():
     """The defect that made every attempt fail with an opaque permissions error.
 
-    The comment said `Owner: tesoro`. The owner of `github.com/aegoll/tesoro` is `aegoll`; the
-    repository is `tesoro`. Anyone following the instruction configured a publisher that could
-    never match, and PyPI's refusal names none of the four fields. Checked here because the
-    instruction is the only place those four values are written down, and being confidently
-    wrong is worse than being absent.
+    The comment said `Owner: tesoro`. The owner was the *organisation* and the repository is
+    `tesoro`. Anyone following the instruction configured a publisher that could never match, and
+    PyPI's refusal names none of the four fields. Checked here because the instruction is the only
+    place those four values are written down, and being confidently wrong is worse than absent.
+
+    **Updated 2026-08-28: the organisation was renamed `aegoll` -> `tesoro-labs`.** A rename
+    silently invalidates the publisher on PyPI, which is the same opaque failure from a second
+    cause -- so this test is also the reminder that the publisher must be edited whenever the
+    value below changes. Nothing else in either repository would notice.
     """
     release = next(p for p in WORKFLOWS if p.name == "release.yml")
     setup = [
@@ -127,7 +131,10 @@ def test_the_setup_instructions_name_the_organisation_as_the_owner():
         line.lstrip("# ").split(":", 1)[0]: line.split(":", 1)[1].split("<--")[0].strip()
         for line in setup
     }
-    assert values["Owner"] == "aegoll", f"Owner must be the organisation, got {values['Owner']!r}"
+    assert values["Owner"] == "tesoro-labs", (
+        f"Owner must be the organisation, got {values['Owner']!r}. If the organisation was renamed, "
+        "the trusted publisher on PyPI must be edited to match or the next release fails."
+    )
     assert values["Repository"] == "tesoro"
     assert values["Workflow name"] == "release.yml"
     assert values["Environment"] == "pypi"

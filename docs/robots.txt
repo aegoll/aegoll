@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aegoll.github.io/tesoro/sitemap.xml
+Sitemap: https://tesoro-labs.github.io/tesoro/sitemap.xml

@@ -6,7 +6,7 @@
 >
 > Written before the code because the last two designs in this directory were built on premises
 > that turned out to be wrong, both times because something already existed and had not been
-> read. So: [AEGS-0.1-EVID-6](https://github.com/aegoll/aegs/blob/main/spec/07-evidence.md) has
+> read. So: [AEGS-0.1-EVID-6](https://github.com/tesoro-labs/aegs/blob/main/spec/07-evidence.md) has
 > been read in full, it is quoted below, and it settles more of this than expected.
 
 ## What the standard already settles

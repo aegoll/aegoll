@@ -53,8 +53,8 @@ Not-ported is a decision, not an omission.
 | `aegl/aegl/{app,ui,ui_demo,ui_keys,crossview}.py` | Streamlit cockpit — a library must not drag a web framework into every install. Goes to `aegoll-integrations` |
 | `aegl/aegl/{scenarios,evaluation}.py` | Demo and measurement harnesses, not library surface. Goes to `aegoll-integrations` |
 | The eleven 13-line re-export shims | Existed for an in-repo move. A fresh package does not need two import routes — and they are the shape that once made a purity test pass while checking nothing |
-| `aegs/`, `conformance/` | Belong to the standard, not the implementation. Go to `aegoll/aegs` |
+| `aegs/`, `conformance/` | Belong to the standard, not the implementation. Go to `tesoro-labs/aegs` |
 | `src/` (TypeScript), `docs/protocol/`, `data/` | The x402 rail itself. Stays in the POC, which keeps running as the seller examples buy from |
 | `EXECUTION-PLAN.md`, `docs/DISTRIBUTION-PLAN.md`, `aegl/PLAN.md` | Superseded plans. Kept in the POC as the decision record — a log with the wrong turns removed is not a log |
 | `docs/how-aegl-came-about.md`, `aegl_aegs.md` | The origin record. **Linked, never copied.** Copies drift |
-| `research/` | Sealed experiment records stay where their commit stamps remain valid. New records go to `aegoll/aegs` |
+| `research/` | Sealed experiment records stay where their commit stamps remain valid. New records go to `tesoro-labs/aegs` |

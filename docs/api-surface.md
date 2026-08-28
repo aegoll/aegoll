@@ -476,7 +476,7 @@ Recorded rather than guessed. None blocks implementation.
 - [ ] Does a custom engine get a stable id it can be referenced by in a policy pack, and who owns that namespace?
 - [ ] **Should a host be able to enumerate what is installed, and ask a cost before committing?**
   Raised by the cockpit, which needs nine symbols this document does not make public
-  ([C4.3](https://github.com/aegoll/tesoro-integrations/blob/main/cockpit/README.md) — *if the
+  ([C4.3](https://github.com/tesoro-labs/tesoro-integrations/blob/main/cockpit/README.md) — *if the
   cockpit needs a private symbol, that is a gap in the public API*). Seven are advisor-internal
   and arguably belong behind the `advisors` extra's own surface rather than the core's. **Two are
   real gaps:**

@@ -12,9 +12,9 @@ anything was refused.**
 
 [![PyPI](https://img.shields.io/pypi/v/tesoro?color=2b4c7e&label=pypi)](https://pypi.org/project/tesoro/)
 [![Python](https://img.shields.io/pypi/pyversions/tesoro?color=2b4c7e)](https://pypi.org/project/tesoro/)
-[![CI](https://github.com/aegoll/tesoro/actions/workflows/ci.yml/badge.svg)](https://github.com/aegoll/tesoro/actions/workflows/ci.yml)
+[![CI](https://github.com/tesoro-labs/tesoro/actions/workflows/ci.yml/badge.svg)](https://github.com/tesoro-labs/tesoro/actions/workflows/ci.yml)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-2b4c7e)](LICENSE)
-[![Red team](https://img.shields.io/badge/red%20team-15%2F18%20defended%2C%202%20open-9a6a00)](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-010)
+[![Red team](https://img.shields.io/badge/red%20team-15%2F18%20defended%2C%202%20open-9a6a00)](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010)
 
 *Three payments approved. The fourth stopped at the ceiling — and the record says which
 control stopped it.*
@@ -44,11 +44,11 @@ The two that work are named rather than footnoted:
 | **Journal truncation** | Any prefix of a valid hash chain is a valid hash chain, so a refused agent can delete the refusal. `verify_anchored()` closes it against an external anchor; **no anchor ships by default**, so the benchmark reports the unanchored posture |
 
 Every score is a **sealed record** with a checksum — and one of them exists because an earlier
-measurement was *wrong*: [EXP-009](https://github.com/aegoll/aegs/tree/main/research/experiments/EXP-009)
+measurement was *wrong*: [EXP-009](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-009)
 supersedes EXP-008 rather than editing it, because a record that can be revised after the fact
 stops being evidence.
 
-**📊 [The benchmark](https://aegoll.github.io/tesoro/benchmark.html)** — methodology, all 18
+**📊 [The benchmark](https://tesoro-labs.github.io/tesoro/benchmark.html)** — methodology, all 18
 attacks, the provenance, and the limitations that matter more than the score. The first of those:
 every attack was written by the author of the system under test.
 
@@ -67,14 +67,14 @@ Two things appear to be absent from that prior art:
    carry which policy applied; `AEGS` requires which control decided, and scores it separately from
    whether the verdict was right.
 
-Both are checkable claims. [The prior-art survey](https://github.com/aegoll/research) records what
+Both are checkable claims. [The prior-art survey](https://github.com/tesoro-labs/research) records what
 would falsify them.
 
-**📖 [Documentation](https://aegoll.github.io/tesoro/)** — what an AEGL is, the architecture,
+**📖 [Documentation](https://tesoro-labs.github.io/tesoro/)** — what an AEGL is, the architecture,
 policies and rules, framework adapters, and the AEGS standard. Two pages worth reading first:
-[**stablecoins and irreversibility**](https://aegoll.github.io/tesoro/stablecoins.html), which is
+[**stablecoins and irreversibility**](https://tesoro-labs.github.io/tesoro/stablecoins.html), which is
 why the controls are shaped this way, and
-[**what governs what**](https://aegoll.github.io/tesoro/ecosystem.html), which is how this relates
+[**what governs what**](https://tesoro-labs.github.io/tesoro/ecosystem.html), which is how this relates
 to action-governance tools like Microsoft's Agent Governance Toolkit.
 
 ```bash
@@ -104,12 +104,12 @@ echo $?                                         # 0 approved · 2 refused · 1 i
 tesoro report --html -o spend.html              # one self-contained page, no server
 ```
 
-Start with [`docs/quickstart.md`](https://github.com/aegoll/tesoro/blob/main/docs/quickstart.md).
+Start with [`docs/quickstart.md`](https://github.com/tesoro-labs/tesoro/blob/main/docs/quickstart.md).
 
 > **Status: pre-release.** Nothing is published yet. Ported from a working prototype and now
-> at **597 tests**, a 7/7 [AEGS](https://github.com/aegoll/aegs) conformance score with both
+> at **597 tests**, a 7/7 [AEGS](https://github.com/tesoro-labs/aegs) conformance score with both
 > levels claimable, and **151 specification test vectors executing** against 56 normative
-> clauses. See [`PLAN.md`](https://github.com/aegoll/tesoro/blob/main/PLAN.md) and [`CHANGELOG.md`](https://github.com/aegoll/tesoro/blob/main/CHANGELOG.md).
+> clauses. See [`PLAN.md`](https://github.com/tesoro-labs/tesoro/blob/main/PLAN.md) and [`CHANGELOG.md`](https://github.com/tesoro-labs/tesoro/blob/main/CHANGELOG.md).
 
 ---
 
@@ -167,7 +167,7 @@ These are not preferences. Each is enforced by a test.
 
 ## AEGS
 
-`tesoro` is a **policy-engine host**. [AEGS](https://github.com/aegoll/aegs) — the
+`tesoro` is a **policy-engine host**. [AEGS](https://github.com/tesoro-labs/aegs) — the
 Autonomous Economic Governance Standard — is one *profile* it can enforce, and the default.
 Pick it and your agent emits conformant, scoreable Decision Records without your ever having
 read the specification.
@@ -180,18 +180,18 @@ by you.
 
 | | |
 |---|---|
-| [`tesoro`](https://github.com/aegoll/tesoro) | this package |
-| [`aegs`](https://github.com/aegoll/aegs) | the standard: spec, schemas, vectors, conformance |
-| [`tesoro-integrations`](https://github.com/aegoll/tesoro-integrations) | example agents, frameworks, use cases |
+| [`tesoro`](https://github.com/tesoro-labs/tesoro) | this package |
+| [`aegs`](https://github.com/tesoro-labs/aegs) | the standard: spec, schemas, vectors, conformance |
+| [`tesoro-integrations`](https://github.com/tesoro-labs/tesoro-integrations) | example agents, frameworks, use cases |
 | [`Jayzilva/x402`](https://github.com/Jayzilva/x402) | the proof-of-concept this grew from. Read-only |
 
 ## Documentation
 
-- [`docs/quickstart.md`](https://github.com/aegoll/tesoro/blob/main/docs/quickstart.md) — governing an agent from nothing, in about five minutes
-- [`docs/api-surface.md`](https://github.com/aegoll/tesoro/blob/main/docs/api-surface.md) — the public API, and what is deliberately not public
-- [`docs/adapters.md`](https://github.com/aegoll/tesoro/blob/main/docs/adapters.md) — framework and rail adapters, and what is verified about each
-- [`PLAN.md`](https://github.com/aegoll/tesoro/blob/main/PLAN.md) — the build plan, as tracked checkboxes
-- [`PROVENANCE.md`](https://github.com/aegoll/tesoro/blob/main/PROVENANCE.md) — what was ported from the prototype, and from which commit
+- [`docs/quickstart.md`](https://github.com/tesoro-labs/tesoro/blob/main/docs/quickstart.md) — governing an agent from nothing, in about five minutes
+- [`docs/api-surface.md`](https://github.com/tesoro-labs/tesoro/blob/main/docs/api-surface.md) — the public API, and what is deliberately not public
+- [`docs/adapters.md`](https://github.com/tesoro-labs/tesoro/blob/main/docs/adapters.md) — framework and rail adapters, and what is verified about each
+- [`PLAN.md`](https://github.com/tesoro-labs/tesoro/blob/main/PLAN.md) — the build plan, as tracked checkboxes
+- [`PROVENANCE.md`](https://github.com/tesoro-labs/tesoro/blob/main/PROVENANCE.md) — what was ported from the prototype, and from which commit
 
 ## What is not established
 

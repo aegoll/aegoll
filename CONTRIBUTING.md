@@ -39,7 +39,7 @@ Each has a test; if you find a way past one, that is a bug report worth more tha
   the hard way: a refactor turned the checked files into three-line shims, and the test kept
   passing while checking nothing.
 - **A vector, if the change affects a verdict, an envelope, or a hash.** Vectors live in
-  [`aegs/vectors/`](https://github.com/aegoll/aegs) and are language-neutral on purpose.
+  [`aegs/vectors/`](https://github.com/tesoro-labs/aegs) and are language-neutral on purpose.
 - **A note in `PLAN.md`** — tick the task, and add to that section's **Findings** if you
   learned something that changes the plan. A plan with the wrong turns removed is not a plan.
 

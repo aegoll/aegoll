@@ -181,7 +181,7 @@ and no product of a rate limit and a duration is ever compared against anything.
 **No rate limit closes that, and `max_rpm` is a framework's rate limit, not a governance
 control.** What closes it is a count envelope over a long window: tesoro's `actions_per_day` and
 `actions_per_month`, permitted by
-[AEGS-0.1-ENV-7](https://github.com/aegoll/aegs/blob/main/spec/03-envelopes.md). Setting
+[AEGS-0.1-ENV-7](https://github.com/tesoro-labs/aegs/blob/main/spec/03-envelopes.md). Setting
 `max_rpm` low is not a substitute, and a governed run does not need it to be.
 
 ## What is verified, and what is not
@@ -199,7 +199,7 @@ every refusal and stop, and that neither module imports its framework.
 LangGraph's config keys were additionally checked against the installed `RunnableConfig`. For
 **`crewai` they come from documentation only** — see the table above. An SDK that moves a hook
 will break the integration without breaking these tests. That is what the version pins in `[project.optional-dependencies]` are for,
-and it is why [`tesoro-integrations`](https://github.com/aegoll/tesoro-integrations) — which does
+and it is why [`tesoro-integrations`](https://github.com/tesoro-labs/tesoro-integrations) — which does
 install the real SDKs — is where end-to-end runs belong.
 
 A contract exercised only with a real SDK present is a contract nobody checks, so the tests are
