@@ -46,10 +46,16 @@ def live():
     return report(run_all())
 
 
-def test_the_suite_is_not_empty_and_covers_four_threat_classes():
-    assert len(CATALOGUE) == 18, f"the catalogue is {len(CATALOGUE)} attacks, not 18"
+def test_the_suite_is_not_empty_and_covers_five_threat_classes():
+    """Five since 2026-08-30, when the advisor path got its own class.
+
+    `advisor` is separate rather than folded into `authority` because its adversary is different:
+    the counterparty supplies the text a model reads, so the attack arrives through content rather
+    than through a credential or a claim of authority.
+    """
+    assert len(CATALOGUE) == 20, f"the catalogue is {len(CATALOGUE)} attacks, not 20"
     classes = {a.threat_class for a in CATALOGUE}
-    assert classes == {"numeric", "economic", "evidence", "authority"}, classes
+    assert classes == {"numeric", "economic", "evidence", "authority", "advisor"}, classes
 
 
 def test_every_attack_has_a_handler(live):

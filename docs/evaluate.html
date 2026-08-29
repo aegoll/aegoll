@@ -154,7 +154,7 @@
 <h2 id="what-does-not-work">Start here: what does not work</h2>
 
 <p>
-  Eighteen adversarial attacks run in CI against a recorded baseline. <strong>Two still
+  Twenty adversarial attacks run in CI against a recorded baseline. <strong>Two still
   succeed</strong>, and one is refused by a control that was not aiming at it &mdash; which is scored
   as a finding, not a pass.
 </p>
@@ -294,7 +294,7 @@ tesoro audit
 #   chain: VALID</code></pre>
 
 <p>
-  <strong>The benchmark needs the repository, not the package.</strong> The 18 attacks are a
+  <strong>The benchmark needs the repository, not the package.</strong> The 20 attacks are a
   development harness and are deliberately not shipped in the wheel &mdash; an adversarial suite is
   something you run against a checkout you can read, not an opaque dependency:
 </p>
@@ -337,7 +337,7 @@ python -m redteam.runner
 <div class="cards">
   <div class="card">
     <h3>The benchmark</h3>
-    <p>All eighteen attacks, the four outcomes, and the sealed lineage behind the score.</p>
+    <p>All twenty attacks, the four outcomes, and the sealed lineage behind the score.</p>
     <a href="benchmark.html">benchmark &rarr;</a>
   </div>
   <div class="card">

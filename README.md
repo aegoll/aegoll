@@ -14,7 +14,7 @@ anything was refused.**
 [![Python](https://img.shields.io/pypi/pyversions/tesoro?color=2b4c7e)](https://pypi.org/project/tesoro/)
 [![CI](https://github.com/tesoro-labs/tesoro/actions/workflows/ci.yml/badge.svg)](https://github.com/tesoro-labs/tesoro/actions/workflows/ci.yml)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-2b4c7e)](LICENSE)
-[![Red team](https://img.shields.io/badge/red%20team-15%2F18%20defended%2C%202%20open-9a6a00)](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010)
+[![Red team](https://img.shields.io/badge/red%20team-17%2F20%20defended%2C%202%20open-9a6a00)](https://github.com/tesoro-labs/aegs/tree/main/research/experiments/EXP-010)
 
 *Three payments approved. The fourth stopped at the ceiling — and the record says which
 control stopped it.*
@@ -25,7 +25,7 @@ control stopped it.*
 **which control decided**. Deterministic arithmetic, no model in the decision path, and an
 append-only hash-chained journal of every decision.
 
-## It is measured against 18 attacks, and 2 of them still work
+## It is measured against 20 attacks, and 2 of them still work
 
 ```
 $ python -m redteam.runner

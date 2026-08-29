@@ -2,7 +2,7 @@
   "suite": "tesoro red-team",
   "note": "The recorded score. `tests/test_redteam.py` compares a live run against this file and fails on ANY difference -- a defence that regressed and a gap that closed are both changes that must be made deliberately, with this file updated in the same commit. Regenerate with `python -m redteam.baseline`.",
   "counts": {
-    "DEFENDED": 15,
+    "DEFENDED": 17,
     "DEFENDED_BY_ACCIDENT": 1,
     "UNDEFENDED": 2,
     "ERROR": 0
@@ -25,7 +25,9 @@
     "RT-AUTH-002": "DEFENDED",
     "RT-AUTH-003": "DEFENDED",
     "RT-AUTH-004": "DEFENDED",
-    "RT-AUTH-005": "DEFENDED"
+    "RT-AUTH-005": "DEFENDED",
+    "RT-ADV-001": "DEFENDED",
+    "RT-ADV-002": "DEFENDED"
   },
   "undefended": [
     "RT-ECON-001",

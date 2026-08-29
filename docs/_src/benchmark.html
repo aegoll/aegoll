@@ -1,5 +1,5 @@
-<!-- title: The benchmark — 18 adversarial attacks against a spend control, and what it still fails -->
-<!-- description: A reproducible adversarial benchmark for autonomous economic governance. 18 attacks, four outcomes, sealed measurements. Currently 15 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden. -->
+<!-- title: The benchmark — 20 adversarial attacks against a spend control, and what it still fails -->
+<!-- description: A reproducible adversarial benchmark for autonomous economic governance. 20 attacks, four outcomes, sealed measurements. Currently 17 defended, 1 defended by accident, 2 undefended — and the two open ones are published rather than hidden. -->
 
 <h1>The benchmark</h1>
 <p class="lede">
@@ -21,7 +21,7 @@
 
 <pre><code>$ python -m redteam.runner
 
-  defended 15   by accident 1   undefended 2   error 0</code></pre>
+  defended 17   by accident 1   undefended 2   error 0</code></pre>
 
 <div class="scroll">
 <table>
@@ -31,7 +31,8 @@
     <tr><td>economic</td><td>4</td><td>2</td><td><strong>1</strong></td><td><strong>1</strong></td></tr>
     <tr><td>evidence</td><td>4</td><td>3</td><td>—</td><td><strong>1</strong></td></tr>
     <tr><td>authority</td><td>5</td><td>5</td><td>—</td><td>—</td></tr>
-    <tr><td><strong>total</strong></td><td><strong>18</strong></td><td><strong>15</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr>
+    <tr><td>advisor</td><td>2</td><td>2</td><td>—</td><td>—</td></tr>
+    <tr><td><strong>total</strong></td><td><strong>20</strong></td><td><strong>17</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr>
   </tbody>
 </table>
 </div>
@@ -81,7 +82,7 @@
     certifies protection it lacks.
   </p>
   <p>
-    This is also why a headline number alone is misleading. <strong>15 of 18 defended</strong> is the
+    This is also why a headline number alone is misleading. <strong>17 of 20 defended</strong> is the
     honest figure; <em>16</em> would count a coincidence as a control.
   </p>
 </div>
