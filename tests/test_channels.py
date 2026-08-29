@@ -119,3 +119,94 @@ def test_channel_is_part_of_the_decision_hash(tesoro):
     a = tesoro.decide(tesoro.build_request(channel=Channel.INTERNAL, **common))
     b = tesoro.decide(tesoro.build_request(channel=Channel.EXTERNAL, **common))
     assert a.decision_hash != b.decision_hash
+
+
+# --- P2.2: settlement reconciliation ---------------------------------------
+
+
+def test_an_authorisation_that_never_settles_is_unreconciled_not_failed(tmp_path):
+    """The four-state rule applied to settlement. P2.2.
+
+    A failure is a statement somebody made. Silence is the absence of one, and money may well
+    have moved. Collapsing the two would let a broken integration look like a series of clean
+    refusals.
+    """
+    from tesoro.domain import Vendor
+    from tesoro.runtime import Paths, Tesoro
+
+    t = Tesoro(paths=Paths.under(tmp_path))
+    for i in range(3):
+        t.authorize(t.build_request(resource=f"/r{i}", amount_usd="9.00", vendor=Vendor(id="acme")))
+
+    r = t.store.reconcile()
+    assert r.unreconciled_count == 3
+    assert r.unreconciled_atomic == 27_000_000
+    assert r.failed_count == 0, "silence was counted as failure"
+    assert r.settled_count == 0
+    assert not r.clean
+
+
+def test_the_value_envelopes_have_not_counted_the_unreconciled_exposure(tmp_path):
+    """The measurement that makes this surface worth having, pinned so it cannot drift.
+
+    Value envelopes sum `settled=1 AND success=1`. That is defensible -- an authorisation that
+    never executed should not permanently consume a budget -- and it means an integration that
+    never calls `record_settlement` has **no value ceiling at all**, only a count one.
+
+    Measured: ten $9 authorisations against a $50 daily ceiling leave `spent_today` at zero.
+    This test does not assert that the envelope semantics are wrong. It asserts that the gap is
+    real and that `reconcile()` reports the number no envelope has seen.
+    """
+    from tesoro.domain import Vendor
+    from tesoro.runtime import Paths, Tesoro
+
+    t = Tesoro(paths=Paths.under(tmp_path))
+    for i in range(10):
+        t.authorize(t.build_request(resource=f"/r{i}", amount_usd="9.00", vendor=Vendor(id="acme")))
+
+    probe = t.build_request(resource="/probe", amount_usd="9.00", vendor=Vendor(id="acme"))
+    assert t.snapshot_for(probe).spent_today_atomic == 0, "envelopes saw the unsettled spend"
+    assert t.store.reconcile().exposure_atomic == 90_000_000
+
+
+def test_a_settlement_for_a_different_amount_is_diverged(tmp_path):
+    """`diverged` is separate from `settled`, because a persistent gap is a broken integration.
+
+    A NULL settled amount means *not reported*, which is a different fact from *reported as
+    equal* -- so the query counts only rows where an amount was actually given. Counting NULL as
+    agreement would report a silent integration as a reconciled one.
+    """
+    from tesoro.domain import Vendor
+    from tesoro.runtime import Paths, Tesoro
+
+    t = Tesoro(paths=Paths.under(tmp_path))
+    req = t.build_request(resource="/r", amount_usd="5.00", vendor=Vendor(id="acme"))
+    t.authorize(req)
+    t.record_settlement(req.id, success=True, tx_hash="0xabc", amount_atomic=7_000_000)
+
+    r = t.store.reconcile()
+    assert r.settled_count == 1
+    assert r.diverged_count == 1
+    assert r.diverged_atomic == 7_000_000, "diverged reports what settled, not what was authorised"
+    assert r.unreconciled_count == 0
+    assert not r.clean
+
+
+def test_a_settlement_matching_its_authorisation_reconciles_clean(tmp_path):
+    from tesoro.domain import Vendor
+    from tesoro.runtime import Paths, Tesoro
+
+    t = Tesoro(paths=Paths.under(tmp_path))
+    req = t.build_request(resource="/r", amount_usd="5.00", vendor=Vendor(id="acme"))
+    t.authorize(req)
+    t.record_settlement(req.id, success=True, tx_hash="0xabc", amount_atomic=5_000_000)
+
+    r = t.store.reconcile()
+    assert r.clean
+    assert r.settled_count == 1 and r.diverged_count == 0 and r.unreconciled_count == 0
+
+
+def test_the_four_reconciliation_states_are_named_and_distinct():
+    from tesoro.store import RECONCILIATION_STATES
+
+    assert RECONCILIATION_STATES == ("settled", "failed", "diverged", "unreconciled")

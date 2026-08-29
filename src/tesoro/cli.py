@@ -190,6 +190,52 @@ def cmd_decide(args: argparse.Namespace) -> int:
         tesoro.close()
 
 
+def cmd_reconcile(args: argparse.Namespace) -> int:
+    """Authorised against settled. P2.2.
+
+    Deliberately **not** on the decision path. Reconciliation state changes slowly and the
+    decision path is measured in microseconds, so an aggregate query per decision would tax
+    every payment to surface a condition that moves hourly. An operator who wants it as a policy
+    input runs this and acts on the number.
+    """
+    tesoro = _aegl(args)
+    r = tesoro.store.reconcile(channel=args.channel, window_hours=args.hours)
+
+    if args.json:
+        print(json.dumps(r.as_dict(), indent=2))
+        return 0 if r.clean else 1
+
+    print(f"reconciliation  last {r.window_hours}h  channel={args.channel}")
+    print(f"  settled      {r.settled_count:5}  {fmt_usd(r.settled_atomic)}")
+    print(f"  failed       {r.failed_count:5}")
+    print(f"  diverged     {r.diverged_count:5}  {fmt_usd(r.diverged_atomic)}"
+          "   settled for an amount other than the one authorised")
+    print(f"  unreconciled {r.unreconciled_count:5}  {fmt_usd(r.unreconciled_atomic)}"
+          "   authorised, never reported back")
+
+    if r.clean:
+        print()
+        print("ok")
+        return 0
+
+    if r.unreconciled_count:
+        print()
+        print(
+            f"{fmt_usd(r.unreconciled_atomic)} was authorised and never reported back. "
+            "**No value envelope has counted it** -- they sum settled rows only, so an "
+            "integration that never calls record_settlement has no value ceiling, only a "
+            "count one. Silence is not failure; money may have moved."
+        )
+    if r.diverged_count:
+        print()
+        print(
+            f"{r.diverged_count} settled for an amount other than the one authorised. "
+            "The envelopes counted what settled, which is correct -- but a persistent gap "
+            "between authorised and settled is a broken integration or a hostile one."
+        )
+    return 1
+
+
 def cmd_audit(args: argparse.Namespace) -> int:
     tesoro = _aegl(args)
     try:
@@ -978,6 +1024,11 @@ def build_parser() -> argparse.ArgumentParser:
     con.add_argument("--limit", type=int, default=10, help="non-conformant records to detail")
     con.add_argument("--json", action="store_true", help="machine-readable output")
     con.set_defaults(func=cmd_conformance)
+
+    rc = sub.add_parser("reconcile", help="authorised against settled; exit 1 if not clean")
+    rc.add_argument("--hours", type=int, default=24)
+    rc.add_argument("--channel", default="external", choices=("external", "internal"))
+    rc.set_defaults(func=cmd_reconcile)
 
     a = sub.add_parser("audit", help="verify the audit chain")
     a.add_argument("--tail", type=int, default=10)

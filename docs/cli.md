@@ -12,6 +12,7 @@ tesoro report          # what was spent, what was refused, and why
 tesoro report --html   # the same, as one self-contained page
 tesoro conformance     # were the profile's required controls exercised?
 tesoro audit           # verify the evidence chain
+tesoro reconcile       # authorised against settled: what never came back
 ```
 
 ---
@@ -208,6 +209,37 @@ Exits `1` when any record is non-conformant, and names the finding:
 [MUST_EXERCISE] TrustAssessment: nothing at 'assessments/trust'. The profile requires
 this control and the record does not show it ran.
 ```
+
+## `tesoro reconcile`
+
+Authorised against settled, over a window. Four states, and the third is the one that had no
+name before:
+
+| State | Means |
+|---|---|
+| `settled` | It settled, for what was authorised |
+| `failed` | Settlement was attempted and reported as failed. Nothing moved |
+| `diverged` | It settled for an amount other than the one authorised |
+| `unreconciled` | **Nothing was ever reported back** |
+
+**`unreconciled` is not `failed`.** A failure is a statement somebody made; silence is the absence
+of one, and money may well have moved. Collapsing them would let a broken integration look like a
+run of clean refusals.
+
+**Why this command exists.** The value envelopes sum settled rows only — `settled=1 AND success=1`.
+That is defensible on its own terms: an authorisation that never executed should not permanently
+consume a budget. It also means **an integration that never calls `record_settlement` has no value
+ceiling at all**, only a count one. Measured: ten $9 authorisations against a $50 daily ceiling
+leave `spent_today` at zero, and the only control that fires is a *rate* counter, because counts do
+not filter on settlement.
+
+This command does not change what the envelopes count. Changing that silently would make a failed
+payment permanently consume budget — a different defect with a different set of victims. It makes
+the gap visible so the choice stays yours. Exits `1` when anything is unreconciled or diverged.
+
+**Not on the decision path, deliberately.** Reconciliation state moves hourly and a decision is
+measured in microseconds; an aggregate query per payment would tax every decision to surface a
+condition that changes slowly.
 
 ## `tesoro audit` · `tesoro replay`
 

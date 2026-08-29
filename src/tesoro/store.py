@@ -112,6 +112,69 @@ class VendorStats:
 BASELINE_ROW_CAP = 1000
 
 
+#: The four states an authorised action can be in once settlement is considered. They are the
+#: four-state rule applied to settlement, and the third is the one that had no name before.
+#:
+#: * `settled`      -- it settled, for what was authorised.
+#: * `failed`       -- settlement was attempted and reported as failed. Nothing moved.
+#: * `diverged`     -- it settled for an amount other than the one authorised.
+#: * `unreconciled` -- **nothing was ever reported back.** Not a success and not a failure.
+#:
+#: Collapsing `unreconciled` into `failed` is the error this exists to prevent. A failure is a
+#: statement somebody made; silence is the absence of one, and money may well have moved.
+RECONCILIATION_STATES = ("settled", "failed", "diverged", "unreconciled")
+
+
+@dataclass(frozen=True)
+class Reconciliation:
+    """Authorised against settled, over a window. AEGL exposure that no envelope counts.
+
+    **The value envelopes sum `settled=1 AND success=1` only.** That is defensible on its own
+    terms -- an authorisation that never executed should not permanently consume a budget -- and
+    it leaves a gap with a measured size: ten $9 authorisations against a $50 daily ceiling
+    register `spent_today = 0`, and the only control that fires is a *count* counter, because
+    counts do not filter on settlement.
+
+    So an integration that never calls `record_settlement` has no value ceiling at all. It is
+    bounded by `actions_per_day` and by nothing else.
+
+    This type does not change what the envelopes count. Changing that silently would make a
+    failed payment permanently consume budget, which is a different defect with a different set
+    of victims. It makes the gap **visible and governable**: the numbers become policy facts, an
+    operator can refuse on them, and the choice stays theirs.
+    """
+
+    window_hours: int
+    settled_count: int
+    settled_atomic: int
+    failed_count: int
+    diverged_count: int
+    diverged_atomic: int
+    unreconciled_count: int
+    unreconciled_atomic: int
+
+    @property
+    def exposure_atomic(self) -> int:
+        """Authorised, never reported back. The figure no value envelope has counted."""
+        return self.unreconciled_atomic
+
+    @property
+    def clean(self) -> bool:
+        return self.unreconciled_count == 0 and self.diverged_count == 0
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "windowHours": self.window_hours,
+            "settled": {"count": self.settled_count, "atomic": self.settled_atomic},
+            "failed": {"count": self.failed_count},
+            "diverged": {"count": self.diverged_count, "atomic": self.diverged_atomic},
+            "unreconciled": {
+                "count": self.unreconciled_count,
+                "atomic": self.unreconciled_atomic,
+            },
+        }
+
+
 @dataclass(frozen=True)
 class HistorySnapshot:
     """An immutable view of history at one instant, for one agent+vendor pair."""
@@ -307,6 +370,42 @@ class Store:
             ),
         )
         self._conn.commit()
+
+    def reconcile(self, *, channel: str = "external", window_hours: int = 24,
+                  now: datetime | None = None) -> "Reconciliation":
+        """Authorised against settled over a window. See `Reconciliation`.
+
+        `diverged` compares `settled_amount_atomic` against `amount_atomic` and counts only rows
+        where a settled amount was actually reported -- a NULL there means *not reported*, which
+        is a different fact from *reported as equal* and must not be counted as agreement.
+        """
+        moment = now or datetime.now(timezone.utc)
+        since = (moment - timedelta(hours=window_hours)).isoformat()
+
+        def one(where: str) -> tuple[int, int]:
+            row = self._rows(
+                "SELECT COUNT(*) AS c, "
+                "COALESCE(SUM(COALESCE(settled_amount_atomic, amount_atomic)),0) AS s "
+                f"FROM transactions WHERE channel=? AND at>=? AND {where}",
+                (channel, since),
+            )[0]
+            return int(row["c"]), int(row["s"])
+
+        settled_c, settled_s = one("settled=1 AND success=1")
+        failed_c, _ = one("settled=1 AND success=0")
+        diverged_c, diverged_s = one(
+            "settled=1 AND success=1 AND settled_amount_atomic IS NOT NULL "
+            "AND settled_amount_atomic != amount_atomic"
+        )
+        unrec_c, unrec_s = one("settled=0")
+
+        return Reconciliation(
+            window_hours=window_hours,
+            settled_count=settled_c, settled_atomic=settled_s,
+            failed_count=failed_c,
+            diverged_count=diverged_c, diverged_atomic=diverged_s,
+            unreconciled_count=unrec_c, unreconciled_atomic=unrec_s,
+        )
 
     def already_settled(self, tx_id: str) -> bool:
         """Has this request id already settled?

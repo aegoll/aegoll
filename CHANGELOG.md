@@ -99,6 +99,31 @@ and hides fixes tells a reader what was added and not what was wrong.
   evidence. This implementation emits `delegated` or `unknown` and **never `direct`** — a person
   driving it is asking it to decide, not confirming a specific transfer.
 
+- **`tesoro reconcile` — authorised against settled, as a first-class surface.** Four states:
+  `settled`, `failed`, `diverged`, and **`unreconciled`**. The last one had no name before, and it
+  is not `failed` — a failure is a statement somebody made, silence is the absence of one, and money
+  may well have moved.
+
+  **It exists because of a measured gap.** The value envelopes sum `settled=1 AND success=1`, so an
+  authorisation that never gets a settlement recorded consumes no budget at all. Measured: **ten $9
+  authorisations against a $50 daily ceiling leave `spent_today` at zero**, and the only control
+  that fires is `velocity_60s` — a *rate* counter, because counts do not filter on settlement. An
+  integration that never calls `record_settlement` therefore has **no value ceiling, only a count
+  one**, and no pacing is required to exploit it.
+
+  **The envelope semantics are deliberately unchanged.** Counting authorised-but-unsettled spend
+  would make a failed payment permanently consume budget, which is a different defect with a
+  different set of victims. This makes the gap visible and governable instead, and leaves the
+  choice with the operator. `tesoro reconcile` exits `1` when anything is unreconciled or diverged.
+
+  **Not on the decision path, deliberately.** Reconciliation state moves hourly and a decision is
+  measured in microseconds; an aggregate query per payment would tax every decision to surface a
+  condition that changes slowly.
+
+  `diverged` counts only rows where a settled amount was actually reported — a NULL there means
+  *not reported*, which is different from *reported as equal*, and counting it as agreement would
+  make a silent integration look reconciled.
+
 - **A regulatory positioning page — `docs/regulation.html`, "Where the obligations fall".**
   GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the
   Travel Rule binds VASPs. **This is a library and is none of them.** None of those terms appeared
