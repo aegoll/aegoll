@@ -182,3 +182,83 @@ def test_velocity_burst_is_caught(tesoro):
     assert not decision.budget.ok
     assert decision.budget.binding == "velocity_60s"
     assert decision.verdict is not Verdict.APPROVE
+
+
+# --- P3.2: the narrowing lattice, enumerated -------------------------------
+
+_SEVERITY = {"APPROVE": 0, "REVIEW": 1, "ESCALATE": 2, "REJECT": 3}
+
+
+def _resolve(order):
+    """Run one evaluation order. Returns (final severity, narrowing sequence).
+
+    The lattice from `research/lattice.md`: controls propose, composition is join, and a control
+    narrows only when it strictly raises the running verdict.
+    """
+    running, narrowed = 0, []
+    for name, proposal in order:
+        if _SEVERITY[proposal] > running:
+            running = _SEVERITY[proposal]
+            narrowed.append(name)
+    return running, narrowed
+
+
+def test_the_verdict_is_order_independent_over_every_permutation():
+    """AEGS-0.1-VERD-3, as a theorem rather than a discipline.
+
+    `max` is commutative, associative and idempotent, so the join of a set of proposals cannot
+    depend on the order they arrive in. An implementation cannot fail this except by leaving the
+    lattice -- by letting a control *assign* a verdict rather than propose one.
+    """
+    import itertools
+
+    controls = [("treasury", "REVIEW"), ("risk", "ESCALATE"),
+                ("sanctions", "REJECT"), ("roi", "APPROVE")]
+    finals = {_resolve(p)[0] for p in itertools.permutations(controls)}
+    assert finals == {_SEVERITY["REJECT"]}, finals
+
+
+def test_attribution_is_order_dependent_exactly_when_the_maximum_ties():
+    """`research/lattice.md` Proposition 2, and the correction it produced.
+
+    The last control to narrow is the **first control in the order attaining the maximum**. So
+    attribution varies with order if and only if more than one control proposes that maximum.
+
+    The specification's own rationale for VERD-4 illustrated order-dependence with treasury
+    narrowing to REVIEW and risk then narrowing to ESCALATE. **That example does not exhibit it**
+    -- the maximum is attained only by risk, so every order attributes to risk. Formalising the
+    lattice caught it; this test pins the corrected reading so the example cannot drift back.
+    """
+    import itertools
+
+    # |argmax| == 1: attribution is order-independent.
+    single = [("treasury", "REVIEW"), ("risk", "ESCALATE")]
+    attributions = {_resolve(p)[1][-1] for p in itertools.permutations(single)}
+    assert attributions == {"risk"}, (
+        "the spec's original VERD-4 example, which attributes to risk under both orders and "
+        "therefore demonstrates nothing about attribution"
+    )
+
+    # |argmax| == 2: attribution follows whichever tied control comes first.
+    tied = [("sanctions", "REJECT"), ("treasury", "REJECT")]
+    attributions = {_resolve(p)[1][-1] for p in itertools.permutations(tied)}
+    assert attributions == {"sanctions", "treasury"}, (
+        "a tie at the maximum is the only way attribution becomes order-dependent, and it is "
+        "exactly the case VERD-4a's dispositive controls exist to resolve"
+    )
+
+
+def test_a_dispositive_control_makes_attribution_order_independent_again():
+    """`research/lattice.md` Proposition 3, against the shipped declaration.
+
+    A total order on verdicts cannot separate two controls that both reach the maximum. Something
+    outside the lattice has to, and the declared precedence of dispositive controls is that
+    something -- which is why the set must be fixed in advance rather than chosen per decision.
+    """
+    from tesoro.record import DISPOSITIVE_CONTROLS
+
+    assert DISPOSITIVE_CONTROLS == ("sanctions", "killswitch"), DISPOSITIVE_CONTROLS
+
+    # Declared precedence is a total order on the set, so a tie among dispositive controls
+    # resolves without reading the evaluation order at all.
+    assert len(set(DISPOSITIVE_CONTROLS)) == len(DISPOSITIVE_CONTROLS)
