@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>Where the obligations fall — and why none of them fall here</title>
-<meta name="description" content="GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed.">
+<meta name="description" content="FATF narrowed the definition of originator from the account holder who allows a transfer to the one who requests it, in June 2025. GENIUS binds issuers, MiCA binds CASPs, the Travel Rule binds VASPs — and a library is none of those. Sources named, no compliance claimed.">
 <link rel="canonical" href="https://tesoro-labs.github.io/tesoro/regulation.html">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
 <meta name="author" content="Jayzilva">
@@ -15,12 +15,12 @@
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="tesoro">
 <meta property="og:title" content="Where the obligations fall — and why none of them fall here">
-<meta property="og:description" content="GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed.">
+<meta property="og:description" content="FATF narrowed the definition of originator from the account holder who allows a transfer to the one who requests it, in June 2025. GENIUS binds issuers, MiCA binds CASPs, the Travel Rule binds VASPs — and a library is none of those. Sources named, no compliance claimed.">
 <meta property="og:url" content="https://tesoro-labs.github.io/tesoro/regulation.html">
 <meta property="og:locale" content="en">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Where the obligations fall — and why none of them fall here">
-<meta name="twitter:description" content="GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed.">
+<meta name="twitter:description" content="FATF narrowed the definition of originator from the account holder who allows a transfer to the one who requests it, in June 2025. GENIUS binds issuers, MiCA binds CASPs, the Travel Rule binds VASPs — and a library is none of those. Sources named, no compliance claimed.">
 
 <!-- Structured data. An answer engine quoting this page needs to know what kind of thing it is,
      who wrote it and what software it documents; a crawler infers none of that from prose. Kept
@@ -33,7 +33,7 @@
       "@type": "TechArticle",
       "@id": "https://tesoro-labs.github.io/tesoro/regulation.html#article",
       "headline": "Where the obligations fall \u2014 and why none of them fall here",
-      "description": "GENIUS binds permitted payment stablecoin issuers, MiCA binds EMT and ART issuers and CASPs, the Travel Rule binds VASPs. Tesoro is a library and is none of those. Context for an obliged entity, and no compliance claimed.",
+      "description": "FATF narrowed the definition of originator from the account holder who allows a transfer to the one who requests it, in June 2025. GENIUS binds issuers, MiCA binds CASPs, the Travel Rule binds VASPs \u2014 and a library is none of those. Sources named, no compliance claimed.",
       "inLanguage": "en",
       "isPartOf": {
         "@id": "https://tesoro-labs.github.io/tesoro/#website"
@@ -116,6 +116,7 @@
   <ul class="sub">
     <li><a href="#who-each-one-binds">Who each one binds</a></li>
     <li><a href="#the-genius-timeline">The GENIUS timeline, with its dates</a></li>
+    <li><a href="#originator-narrowed">One word changed in June 2025, and it moved away from agents</a></li>
     <li><a href="#the-direction-of-travel">One line in the April proposal is worth reading carefully</a></li>
     <li><a href="#what-is-not-claimed">What is not claimed, in plain terms</a></li>
     <li><a href="#what-an-obliged-entity-gets">What an obliged entity actually gets</a></li>
@@ -210,6 +211,77 @@
     <strong>The NPRM itself was not read in full.</strong> The FATF material elsewhere on this site
     <em>was</em> read in the source text &mdash; the consolidated Recommendations 2012&ndash;2025 and
     the June 2025 explanatory note &mdash; and that difference is stated rather than smoothed over.
+  </p>
+</div>
+
+<h2 id="originator-narrowed">One word changed in June 2025, and it moved away from agents</h2>
+
+<p>
+  The FATF glossary defines <em>originator</em>. The June 2025 revision changed it, and the change is
+  one word:
+</p>
+
+<div class="key">
+  <p style="font-size:1.05em">
+    &ldquo;Originator refers to the account holder who <s>allows</s> <strong>requests</strong> the
+    payment or value transfer from that account&hellip;&rdquo;
+  </p>
+</div>
+
+<p>
+  <strong>&ldquo;Allows&rdquo; would have covered an account holder who authorised a standing policy.
+  &ldquo;Requests&rdquo; does not.</strong> The definition narrowed to an act of requesting, at the
+  moment software began doing the requesting.
+</p>
+
+<p>
+  Two things to be careful about, because this is the kind of finding that gets overstated.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Careful about</th><th>What is actually true</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>It is a consequence, not an intent</strong></td>
+      <td>The revision's stated purpose is payment transparency and ISO 20022 alignment. The phrase
+      <em>artificial intelligence</em> appears <strong>nowhere</strong> in the explanatory note, and
+      &ldquo;requests&rdquo; is arguably the more natural description of what an account holder does.
+      Nothing suggests agents were considered.</td>
+    </tr>
+    <tr>
+      <td><strong>Fiat rails do carry an initiator field</strong></td>
+      <td>CBPR+ <code>pacs.008.001.08</code> has <code>InitiatingParty [0..1]</code> and
+      <code>UltimateDebtor [0..1]</code>. So &ldquo;no payment format can express this&rdquo; is
+      <strong>false</strong>, and an earlier version of this analysis said it. It is optional, absent
+      from R.16's required set, names a <em>party</em> rather than a mode, cannot name an agent
+      &mdash; an agent has no legal personality &mdash; and yields the same value whether authority
+      was delegated or credentials were stolen. <strong>IVMS101, the virtual-asset payload, has no
+      equivalent at all.</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>What survives is narrow and checkable.</strong> R.16's required set &mdash; name, account
+  number or unique transaction reference, address or national identity number or customer
+  identification number or date and place of birth, plus LEI or BIC for a legal person &mdash;
+  identifies <em>whose money moved</em> and never <em>who instructed the movement</em>. An
+  agent-initiated payment therefore produces a transfer record naming a person who pressed nothing,
+  indistinguishable from one a person reviewed and sent and from one made with stolen credentials.
+</p>
+
+<div class="note">
+  <p>
+    <strong>Check it rather than take it.</strong> Both documents are free from
+    <code>fatf-gafi.org</code>: the consolidated <em>FATF Recommendations 2012&ndash;2025</em> and the
+    <em>Explanatory note for revised R.16</em>. The glossary entry is in the consolidated text; the
+    struck word is visible in the explanatory note's redline. Retrieved and read
+    <strong>28 August 2026</strong>. Full working, including the searches that returned zero hits for
+    <em>initiating party</em> and <em>artificial intelligence</em>, is in
+    <a href="https://github.com/tesoro-labs/research/blob/main/verification/r16-originator.md">the
+    verification record</a>.
   </p>
 </div>
 
